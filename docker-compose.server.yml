@@ -26,7 +26,7 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/spdb_power_finance?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&yearIsDateType=false
       DB_USER: root
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在服务器.env中设置MYSQL_ROOT_PASSWORD}
-      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://121.40.255.180}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://121.40.255.180,http://tairan-ecfiplatform.online,http://www.tairan-ecfiplatform.online,https://tairan-ecfiplatform.online,https://www.tairan-ecfiplatform.online}
     depends_on:
       mysql:
         condition: service_healthy
@@ -41,7 +41,19 @@ services:
       - backend
     ports:
       - "80:80"
+    volumes:
+      - certbot_webroot:/var/www/certbot:ro
+      - letsencrypt:/etc/letsencrypt:ro
     restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ["maintenance"]
+    volumes:
+      - certbot_webroot:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
 
 volumes:
   mysql_data:
+  certbot_webroot:
+  letsencrypt:

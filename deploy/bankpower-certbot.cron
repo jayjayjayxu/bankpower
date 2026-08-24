@@ -1,0 +1,4 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+17 3 * * * root cd /opt/bankpower && /usr/bin/docker compose -f docker-compose.server.yml --profile maintenance run --rm certbot renew --webroot -w /var/www/certbot --quiet && /usr/bin/docker compose -f docker-compose.server.yml exec -T frontend nginx -s reload >> /var/log/bankpower-certbot.log 2>&1
