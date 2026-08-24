@@ -176,14 +176,14 @@ public class EnterpriseQueryService {
                 SELECT * FROM enterprise_financial WHERE company_id = :companyId ORDER BY financial_year DESC
                 """, Map.of("companyId", companyId))));
         result.put("hourlyCoverage", normalizeRows(jdbc.queryForList("""
-                SELECT YEAR(ts) AS analysis_year, COUNT(*) AS row_count, MIN(ts) AS start_time,
+                SELECT CAST(YEAR(ts) AS UNSIGNED) AS analysis_year, COUNT(*) AS row_count, MIN(ts) AS start_time,
                        MAX(ts) AS end_time, COUNT(DISTINCT DATE(ts)) AS day_count,
                        MIN(data_type) AS data_type, MIN(data_quality) AS data_quality
                 FROM enterprise_hourly_load WHERE company_id = :companyId
                 GROUP BY YEAR(ts) ORDER BY analysis_year DESC
                 """, Map.of("companyId", companyId))));
         result.put("generationCoverage", normalizeRows(jdbc.queryForList("""
-                SELECT YEAR(ts) AS analysis_year, COUNT(*) AS row_count, MIN(ts) AS start_time,
+                SELECT CAST(YEAR(ts) AS UNSIGNED) AS analysis_year, COUNT(*) AS row_count, MIN(ts) AS start_time,
                        MAX(ts) AS end_time, COUNT(DISTINCT DATE(ts)) AS day_count,
                        MIN(data_type) AS data_type, MIN(data_quality) AS data_quality
                 FROM enterprise_hourly_generation WHERE company_id = :companyId

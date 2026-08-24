@@ -1,5 +1,11 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
+function normalizeYear(value, fallback = null) {
+  const match = String(value ?? '').match(/^\d{4}/)
+  const year = match ? Number(match[0]) : Number.NaN
+  return Number.isInteger(year) && year >= 2000 && year <= 2100 ? year : fallback
+}
+
 async function request(path) {
   const response = await fetch(`${API_BASE}${path}`, { headers: { Accept: 'application/json' } })
   if (!response.ok) {
@@ -33,18 +39,20 @@ export function fetchPowerSourceOverview() {
 }
 
 export function fetchLoadPriceWindow(companyId, year = 2025) {
-  return request(`/enterprises/${encodeURIComponent(companyId)}/load-price-window?year=${encodeURIComponent(year)}`)
+  return request(`/enterprises/${encodeURIComponent(companyId)}/load-price-window?year=${normalizeYear(year, 2025)}`)
 }
 
 export function fetchHourlyLoad(companyId, { year, page = 0, size = 24 } = {}) {
   const params = new URLSearchParams({ page: String(page), size: String(size) })
-  if (year) params.set('year', String(year))
+  const normalizedYear = normalizeYear(year)
+  if (normalizedYear) params.set('year', String(normalizedYear))
   return request(`/enterprises/${encodeURIComponent(companyId)}/hourly-load?${params}`)
 }
 
 export function fetchHourlyGeneration(companyId, { year, page = 0, size = 24 } = {}) {
   const params = new URLSearchParams({ page: String(page), size: String(size) })
-  if (year) params.set('year', String(year))
+  const normalizedYear = normalizeYear(year)
+  if (normalizedYear) params.set('year', String(normalizedYear))
   return request(`/enterprises/${encodeURIComponent(companyId)}/hourly-generation?${params}`)
 }
 

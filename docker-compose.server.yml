@@ -23,7 +23,7 @@ services:
     build:
       context: ./backend
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/spdb_power_finance?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+      DB_URL: jdbc:mysql://mysql:3306/spdb_power_finance?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&yearIsDateType=false
       DB_USER: root
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在服务器.env中设置MYSQL_ROOT_PASSWORD}
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://121.40.255.180}

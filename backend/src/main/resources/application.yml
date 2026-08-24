@@ -7,7 +7,7 @@ spring:
   application:
     name: power-finance-api
   datasource:
-    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/spdb_power_finance?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/spdb_power_finance?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true&yearIsDateType=false}
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:}
     hikari:
