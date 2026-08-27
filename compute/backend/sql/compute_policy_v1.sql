@@ -213,7 +213,9 @@ SELECT pr.provider_registry_id,p.platform_id,'MATCHED','EXACT_OPERATOR_NAME',
        '服务机构公开名称与平台运营主体“深圳市智城翼云科技有限公司”完全一致。','2026-08-26','PUBLIC_DERIVED',
        '仅证明该运营主体在2025年度第二批名单中有新增服务事项；具体商品和客户合同仍需核验。'
 FROM compute_policy_provider_registry_v1 pr
-JOIN compute_service_platform_v1 p ON p.operator_name=pr.provider_name
+JOIN compute_service_platform_v1 p
+  ON CONVERT(p.operator_name USING utf8mb4) COLLATE utf8mb4_0900_ai_ci
+   = CONVERT(pr.provider_name USING utf8mb4) COLLATE utf8mb4_0900_ai_ci
 WHERE pr.provider_name='深圳市智城翼云科技有限公司'
 ON DUPLICATE KEY UPDATE match_status=VALUES(match_status),match_method=VALUES(match_method),match_basis=VALUES(match_basis),verified_at=VALUES(verified_at),data_type=VALUES(data_type),notes=VALUES(notes);
 
