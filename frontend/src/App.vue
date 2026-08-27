@@ -2,9 +2,28 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import EnterpriseDataView from './components/EnterpriseDataView.vue'
 import DataCatalogView from './components/DataCatalogView.vue'
+import BankWorkbenchView from './components/BankWorkbenchView.vue'
 import PowerSourceStructure from './components/PowerSourceStructure.vue'
 import { fetchHomeSummary, fetchLoadPriceWindow } from './services/enterpriseApi'
 
+function researchSiteUrl(configuredUrl, defaultPort) {
+  const configured = configuredUrl?.trim()
+  const fallback = `${window.location.protocol}//${window.location.hostname}:${defaultPort}`
+  try {
+    const url = new URL(configured || fallback)
+    if (url.pathname.replace(/\/+$/, '') === '/login') url.pathname = ''
+    else url.pathname = url.pathname.replace(/\/+$/, '')
+    url.search = ''
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return fallback
+  }
+}
+
+const powerSiteUrl = researchSiteUrl(import.meta.env.VITE_POWER_SITE_URL, 5173)
+const computeSiteUrl = researchSiteUrl(import.meta.env.VITE_COMPUTE_SITE_URL, 5174)
+const bankWorkbenchUrl = `${powerSiteUrl}/bank-workbench`
 const activeSignalId = ref('tariff')
 const selectedCompanyId = ref('C000020')
 const menuOpen = ref(false)
@@ -100,6 +119,7 @@ const selectedCompany = computed(() => companies.value.find((company) => company
 })
 const detailCompanyId = computed(() => currentPath.value.match(/^\/enterprise\/([^/]+)$/)?.[1] || '')
 const dataRoute = computed(() => currentPath.value.match(/^\/data\/([^/]+)$/)?.[1] || '')
+const bankWorkbench = computed(() => currentPath.value === '/bank-workbench')
 const loadPriceSeries = computed(() => (loadPriceWindow.value.series || []).map((row) => ({
   ...row,
   hour: Number(row.hourOfDay),
@@ -139,7 +159,14 @@ const periodBlocks = computed(() => {
 const highPriceWindows = computed(() => formatHourRanges(loadPriceSeries.value
   .filter((row) => ['PEAK', 'CRITICAL', 'CRITICAL_PEAK'].includes(row.timePeriod)).map((row) => row.hour)))
 
+function normalizeLegacyPath() {
+  if (window.location.pathname === '/login') {
+    window.history.replaceState({}, '', '/')
+  }
+}
+
 function syncPath() {
+  normalizeLegacyPath()
   currentPath.value = window.location.pathname
 }
 
@@ -213,6 +240,8 @@ function formatHourRanges(hours) {
 }
 
 onMounted(() => {
+  normalizeLegacyPath()
+  currentPath.value = window.location.pathname
   window.addEventListener('popstate', syncPath)
   loadHomeSummary()
   loadHeroWindow()
@@ -258,6 +287,13 @@ function navigateToEnterprise(companyId) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+function openBankWorkbench() {
+  window.history.pushState({}, '', '/bank-workbench')
+  currentPath.value = window.location.pathname
+  document.title = '银行客户经理工作台 · 电力能源金融'
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 function returnHome() {
   window.history.pushState({}, '', '/')
   currentPath.value = window.location.pathname
@@ -269,6 +305,14 @@ function returnHome() {
 <template>
   <div class="app-shell">
     <DataCatalogView v-if="dataRoute" :dataset="dataRoute" @back="returnHome" />
+
+    <BankWorkbenchView
+      v-else-if="bankWorkbench"
+      :compute-site-url="computeSiteUrl"
+      :power-site-url="powerSiteUrl"
+      @back="returnHome"
+      @open-enterprise="navigateToEnterprise"
+    />
 
     <EnterpriseDataView
       v-else-if="detailCompanyId"
@@ -299,6 +343,12 @@ function returnHome() {
           </button>
         </nav>
 
+        <div class="site-switcher" aria-label="研究站点切换">
+          <a :href="bankWorkbenchUrl" title="进入银行客户经理工作台">工作台</a>
+          <b>电力研究</b>
+          <a :href="computeSiteUrl" title="进入算力能源研究网站">算力研究</a>
+        </div>
+
         <button class="snapshot-chip" type="button" @click="scrollToSection('trace')">
           <span class="status-dot"></span>
           2025 数据基准 · 2026-08 快照
@@ -317,6 +367,7 @@ function returnHome() {
           <div class="hero-actions">
             <button class="button primary" type="button" @click="scrollToSection('energy-mix')">查看能源与市场逻辑 <span>↓</span></button>
             <button class="button ghost" type="button" @click="scrollToSection('enterprises')">浏览企业画像</button>
+            <button class="button ghost" type="button" @click="openBankWorkbench">进入银行工作台 →</button>
           </div>
           <p class="disclaimer"><span>研究边界</span> 当前展示为公开资料与研究情景下的模型结果，不构成授信承诺。</p>
         </div>

@@ -6,6 +6,7 @@
 project/
 ├── frontend/       Vue 3 + JavaScript 展示页
 ├── backend/        Spring Boot 只读数据库接口
+├── compute/        算力研究前后端及算电协同说明
 ├── tools/          本地开发辅助工具，不存放任何密钥
 └── docker-compose.yml
 ```
@@ -28,7 +29,7 @@ npm install
 npm run dev
 ```
 
-浏览器访问 `http://localhost:5173`。
+浏览器访问终端输出的本机局域网地址，例如 `http://172.20.10.2:5173`。
 
 ## Docker 预览
 
@@ -51,7 +52,14 @@ cp server.env.example .env
 docker compose -f docker-compose.server.yml up -d --build
 ```
 
-对外只开放网页端口 `80`；Java API 仅绑定服务器本机 `127.0.0.1:8081`，由前端 Nginx 反向代理。
+对外只开放网页端口 `80`；两个 Java API 仅在容器网络内提供服务，由前端 Nginx 反向代理。部署后使用同一 IP 访问：
+
+- `/`：电力研究首页；
+- `/bank-workbench`：银行工作台；
+- `/compute/`：算力研究首页；
+- `/api/` 与 `/compute/api/`：分别对应电力与算力只读接口。
+
+该设计不依赖未备案域名，也不会重置既有 MySQL 数据卷。
 
 ## 当前边界
 

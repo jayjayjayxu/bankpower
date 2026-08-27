@@ -34,10 +34,6 @@ export function fetchHomeSummary() {
   return request('/enterprises/home-summary')
 }
 
-export function fetchBankWorkbench() {
-  return request('/bank-workbench')
-}
-
 export function fetchPowerSourceOverview() {
   return request('/power-source-structure/overview')
 }

@@ -1,0 +1,26 @@
+.facility-due-link { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: 9px; padding: 11px 13px; border: 1px solid #d9c58d; border-radius: 6px; background: #fffaf0; color: #876522; font-size: 11px; font-weight: 700; cursor: pointer; }
+.facility-due-link:hover { border-color: #c4953f; background: #fff5df; }
+.facility-due-link span { font-size: 15px; }
+
+.due-diligence-section { padding: 14px 0 88px; }
+.due-status-overview { display: grid; grid-template-columns: 1.2fr .8fr; gap: 1px; overflow: hidden; border: 1px solid #d7e4e6; border-radius: 9px; background: #d7e4e6; }
+.due-status-summary { padding: 24px; background: linear-gradient(135deg,#f4fbf9,#fffdf7); }
+.due-status-summary > span, .due-checklist-panel > header span { color: #438f89; font: 11px ui-monospace,monospace; letter-spacing: .04em; }
+.due-status-summary h2 { max-width: 630px; margin: 10px 0 9px; color: #24475c; font-size: 22px; line-height: 1.35; }
+.due-status-summary p { max-width: 620px; margin: 0; color: #71858e; font-size: 11px; line-height: 1.7; }
+.due-status-counts { display: grid; grid-template-columns: repeat(3,1fr); background: #d7e4e6; }
+.due-status-counts article { display: grid; align-content: center; min-height: 145px; padding: 16px; background: #fff; }
+.due-status-counts strong { display: block; color: #315b6d; font-size: 32px; }.due-status-counts span { margin-top: 5px; color: #778a93; font-size: 11px; }
+.due-status-counts article.verified strong { color: #2c877e; }.due-status-counts article.partial strong { color: #a97828; }.due-status-counts article.pending strong { color: #b36b2b; }
+.due-checklist-panel { margin-top: 13px; overflow: hidden; border: 1px solid #d9e5e7; border-radius: 9px; background: #fff; }
+.due-checklist-panel > header { display: flex; justify-content: space-between; gap: 18px; align-items: end; padding: 17px 18px; background: #f7fafb; }
+.due-checklist-panel > header h3 { margin: 6px 0 0; color: #2c4d61; font-size: 15px; }.due-checklist-panel > header small { max-width: 310px; color: #82939c; font-size: 11px; line-height: 1.55; text-align: right; }
+.due-check-item { display: grid; grid-template-columns: 132px 1.1fr 1.25fr 1.25fr; gap: 15px; padding: 16px 18px; border-top: 1px solid #e5ecee; }
+.due-check-status { display: flex; flex-wrap: wrap; align-content: start; gap: 5px; }.due-check-status > span, .due-check-status > b, .due-check-status > em { padding: 4px 6px; border-radius: 4px; font-size: 11px; font-style: normal; line-height: 1.35; }
+.due-check-status > span { background: #edf3f4; color: #607983; }.due-check-status > b.verified { background: #e5f5f0; color: #287970; }.due-check-status > b.partial { background: #fff4df; color: #9d7023; }.due-check-status > b.pending { background: #fff0e5; color: #a35b24; }
+.due-check-status > em { background: #f1f4f5; color: #71838c; }.due-check-status > em.blocking { background: #fdece3; color: #a14921; }.due-check-status > em.high { background: #fff3dc; color: #9e6d1b; }
+.due-check-item h4 { margin: 0; color: #34576a; font-size: 12px; }.due-check-item p { margin: 6px 0 0; color: #72858f; font-size: 11px; line-height: 1.6; }.due-check-item > div:nth-child(3) > span, .due-check-item > div:nth-child(4) > span { color: #7a9099; font-size: 11px; }.due-check-item a { display: inline-block; margin-top: 8px; color: #33857f; font-size: 11px; }
+.due-boundary { display: grid; grid-template-columns: 65px 1fr; gap: 10px; margin: 11px 0 0; padding: 12px 14px; border-left: 3px solid #d6a54c; background: #fff9ed; color: #776b53; font-size: 11px; line-height: 1.65; }.due-boundary b { color: #946b1d; }
+
+@media (max-width: 1060px) { .due-check-item { grid-template-columns: 110px 1fr 1fr; }.due-check-item > div:last-child { grid-column: 2 / -1; } }
+@media (max-width: 760px) { .due-status-overview { grid-template-columns: 1fr; }.due-status-counts { min-height: 105px; }.due-check-item { grid-template-columns: 1fr; }.due-check-item > div:last-child { grid-column: auto; }.due-checklist-panel > header { display: grid; }.due-checklist-panel > header small { text-align: left; }.due-boundary { grid-template-columns: 1fr; } }
