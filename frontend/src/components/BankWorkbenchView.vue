@@ -150,7 +150,7 @@ onMounted(load)
           <span>01 · 先约谈什么</span>
           <h2>已有模型快照的电力客户</h2>
           <p>优先围绕电费结构、储能工程条件和项目主体开展首次拜访。数值仅是模型筛选结果，不能直接作为报价或授信结论。</p>
-          <button type="button" @click="selectedTrack = 'POWER'">查看电力客户 {{ powerItems.length }} 家 →</button>
+          <button type="button" @click="selectedTrack = 'POWER'">查看电力客户 {{ powerItems.length }} 家 ↓</button>
         </article>
         <article class="compute-action">
           <span>02 · 先尽调什么</span>
