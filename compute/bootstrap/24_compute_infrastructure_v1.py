@@ -245,7 +245,8 @@ RELATIONS = [
 def connect():
     return pymysql.connect(
         host=os.getenv("DB_HOST", "127.0.0.1"), port=int(os.getenv("DB_PORT", "3306")),
-        user=os.getenv("DB_USER", "root"), password=os.getenv("MYSQL_PASSWORD", ""),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("MYSQL_PASSWORD") or os.getenv("MYSQL_ROOT_PASSWORD", ""),
         database=os.getenv("DB_NAME", "spdb_power_finance"), charset="utf8mb4",
         autocommit=False, cursorclass=pymysql.cursors.DictCursor,
     )
