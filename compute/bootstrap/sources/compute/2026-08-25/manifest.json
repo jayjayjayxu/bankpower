@@ -1,0 +1,743 @@
+{
+  "captured_at": "2026-08-25T10:18:28+08:00",
+  "files": [
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products",
+      "file": "cnix_products.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 246478,
+      "sha256": "7f7cb7f9956af7dc72562617f416a6470a77554f4daac5eb91ce5f4507523e09",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/product-categories/compute?with_children=true",
+      "file": "cnix_compute_categories.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2118,
+      "sha256": "800ef0e2137e250f6974f38feeb4220426e5a5e7c6ed58189589b49d1b481309",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/product-categories/compute/filter-fields?with_children=true",
+      "file": "cnix_compute_filter_fields.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3165,
+      "sha256": "c005aacef209bd029b86d0dd7485b3bf439a5cff4d504bf5f016ea830e8938e5",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A100-40G-PCIE-8",
+      "file": "cnix_product_details/A100-40G-PCIE-8.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6110,
+      "sha256": "4148917d1ee837c7ba7bc06a235f0c7811ed5bfdec49db5416d028d93b1a5b1d",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A100-80GB-SXM-8-C2-1",
+      "file": "cnix_product_details/A100-80GB-SXM-8-C2-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 8065,
+      "sha256": "6ba0af52b6b0e3859021755067231974d942a8d3f953ce3156f6b695e0fc58fa",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A100-80GB-SXM-8-C4-1",
+      "file": "cnix_product_details/A100-80GB-SXM-8-C4-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6171,
+      "sha256": "edd369c1fa87847598f11d236b948b4b942bd1674281efb4d8c2636e59d39166",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A100-80GB-sxm-8-G1-1",
+      "file": "cnix_product_details/A100-80GB-sxm-8-G1-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6155,
+      "sha256": "c3c3cc133e51030a7046acb19097efc186c17abdcbd01c03d8f76210fdc5615b",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A100-80GB-sxm-8-G1-3",
+      "file": "cnix_product_details/A100-80GB-sxm-8-G1-3.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6151,
+      "sha256": "43094b870310bc137fe1dce87f71500fa7d5b089825a773769ba56c3d068294a",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A800-80GB-8-C5-5",
+      "file": "cnix_product_details/A800-80GB-8-C5-5.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6986,
+      "sha256": "41aac30a3f41d2499e5038d9c2543450a1eb1462bda6eb5a2a45c0dc9aefba49",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A800-80GB-SXM-8-C2-1",
+      "file": "cnix_product_details/A800-80GB-SXM-8-C2-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 10029,
+      "sha256": "ad89fd09576327cfc715d6aafdd0eda8b337fc5740c7680caba826e39c6f6632",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A800-80GB-SXM-8-C5-1",
+      "file": "cnix_product_details/A800-80GB-SXM-8-C5-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 9006,
+      "sha256": "3df325cd87709a08f91997cf9892eedb1cb21ff0f14f038ee247df275ee3f895",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A800-80GB-sxm-8-C3-1",
+      "file": "cnix_product_details/A800-80GB-sxm-8-C3-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6117,
+      "sha256": "110707ca2d4a68fe8498c0465f7030fb8caac641e610774c893f73ee358f3f00",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/A800-80GB-sxm-8-I6",
+      "file": "cnix_product_details/A800-80GB-sxm-8-I6.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6109,
+      "sha256": "85063f300b2d86c45a283d4a5aa2e0586dd5deb3e5260524a6e9e86f340edbdd",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/AIGalaxyA100-40",
+      "file": "cnix_product_details/AIGalaxyA100-40.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3282,
+      "sha256": "93dd0c3ba2e7dabbf41e03e50b272894979f01bde977d12743b91bcf2026b134",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/B200-C4-1",
+      "file": "cnix_product_details/B200-C4-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6096,
+      "sha256": "854e094039ec518cb032452186a000032f23b06c8c2829edef17f9818143841f",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/BMGNH100-8XLARGE2048",
+      "file": "cnix_product_details/BMGNH100-8XLARGE2048.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 8323,
+      "sha256": "060128e92fafba25a22d5b14683eaeb883e3f3be08ebd06d54f75bf62b7ce309",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/BMGNH800-32XLARGE2000",
+      "file": "cnix_product_details/BMGNH800-32XLARGE2000.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 7544,
+      "sha256": "5c780851b46fbd35e037237021442ec436c20f1b47bda86309b70f63326b8049",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/BMGNV100-16XLARGE600",
+      "file": "cnix_product_details/BMGNV100-16XLARGE600.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 7098,
+      "sha256": "7dfd2f24d7fc63440b65129953532ca2cff86ad599d2ef52f0fd03cadc741948",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Credit",
+      "file": "cnix_product_details/Credit.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2881,
+      "sha256": "d32306b501a675ed7fdbe848a5fa5f47185e2cc57a5b45045a540886982d05e5",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Credit-C2",
+      "file": "cnix_product_details/Credit-C2.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2885,
+      "sha256": "61b02ef9c8b2a00b76a62139e306352f42d7b568c54e0955a2025a4567ef0d99",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Credit-C3",
+      "file": "cnix_product_details/Credit-C3.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2876,
+      "sha256": "ef31d855717bb4f621a3f80207a68e1a75fb87b1606e2491c5a12e60979c4673",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Credit-C4",
+      "file": "cnix_product_details/Credit-C4.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2885,
+      "sha256": "be6b668cf4368c4564e7b8fd55b99655080a2e41dc2593490384ca06e5f6dd1b",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Credit-C5",
+      "file": "cnix_product_details/Credit-C5.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2872,
+      "sha256": "f8089c5604249bd2fbd3d4ec91020424a1fd5e8fe1a513dfabee09e897c7192a",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Flexible-Compute-Fill",
+      "file": "cnix_product_details/Flexible-Compute-Fill.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2365,
+      "sha256": "cf11e0d2d8397d6ec987617ad7475647ef5e3fdc0014463eaa8300fff72defcc",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/GN3090-8XLARGE256",
+      "file": "cnix_product_details/GN3090-8XLARGE256.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 8404,
+      "sha256": "c027aa746401515276c41a0636058e7d07133d5cd65f76c47d88b75b136ecf49",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/GNH800-32XLARGE2048",
+      "file": "cnix_product_details/GNH800-32XLARGE2048.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 8333,
+      "sha256": "e303c2703cb60f1a11aa320be7eb13ca97de08f624b36d5fc036ecf102c41cf9",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/GNV100-2XLARGE32",
+      "file": "cnix_product_details/GNV100-2XLARGE32.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 8724,
+      "sha256": "6d4942543b5c259c6abd0c3a257d5730410ab899c25e41c9d539984130eb6698",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/GNV100-4XLARGE64",
+      "file": "cnix_product_details/GNV100-4XLARGE64.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 8314,
+      "sha256": "5f6b16d266ec6eb15434055085897eb89740ffa2226deec0c09a26215728550a",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/GNV100-8XLARGE128",
+      "file": "cnix_product_details/GNV100-8XLARGE128.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 7882,
+      "sha256": "fd7b3d3ffbbad87b0307165ccb1ef05b2acdda8fcb3a5836bb4abd104fbeeea1",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/GNV100s-16XLARGE64",
+      "file": "cnix_product_details/GNV100s-16XLARGE64.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 7635,
+      "sha256": "b244b32ffbc8e44040532952065b2eff2c3e0478946254b12ce72bcde4eb6d57",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H100-141GB-sxm-G3-1",
+      "file": "cnix_product_details/H100-141GB-sxm-G3-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6284,
+      "sha256": "7652bfa29b9788fd9d1e660eccc12c18a5649f2a23ceda8a23f528b82f553a39",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H100-141GB-sxm-G3-2",
+      "file": "cnix_product_details/H100-141GB-sxm-G3-2.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6122,
+      "sha256": "9837c553aceecd8ce3ce61a54523dcd8f5c1801e35013cc4b5fa1dbd2f477b49",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H100-80GB-sxm-G3-1",
+      "file": "cnix_product_details/H100-80GB-sxm-G3-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6193,
+      "sha256": "3e6a1be238a531b26ba683dfee42eca70fa9b1e7d39837e94556377a86bc3d9d",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H100-80GB-sxm-G3-2",
+      "file": "cnix_product_details/H100-80GB-sxm-G3-2.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6277,
+      "sha256": "b98ec8633c17dccf9b8764c0ed97fff49694526a12726f33a022fd6ecd61beed",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H20-96GB-SXM-8-C5-1",
+      "file": "cnix_product_details/H20-96GB-SXM-8-C5-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 9078,
+      "sha256": "ec4a029663e86cf86b5ab70d0a81e654b67ed61a3c6691a80b3b6bbb2b5d1e29",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H200-141GB-sxm-8-C3-1",
+      "file": "cnix_product_details/H200-141GB-sxm-8-C3-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6158,
+      "sha256": "4f3fe2a389b526bfd350adad6df6ecc40a2c8eb528c2114234d0aaf908ffefb0",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H20_96GB_SXM_8_C2_2",
+      "file": "cnix_product_details/H20_96GB_SXM_8_C2_2.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 8493,
+      "sha256": "17ea9886dd962d1b6ae0682c9a2102d59f516e65b07115a1ea887291bcdd8dc2",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H20_96GB_SXM_8_C2_3",
+      "file": "cnix_product_details/H20_96GB_SXM_8_C2_3.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 8486,
+      "sha256": "3f387763db29e447a92f746fcf2659265b258795a59b1a15ed25e058f11ec2db",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H20_96GB_SXM_8_C2_4",
+      "file": "cnix_product_details/H20_96GB_SXM_8_C2_4.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6540,
+      "sha256": "4f9863375d3b7daf23069e54ad9425a7fcc56a9b5cd5ce174147e8a3b284cf8f",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/H800-80GB-sxm-G2-1",
+      "file": "cnix_product_details/H800-80GB-sxm-G2-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 9025,
+      "sha256": "30ac61037385a56efd6f19555faaf664c44d78208054694db3e1bb035297a382",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/L20-48GB-1-C2-1",
+      "file": "cnix_product_details/L20-48GB-1-C2-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 7184,
+      "sha256": "0a5153ce315fe43d96a86a59dafb59df11558e9e85aaa16641edff513eff5dfb",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-3090-8",
+      "file": "cnix_product_details/RTX-3090-8.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6144,
+      "sha256": "edfb4fe87b2c36abb7bd88168419c6700936265d339b0abcdacd91c91be28d78",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-24GB-4-G1-1",
+      "file": "cnix_product_details/RTX-4090-24GB-4-G1-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6150,
+      "sha256": "95a6370074ece5122379c13f9e022829bc063f86a60b546a17c10d8dc050c03a",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-24GB-8-A2-1",
+      "file": "cnix_product_details/RTX-4090-24GB-8-A2-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 7952,
+      "sha256": "37028a24cac5dd5a54c267a63c02adb577c50aa9c95df86f381e1cade612d335",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-24GB-8-C5-1",
+      "file": "cnix_product_details/RTX-4090-24GB-8-C5-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 11286,
+      "sha256": "ff790ada3ec94677e0f71dc612214855b2a222e41bb52c88b676ab6cd3b1bc89",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-24GB-8-C5-2",
+      "file": "cnix_product_details/RTX-4090-24GB-8-C5-2.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 10764,
+      "sha256": "0fdb3da264300d3129f921d8f30bad00168ec080840c5233fd657d3b48e0125f",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-24GB_8_I3_1",
+      "file": "cnix_product_details/RTX-4090-24GB_8_I3_1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 10307,
+      "sha256": "f744fd755ab3f50374bb4b0b9fcaed28b7f91bde9831f5f2a77a5883aebf5b49",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-24GB_8_I3_1_day",
+      "file": "cnix_product_details/RTX-4090-24GB_8_I3_1_day.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 9717,
+      "sha256": "bfe0361d6b7855cbd21460a37b190775b2db732bd687d36d27fb81c93b665682",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-24GB_8_I3_2",
+      "file": "cnix_product_details/RTX-4090-24GB_8_I3_2.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 9692,
+      "sha256": "85018abe1266911de9566088507e82ce118604504defe672a71d258fc3a7c93c",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-48GB-8-C5-2",
+      "file": "cnix_product_details/RTX-4090-48GB-8-C5-2.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6973,
+      "sha256": "fc5a8f610104c471427f54f329035655cf3ce26c483c99c078327ca5e2031630",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-8-AMD",
+      "file": "cnix_product_details/RTX-4090-8-AMD.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6143,
+      "sha256": "21deb9674e148d0272f9fa1ba674e1c4822562625f3a29f4fc254731c473d120",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-4090-8-intel",
+      "file": "cnix_product_details/RTX-4090-8-intel.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6180,
+      "sha256": "6c6d9886f8bd59eb400eb321b46ea6bdcb04b62dc0f8cfb15844be791ff6efcb",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX-5090-32GB-8-C5-1",
+      "file": "cnix_product_details/RTX-5090-32GB-8-C5-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6594,
+      "sha256": "823ef93c6b7432d144eab0dbf815ceb6ed619b693d0ae91487e32582a905fa86",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/RTX_4090D_24GB_8_C2_1",
+      "file": "cnix_product_details/RTX_4090D_24GB_8_C2_1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 8429,
+      "sha256": "d2c81d497361b4afa31eb1b0b0884b649287615d14b483e5d56079be17eca07f",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Tencent-DeepSeek-R1",
+      "file": "cnix_product_details/Tencent-DeepSeek-R1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3443,
+      "sha256": "04a89d7e2787353fe68f4accf1798342935d3d45c17420a9e1ab922d5a43a9c3",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Tencent-DeepSeek-R1-14",
+      "file": "cnix_product_details/Tencent-DeepSeek-R1-14.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3440,
+      "sha256": "4fa17858181315b81196c95192f2022af55c35bf205d06810dc661301b83e95d",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Tencent-DeepSeek-R1-15",
+      "file": "cnix_product_details/Tencent-DeepSeek-R1-15.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3434,
+      "sha256": "59ac6dbb29c61d1c45148e8cd04cd466fc33d0cd7ef193ec628bd4bfa3e5e298",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Tencent-DeepSeek-R1-32",
+      "file": "cnix_product_details/Tencent-DeepSeek-R1-32.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3441,
+      "sha256": "47f1073908b31fdacbcd55aede4420ed17b220dbbadf7c91492ffc4a1db51123",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Tencent-DeepSeek-R1-7",
+      "file": "cnix_product_details/Tencent-DeepSeek-R1-7.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3429,
+      "sha256": "93e1d0d7bfa36a7b4a0194a3221a8ccbebb1720df33df66a0440e42db68d2ae4",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Tencent-DeepSeek-R1-70",
+      "file": "cnix_product_details/Tencent-DeepSeek-R1-70.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3441,
+      "sha256": "d23a5d53b1e285d2596606f28dc017fcccfa7612cce6653e27fd1cd5fa73a45a",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Tencent-DeepSeek-R1-8",
+      "file": "cnix_product_details/Tencent-DeepSeek-R1-8.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3429,
+      "sha256": "835ebf5cf43abf999a18cb73ef039edaa2b90e66e30c712f12d5f196aff272b5",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Tencent-DeepSeek-V3",
+      "file": "cnix_product_details/Tencent-DeepSeek-V3.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 3443,
+      "sha256": "fd81b9786e4209208c897fffabb2a06920b1f5c7328b43e36200a7577ab89bb4",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/Tesla-V100s-2-ucloud",
+      "file": "cnix_product_details/Tesla-V100s-2-ucloud.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6129,
+      "sha256": "a226a004449380f7d317175757cabf0129351570732e51565cddd639952a3059",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/alicloud",
+      "file": "cnix_product_details/alicloud.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2784,
+      "sha256": "5ace5478aebd1016fc4762f898be478671a66aca30e7c4a651f12e3ec1c46557",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/bandwidth-10",
+      "file": "cnix_product_details/bandwidth-10.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6516,
+      "sha256": "297dd49e39c3abe01e9977449cd8e3615692c95e2c6d308bd8dd04ff220263b7",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/cloud-file-storage-1TB",
+      "file": "cnix_product_details/cloud-file-storage-1TB.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 4555,
+      "sha256": "ee68a6c803a07adbc3d9ea81c9992e2c2abc7809f961d488ed305910fb5ce34e",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/cloud-file-storage-C2",
+      "file": "cnix_product_details/cloud-file-storage-C2.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 5149,
+      "sha256": "c601dc607efd8269bd3b34e9db59ba451107c5beb4a46c6fc1e58d1d1c449f6f",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/cloud-file-storage-C3",
+      "file": "cnix_product_details/cloud-file-storage-C3.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 4083,
+      "sha256": "fc956fb44b07808ddd7c22c3673c17f43b0c2f5a62d9504faa43ed98f1d42b6c",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/cloud-storage-1TB",
+      "file": "cnix_product_details/cloud-storage-1TB.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 6592,
+      "sha256": "e260b3c930873fda204541d5ede97b879a7bfdb509d8ace7868556d70fec7475",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/cloud-storage-C5",
+      "file": "cnix_product_details/cloud-storage-C5.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 5376,
+      "sha256": "6a96e32fe7a0001b92b4c55faa1caeb789454619ac06e5325c2d5dc3825f43a5",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/hm08-48G-OAM-8-A2-1",
+      "file": "cnix_product_details/hm08-48G-OAM-8-A2-1.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 7962,
+      "sha256": "adfb27076a9a8fc1da9b6053d9f43ccadd1736f82719d9e50f3f3262f96145a2",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/huaweicloud",
+      "file": "cnix_product_details/huaweicloud.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2790,
+      "sha256": "3baae37f94c95208c0a821eb912f0a7df43b6c418c416f8612f565db687bf8b3",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/internet-traffic",
+      "file": "cnix_product_details/internet-traffic.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 4816,
+      "sha256": "0368ed9c61f7cf634a4d9093c3343733c82a2046b887cc41862e9557f7973f3e",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/internet-traffic-C5",
+      "file": "cnix_product_details/internet-traffic-C5.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 5104,
+      "sha256": "0f135765d37490486837e86bc434e0c071ae86a60ca742922ab2ba524e091d7f",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/internet-traffic-C5-2",
+      "file": "cnix_product_details/internet-traffic-C5-2.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 5083,
+      "sha256": "6f40914456fbf7a4711e4205f63b4c36c2af7546070ebc262cd131f1e960e415",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/oss-C3",
+      "file": "cnix_product_details/oss-C3.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 5422,
+      "sha256": "9617ec705065b2ce984fbe2c7c9fe33395293ba98bb9c33bdb05d27a1c22b34c",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/storage-G3",
+      "file": "cnix_product_details/storage-G3.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 7135,
+      "sha256": "85c6d43f64771d6255986d02e3bda6e3bc07f884ca13050c31c48c48450e72e7",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/txcloud",
+      "file": "cnix_product_details/txcloud.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 2782,
+      "sha256": "5c15f71c9eb6550d7e9e9d606d38ddf149a8c77612d4a77a851e09602c885c0c",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://ai.cnix.cn/api/market/v1/products/ucloud-pro",
+      "file": "cnix_product_details/ucloud-pro.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 11141,
+      "sha256": "95cc0d3ae60c74e5afe84d06850447f3d566fe54cf99d0e5c166679f53d75b2a",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://console.szaicpp.com/cpn/tenant/v1/recommend/list?paging.page=1&paging.perPage=100",
+      "file": "szaicpp_recommend_all.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 139,
+      "sha256": "bda9ae4ddc2365c0eec029f3096cce19f256602af825995ed219e3ec20b6f9d1",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://console.szaicpp.com/cpn/tenant/v1/recommend/list?appSceneType=3&paging.page=1&paging.perPage=100",
+      "file": "szaicpp_recommend_ai.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 54730,
+      "sha256": "a5e75e89e18b1c4bb11d0bca1e52fd52479c3b2130466afdfe7a3b39966468a2",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    },
+    {
+      "url": "https://console.szaicpp.com/cpn/tenant/v1/recommend/summary",
+      "file": "szaicpp_recommend_summary.json",
+      "http_status": 200,
+      "content_type": "application/json",
+      "bytes": 242,
+      "sha256": "ac5c62c2f3e89cf9da0c90ffda7d5c4ea69ae0ea4c364632dca200698ce63062",
+      "captured_at": "2026-08-25T10:18:28+08:00"
+    }
+  ]
+}
