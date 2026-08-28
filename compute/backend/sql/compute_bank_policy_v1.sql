@@ -110,7 +110,7 @@ INSERT INTO compute_credit_policy_scenario_v1 (
  0.80,0.20,1.20,0.05,1.00,0.80,0.055,7,0,0,'SCENARIO',
  '研究用宽松规则：收入折扣5%，最高债务比例80%，最低资本金20%，最低DSCR 1.20。非正式银行制度。')
 ON DUPLICATE KEY UPDATE
- max_debt_ratio=VALUES(max_debt_ratio),min_equity_ratio=VALUES(min_equity_ratio),
+ policy_name=VALUES(policy_name),max_debt_ratio=VALUES(max_debt_ratio),min_equity_ratio=VALUES(min_equity_ratio),
  min_dscr=VALUES(min_dscr),revenue_haircut_ratio=VALUES(revenue_haircut_ratio),
  eligible_capex_ratio=VALUES(eligible_capex_ratio),
  residual_value_haircut_ratio=VALUES(residual_value_haircut_ratio),
