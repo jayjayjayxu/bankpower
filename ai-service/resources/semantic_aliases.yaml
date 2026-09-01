@@ -1,0 +1,65 @@
+rack_utilization_ratio:
+  aliases:
+    - 上架率
+    - 入住率
+    - 机柜利用率
+  table: compute_facility_operation_fact_v1
+  unit: ratio
+  boundary: 仅表示机柜占用，不表示GPU、设备或储能利用率。
+average_rack_price_yuan_month:
+  aliases:
+    - 机柜价格
+    - 托管价格
+    - 机柜月价
+  table: compute_facility_operation_fact_v1
+  unit: 元/柜/月
+electricity_purchase_price_yuan_kwh:
+  aliases:
+    - 电价
+    - 度电价格
+    - 用电单价
+  table: compute_facility_operation_fact_v1
+  unit: 元/kWh
+  boundary: 是设施披露的电力采购价格；与电网目录电价不同。
+metric_code:PUE:
+  aliases:
+    - PUE
+    - 能源使用效率
+  table: compute_facility_metric_v1
+  unit: ratio
+  boundary: 必须保留metric_scope、as_of_date和disclosure_status。
+annual_power_kwh:
+  aliases:
+    - 年用电量
+    - 年耗电量
+  table: v_enterprise_annual_energy_summary
+  unit: kWh
+  boundary: 已是年度汇总，不得再次按月份求和。
+power_consumption_kwh:
+  aliases:
+    - 月用电量
+    - 月耗电量
+  table: enterprise_monthly_power
+  unit: kWh
+  boundary: 年度总量仅可在明确年份、场景和data_type后求和。
+npv_wanyuan:
+  aliases:
+    - 储能NPV
+    - 净现值
+  table: analysis_result_snapshot
+  unit: 万元
+  boundary: 研究模型结果，不是实际项目现金流或授信结论。
+max_debt_ratio:
+  aliases:
+    - 最大债务比例
+    - 最大负债比例
+  table: analysis_result_snapshot
+  unit: ratio
+  boundary: 情景模型输出，不是银行承诺或推荐贷款比例。
+mapping_status:
+  aliases:
+    - 商品设施映射
+    - 商品对应数据中心
+  table: compute_listing_candidate_mapping_v1
+  unit: enum
+  boundary: 只有CONFIRMED可称为确认映射；INDICATIVE只能称候选。

@@ -9,73 +9,39 @@ if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
 
 from app.config import Settings
-from app.energy_compute import EnergyComputeAgent, QueryResult
+from app.energy_compute import EnergyComputeAgent
+from app.energy_sql import (
+    EnergyTextToSQLPipeline,
+    GeneratedSQL,
+    QueryResult,
+)
 
 
-class FakeSpdbRunner:
-    """Small deterministic fixture for the controlled query catalogue."""
+class FakeGenerator:
+    def __init__(self, sql: str) -> None:
+        self.sql = sql
+        self.questions: list[str] = []
+
+    def generate(self, question: str) -> GeneratedSQL:
+        self.questions.append(question)
+        return GeneratedSQL(question, self.sql, "fake-sql-model", {})
+
+
+class FakeExecutor:
+    def __init__(self) -> None:
+        self.queries: list[str] = []
 
     def execute(self, sql: str) -> QueryResult:
-        if "FROM enterprise_data_center_v2" in sql:
-            return QueryResult(
-                ["facility_code", "official_name", "facility_alias"],
-                [["SZCF016", "深圳百旺信智算中心", "百旺信云数据中心三期"]],
-            )
-        if "FROM compute_facility_operation_fact_v1" in sql:
-            return QueryResult(
-                [
-                    "official_name", "operation_scope_name", "fact_year", "fact_period",
-                    "rack_capacity_count", "average_occupied_rack_count", "rack_utilization_ratio",
-                    "average_rack_price_yuan_month", "source_title", "source_url", "source_locator",
-                ],
-                [[
-                    "深圳百旺信智算中心", "1栋和4栋自建服务器托管整体", "2025", "全年", "3780", "2473",
-                    "0.6542", "5346", "企业经营披露", "", "PDF第85-86页",
-                ]],
-            )
-        if "FROM v_compute_facility_project_cashflow_summary_v1" in sql:
-            return QueryResult(
-                [
-                    "scenario_code", "scenario_name", "reference_historical_capex_yuan", "reference_pue",
-                    "year1_rack_occupancy_ratio", "steady_state_rack_occupancy_ratio",
-                    "year1_pre_tax_cashflow_proxy_yuan", "hypothetical_greenfield_npv_proxy_yuan",
-                    "result_status", "assumption_note",
-                ],
-                [["BASE", "基准情景", "320000000", "1.228", "0.6542", "0.7", "1", "1", "REFERENCE", "研究情景"]],
-            )
-        if "FROM v_compute_facility_project_due_diligence_v1" in sql:
-            return QueryResult(
-                [
-                    "check_code", "check_name", "evidence_status", "risk_level", "evidence_summary",
-                    "required_evidence", "due_diligence_action",
-                ],
-                [["PHASE3_CASHFLOW", "三期现金流", "PENDING", "BLOCKING", "缺失", "独立收入、成本和债务本息", "补充材料"]],
-            )
-        if "FROM policy_rule_v1" in sql and "COMPUTE_VOUCHER" in sql:
-            return QueryResult(
-                [
-                    "file_name", "document_title", "policy_level", "official_url", "rule_code", "rule_title",
-                    "applicability_summary", "requirement_summary", "required_evidence", "source_locator", "model_impact_type",
-                ],
-                [[
-                    "深圳市训力券申请指南.pdf", "2026年度深圳市训力券申请指南", "LOCAL_POLICY", "",
-                    "SZ_TRAINING_VOUCHER_2026_DEMAND", "需求方申请", "需求方", "购买非关联智能算力后可申请抵扣",
-                    "合同与结算材料", "第3页", "NO_AUTOMATIC_EFFECT",
-                ]],
-            )
-        if "FROM policy_rule_v1" in sql:
-            return QueryResult(
-                [
-                    "file_name", "document_title", "policy_level", "official_url", "rule_code", "rule_title",
-                    "applicability_summary", "requirement_summary", "required_evidence", "source_locator", "model_impact_type",
-                ],
-                [[
-                    "绿色金融支持项目目录（2025年版）.pdf", "绿色金融支持项目目录（2025年版）", "NATIONAL", "",
-                    "NAT_GREEN_FINANCE_2025_GREEN_DC", "绿色数据中心", "建设改造", "满足GB 40879二级能效及尽调要求",
-                    "PUE、资金用途证明", "6.6.2", "GATE",
-                ]],
-            )
-        raise AssertionError(f"Unexpected controlled query: {sql}")
+        self.queries.append(sql)
+        return QueryResult(
+            ["official_name", "fact_year", "rack_utilization_ratio"],
+            [["深圳百旺信智算中心", "2025", "0.65420000"]],
+        )
+
+
+class FakeSummarizer:
+    def summarize(self, question: str, result: QueryResult) -> str:
+        return "查询结果显示：深圳百旺信智算中心 2025 年机柜上架率为 0.65420000。"
 
 
 def test_settings() -> Settings:
@@ -89,35 +55,71 @@ def test_settings() -> Settings:
         cors_allowed_origins=("http://localhost:5173",),
         max_concurrency=1,
         database_healthcheck=False,
+        sql_debug_enabled=False,
+        sql_debug_token="",
     )
 
 
 class EnergyComputeAgentTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.agent = EnergyComputeAgent(test_settings(), runner=FakeSpdbRunner())
+    def make_agent(self, sql: str) -> tuple[EnergyComputeAgent, FakeGenerator, FakeExecutor]:
+        generator = FakeGenerator(sql)
+        executor = FakeExecutor()
+        pipeline = EnergyTextToSQLPipeline(
+            test_settings(),
+            Path("unused-schema.md"),
+            generator=generator,
+            executor=executor,
+            summarizer=FakeSummarizer(),
+        )
+        return EnergyComputeAgent(test_settings(), pipeline=pipeline), generator, executor
 
-    def test_operation_question_is_controlled_sql_with_disclosed_values(self) -> None:
-        result = self.agent.run("深圳百旺信智算中心2025年的上架率和平均机柜价格是多少？")
+    def test_facility_alias_is_resolved_before_sql_generation(self) -> None:
+        agent, generator, executor = self.make_agent(
+            """
+            SELECT f.official_name, o.fact_year, o.rack_utilization_ratio
+            FROM enterprise_data_center_v2 AS f
+            JOIN compute_facility_operation_fact_v1 AS o ON o.facility_v2_id = f.facility_v2_id
+            WHERE f.facility_code = 'SZCF016'
+              AND o.fact_year = 2025
+              AND o.operation_scope_code = 'WHOLE_FACILITY_BUILDING_1_4_SELF_BUILT'
+            LIMIT 1
+            """
+        )
+        result = agent.run("百旺信2025年上架率是多少？")
         self.assertEqual(result["route"], "SQL")
-        self.assertIn("65.42%", result["final_answer"])
-        self.assertIn("5,346.00 元/柜/月", result["final_answer"])
-        self.assertIn("独立经营指标", result["final_answer"])
-        self.assertEqual(result["sources"][0]["source_locator"], "PDF第85-86页")
+        self.assertEqual(result["router"]["entity_resolution"][0]["entity_id"], "SZCF016")
+        self.assertIn("SZCF016", generator.questions[0])
+        self.assertEqual(len(executor.queries), 1)
+        self.assertEqual(result["sql_result"]["query_result"]["rows"][0][-1], "0.65420000")
+        self.assertIn("compute_facility_operation_fact_v1", result["sql_result"]["safety"]["tables"])
 
-    def test_training_voucher_question_is_policy_retrieval_not_revenue_fabrication(self) -> None:
-        result = self.agent.run("深圳训力券对算力服务商是否构成直接收入？")
-        self.assertEqual(result["route"], "RAG")
-        self.assertIn("不能仅凭深圳训力券政策", result["final_answer"])
-        self.assertIn("不应自动计入服务商收入", result["final_answer"])
-        self.assertTrue(result["rag_result"]["references"])
+    def test_policy_and_credit_judgment_are_not_sent_to_sql(self) -> None:
+        agent, generator, executor = self.make_agent("SELECT 'NOT_ANSWERABLE_FROM_DB' AS error_code LIMIT 1")
+        for question in (
+            "深圳训力券对算力服务商是否构成直接收入？",
+            "百旺信项目是否适合做绿色贷款？",
+            "哪个数据中心服务最好？",
+        ):
+            with self.subTest(question=question):
+                result = agent.run(question)
+                self.assertEqual(result["route"], "OUT_OF_SCOPE")
+        self.assertEqual(generator.questions, [])
+        self.assertEqual(executor.queries, [])
 
-    def test_green_loan_question_requires_cfad_before_any_ratio(self) -> None:
-        result = self.agent.run("百旺信这种项目是否适合做绿色贷款，预计能做到多少贷款比例？")
-        self.assertEqual(result["route"], "BOTH")
-        self.assertEqual(result["finance_result"]["status"], "INSUFFICIENT_INPUT")
-        self.assertIn("CFADS", result["final_answer"])
-        self.assertIn("不能给出可贷比例", result["final_answer"])
-        self.assertTrue(result["finance_result"]["missing_evidence"])
+    def test_not_answerable_marker_returns_boundary_without_execution(self) -> None:
+        agent, generator, executor = self.make_agent("SELECT 'NOT_ANSWERABLE_FROM_DB' AS error_code LIMIT 1")
+        result = agent.run("百旺信老板是谁？")
+        self.assertEqual(result["route"], "OUT_OF_SCOPE")
+        self.assertEqual(generator.questions, [])
+        self.assertEqual(executor.queries, [])
+
+    def test_rejected_sql_is_never_executed(self) -> None:
+        agent, _, executor = self.make_agent("SELECT unknown_metric FROM compute_facility_metric_v1 LIMIT 1")
+        result = agent.run("深圳哪些算力中心PUE最低？")
+        self.assertEqual(result["route"], "SQL")
+        self.assertFalse(result["sql_result"]["safety"]["safe"])
+        self.assertIsNone(result["sql_result"]["query_result"])
+        self.assertEqual(executor.queries, [])
 
 
 if __name__ == "__main__":

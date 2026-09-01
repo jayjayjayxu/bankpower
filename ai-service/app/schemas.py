@@ -48,7 +48,16 @@ class ChatResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
-    agent_version: str = "V0.4"
+    agent_version: str = "EnergyComputeAI-V0.2"
     database: str
     spdb_database: str
     rag_index: str
+
+
+class DebugSQLResponse(BaseModel):
+    route: str
+    generated_sql: str | None = None
+    safety: dict[str, Any] | None = None
+    query_result: SQLData | None = None
+    answer: str
+    entity_resolution: list[dict[str, str]] = Field(default_factory=list)

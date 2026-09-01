@@ -24,6 +24,8 @@ class Settings:
     cors_allowed_origins: tuple[str, ...]
     max_concurrency: int
     database_healthcheck: bool
+    sql_debug_enabled: bool
+    sql_debug_token: str
     max_question_chars: int = 2_000
 
     @classmethod
@@ -51,4 +53,7 @@ class Settings:
             max_concurrency=max_concurrency,
             database_healthcheck=os.getenv("AI_API_DATABASE_HEALTHCHECK", "true").lower()
             in {"1", "true", "yes"},
+            sql_debug_enabled=os.getenv("AI_API_ENABLE_SQL_DEBUG", "false").lower()
+            in {"1", "true", "yes"},
+            sql_debug_token=os.getenv("AI_API_SQL_DEBUG_TOKEN", "").strip(),
         )

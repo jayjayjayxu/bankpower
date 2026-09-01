@@ -109,6 +109,14 @@ class HybridAgent:
                     self._legacy_agent = build_legacy_agent(self._settings)
         return self._legacy_agent.run(question)
 
+    def debug_sql(self, question: str) -> dict[str, Any]:
+        if not self._energy_agent.supports(question):
+            return {
+                "route": "OUT_OF_SCOPE",
+                "answer": "仅支持查看 V0.2 电力/算力 SQL 调试结果。",
+            }
+        return self._energy_agent.debug_sql(question)
+
 
 def build_default_agent(settings: Settings) -> AgentProtocol:
     """Construct the V0.2 router without eagerly starting either heavy core."""
@@ -131,6 +139,16 @@ class AgentProvider:
                 if self._agent is None:
                     self._agent = self._factory(self._settings)
         return self._agent.run(question)
+
+    def debug_sql(self, question: str) -> dict[str, Any]:
+        if self._agent is None:
+            with self._lock:
+                if self._agent is None:
+                    self._agent = self._factory(self._settings)
+        debug_sql = getattr(self._agent, "debug_sql", None)
+        if not callable(debug_sql):
+            raise CoreUnavailableError("当前 AI 核心未启用 SQL 调试接口。")
+        return debug_sql(question)
 
 
 def health_details(settings: Settings) -> dict[str, str]:

@@ -1,0 +1,44 @@
+entities:
+  - entity_type: FACILITY
+    entity_id: SZCF016
+    canonical_name: 深圳百旺信智算中心
+    aliases:
+      - 百旺信
+      - 深圳百旺信
+      - 百旺信智算中心
+      - 深圳百旺信智算中心
+      - 深圳百旺信云数据中心
+      - 百旺信云数据中心三期
+      - FAC-SZ-001
+  - entity_type: FACILITY
+    entity_id: SZCF001
+    canonical_name: 鹏城云脑Ⅲ
+    aliases:
+      - 鹏城云脑III
+      - 鹏城云脑3
+  - entity_type: FACILITY
+    entity_id: SZCF002
+    canonical_name: 国家超级计算深圳中心（二期）
+    aliases:
+      - 深圳超算二期
+      - 国家超算深圳中心二期
+  - entity_type: FACILITY
+    entity_id: SZCF003
+    canonical_name: 深圳开放智算中心
+    aliases:
+      - 河套深圳开放智算中心
+  - entity_type: FACILITY
+    entity_id: SZCF008
+    canonical_name: 证通智慧光明云数据中心项目
+    aliases:
+      - 证通智慧光明云数据中心
+  - entity_type: FACILITY
+    entity_id: SZCF013
+    canonical_name: 中国联通深汕云数据中心（腾讯鹅埠数据中心2号楼）
+    aliases:
+      - 中国联通深汕云数据中心
+  - entity_type: FACILITY
+    entity_id: SZCF014
+    canonical_name: 深圳电信深汕数据中心（腾讯鹅埠数据中心5号楼）
+    aliases:
+      - 深圳电信深汕数据中心

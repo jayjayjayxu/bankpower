@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .audit import AuditLogger, AuditWriteError
 from .config import Settings
 from .core import AgentFactory, AgentProvider, CoreUnavailableError, health_details
-from .schemas import ChatRequest, ChatResponse, HealthResponse, SQLData, Source
+from .schemas import ChatRequest, ChatResponse, DebugSQLResponse, HealthResponse, SQLData, Source
 
 
 def _public_sources(result: dict[str, Any]) -> list[Source]:
@@ -88,7 +88,6 @@ def _public_response(request_id: str, result: dict[str, Any], elapsed_ms: int) -
         answer=str(result["final_answer"]),
         data={
             "sql": _public_sql_data(result.get("sql_result")),
-            "finance": result.get("finance_result"),
         },
         sources=_public_sources(result),
         claims=list(synthesis.get("claims") or []),
@@ -109,13 +108,13 @@ def create_app(
     provider = AgentProvider(settings, agent_factory) if agent_factory else AgentProvider(settings)
     audit_logger = audit_logger or AuditLogger(settings.audit_dir)
 
-    app = FastAPI(title="EnergyComputeAI", version="0.1.0")
+    app = FastAPI(title="EnergyComputeAI", version="0.2.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.cors_allowed_origins),
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type", "X-Request-ID"],
+        allow_headers=["Content-Type", "X-Request-ID", "X-Admin-Token"],
     )
     app.state.run_gate = asyncio.Semaphore(settings.max_concurrency)
 
@@ -144,7 +143,7 @@ def create_app(
             "request_id": request_id,
             "received_at": datetime.now(UTC).isoformat(),
             "question": payload.question,
-            "api_version": "0.1.0",
+            "api_version": "0.2.0",
         }
         try:
             async with app.state.run_gate:
@@ -184,6 +183,41 @@ def create_app(
         except AuditWriteError:
             pass
         raise HTTPException(status_code=status_code, detail={"request_id": request_id, "code": code, "message": message})
+
+    @app.post("/api/debug/sql", response_model=DebugSQLResponse, include_in_schema=False)
+    async def debug_sql(payload: ChatRequest, request: Request) -> DebugSQLResponse:
+        if not settings.sql_debug_enabled:
+            raise HTTPException(status_code=404, detail="Not Found")
+        if not settings.sql_debug_token or request.headers.get("X-Admin-Token") != settings.sql_debug_token:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        started = time.perf_counter()
+        try:
+            async with app.state.run_gate:
+                result = await asyncio.to_thread(provider.debug_sql, payload.question)
+            response = DebugSQLResponse(
+                route=str(result["route"]),
+                generated_sql=result.get("generated_sql"),
+                safety=result.get("safety"),
+                query_result=_public_sql_data({"query_result": result.get("query_result")}),
+                answer=str(result["answer"]),
+                entity_resolution=list(result.get("entity_resolution") or []),
+            )
+            audit_logger.write(
+                request_id,
+                {
+                    "request_id": request_id,
+                    "received_at": datetime.now(UTC).isoformat(),
+                    "status": "succeeded",
+                    "operation": "debug_sql",
+                    "question": payload.question,
+                    "timing": {"total_ms": round((time.perf_counter() - started) * 1_000)},
+                    "debug_result": result,
+                },
+            )
+            return response
+        except CoreUnavailableError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     return app
 

@@ -79,6 +79,8 @@ def test_settings(audit_dir: Path) -> Settings:
         cors_allowed_origins=("http://localhost:5173",),
         max_concurrency=1,
         database_healthcheck=False,
+        sql_debug_enabled=False,
+        sql_debug_token="",
     )
 
 
@@ -107,7 +109,7 @@ class ApiTests(unittest.TestCase):
             response.json(),
             {
                 "status": "ok",
-                "agent_version": "V0.4",
+                "agent_version": "EnergyComputeAI-V0.2",
                 "database": "ok",
                 "spdb_database": "ok",
                 "rag_index": "ok",
@@ -203,6 +205,13 @@ class ApiTests(unittest.TestCase):
         response = self.make_client(agent).post("/api/chat", json={"question": "   "})
         self.assertEqual(response.status_code, 422)
         self.assertEqual(agent.questions, [])
+
+    def test_sql_debug_endpoint_is_hidden_when_not_explicitly_enabled(self) -> None:
+        response = self.make_client(FakeAgent()).post(
+            "/api/debug/sql",
+            json={"question": "深圳百旺信智算中心2025年上架率是多少？"},
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_core_configuration_failure_is_audited_and_returns_503(self) -> None:
         def unavailable(_: Settings) -> FakeAgent:
