@@ -62,3 +62,11 @@ B200-C4-1对应哪个数据中心？
 ```
 
 回答中的 SQL 事实、实体解析、SQL Safety 与查询结果都会进入审计记录。所有融资与绿色资格问题均不属于 V0.2，必须在后续工具层结合尽调和审批复核。
+
+## V0.3-A：政策语料与隔离索引
+
+V0.3-A 已建立 `resources/policy_metadata_v03.csv`：首批 30 份电力、储能、绿色金融、数据中心和算力政策文件均登记了来源效力、状态、地区、受益主体、版本与权限。原始文件保留在运行环境的 `POLICY_CORPUS_ROOT`，不进入 Git。
+
+构建程序先执行 `PUBLIC`、`EFFECTIVE` 和生效日期过滤，再解析 PDF/HTML/DOCX 并按条款或条款组切块。随后仅为这一访问范围建立独立的 FAISS 索引；`INTERNAL`、`RESTRICTED`、`EXPIRED`、`DRAFT`、`UNKNOWN` 文件不会进入公开索引。详细命令见 [knowledge/README.md](knowledge/README.md)。
+
+截至 `2026-09-01` 的本地构建审计为：30 份登记文件，其中 14 份公开且现行有效，生成 253 个条款级 Chunk 和 1,103 个检索向量；解析失败为 0。V0.3-B 才会将该索引接入 HTTP RAG 回答和引文校验，V0.3-C 才恢复 SQL + RAG 的联合比较。
