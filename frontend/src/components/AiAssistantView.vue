@@ -30,6 +30,8 @@ function sourceDetails(source) {
 function routeLabel(route) {
   return {
     SQL: '电力 / 算力结构化查询',
+    RAG: '现行公开政策检索',
+    BOTH: '数据库 + 政策证据比对',
     OUT_OF_SCOPE: '能力边界提示',
   }[route] || route
 }
@@ -60,15 +62,15 @@ async function submit() {
     <header class="ai-topbar">
       <button type="button" class="ai-back" @click="$emit('back')">← 返回电力研究</button>
       <div><strong>AI 智能问答</strong><span>电力与算力数据库事实可追溯</span></div>
-      <em>EnergyComputeAI · V0.2 SQL</em>
+      <em>EnergyComputeAI · V0.3</em>
     </header>
 
     <main class="ai-shell">
       <section class="ai-conversation" aria-live="polite">
         <div v-if="!messages.length" class="ai-welcome">
-          <p>面向电力与算力事实的可审计查询</p>
+          <p>面向电力、算力与现行公开政策的可审计问答</p>
           <h1>先取证，再作答。</h1>
-          <span>数字只来自已执行的只读 SQL；字段、单位和实体口径均可追溯；数据库无法回答时会明确拒答。</span>
+          <span>数字只来自已执行的只读 SQL；政策结论只来自现行公开原文；跨来源比较由规则引擎完成并保留证据。</span>
           <div class="ai-examples">
             <button v-for="example in examples" :key="example" type="button" @click="useExample(example)">{{ example }}</button>
           </div>
@@ -87,6 +89,11 @@ async function submit() {
             <section v-if="message.result.data?.sql" class="ai-evidence-block">
               <h2>数据依据</h2>
               <div class="ai-table-wrap"><table><thead><tr><th v-for="column in message.result.data.sql.columns" :key="column">{{ column }}</th></tr></thead><tbody><tr v-for="(row, rowIndex) in message.result.data.sql.rows" :key="rowIndex"><td v-for="(cell, cellIndex) in row" :key="cellIndex">{{ cell }}</td></tr></tbody></table></div>
+            </section>
+
+            <section v-if="message.result.data?.comparison" class="ai-evidence-block">
+              <h2>匹配分析</h2>
+              <ul class="ai-claim-list"><li><span>{{ message.result.data.comparison.status }}</span>{{ message.result.data.comparison.reason }}</li></ul>
             </section>
 
             <section v-if="message.result.sources?.length" class="ai-evidence-block">
@@ -109,11 +116,11 @@ async function submit() {
 
       <aside class="ai-sidebar">
         <section><span>工作方式</span><h2>模型不猜数字</h2><ol><li>解析设施、企业与商品别名</li><li>生成并校验只读 SQL</li><li>原样展示数据库字段与结果</li></ol></section>
-        <section><span>使用边界</span><p>当前 V0.2 仅提供数据库事实查询；政策解释、绿色资格、融资风险及授信建议均会拒答，等待后续工具层接入。</p></section>
+        <section><span>使用边界</span><p>系统可做数据库事实、现行公开政策解释及有限的指标比对；绿色贷款资格、授信建议与融资比例仍须人工复核。</p></section>
       </aside>
 
       <form class="ai-composer" @submit.prevent="submit">
-        <label for="ai-question">请输入数据库查询问题</label>
+        <label for="ai-question">请输入项目事实或政策问题</label>
         <div><textarea id="ai-question" v-model="question" rows="3" maxlength="2000" placeholder="例如：哪些算力中心 PUE 低于 1.3？" @keydown.meta.enter.prevent="submit" @keydown.ctrl.enter.prevent="submit"></textarea><button type="submit" :disabled="!canSubmit">{{ loading ? '处理中…' : '发送 →' }}</button></div>
         <small>⌘ / Ctrl + Enter 发送 · 系统会保存审计记录与来源依据。</small>
       </form>

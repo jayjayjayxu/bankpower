@@ -94,6 +94,7 @@ def _public_response(request_id: str, result: dict[str, Any], elapsed_ms: int) -
         answer=str(result["final_answer"]),
         data={
             "sql": _public_sql_data(result.get("sql_result")),
+            "comparison": result.get("policy_comparison"),
         },
         sources=_public_sources(result),
         claims=list(synthesis.get("claims") or []),

@@ -13,6 +13,7 @@ from typing import Any, Callable, Protocol
 from .config import Settings
 from .energy_compute import EnergyComputeAgent
 from .policy_rag import PolicyRAGAgent
+from .policy_workflow import EnergyPolicyBothAgent
 
 
 class AgentProtocol(Protocol):
@@ -99,10 +100,13 @@ class HybridAgent:
         self._settings = settings
         self._energy_agent = EnergyComputeAgent(settings)
         self._policy_agent = PolicyRAGAgent(settings)
+        self._both_agent = EnergyPolicyBothAgent(settings, self._energy_agent, self._policy_agent)
         self._legacy_agent: AgentProtocol | None = None
         self._legacy_lock = threading.Lock()
 
     def run(self, question: str) -> dict[str, Any]:
+        if self._both_agent.supports(question):
+            return self._both_agent.run(question)
         if self._policy_agent.supports(question):
             return self._policy_agent.run(question)
         if self._energy_agent.supports(question):

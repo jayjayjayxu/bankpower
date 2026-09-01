@@ -79,6 +79,17 @@ class EnergyComputeAgent:
             term in lowered for term in cls._NON_SQL_JUDGMENT_TERMS
         )
 
+    @classmethod
+    def has_sql_fact_signal(cls, question: str) -> bool:
+        """Return true only for a catalogue-backed factual domain signal.
+
+        Judgment terms are deliberately excluded: a policy-only question must
+        not acquire a fabricated database subtask in the V0.3 BOTH router.
+        """
+
+        lowered = question.casefold()
+        return any(term in lowered for term in cls._DOMAIN_TERMS)
+
     def _pipeline_for_request(self) -> EnergyTextToSQLPipeline:
         if self._pipeline is None:
             self._pipeline = EnergyTextToSQLPipeline(self.settings, _SCHEMA_PATH)
@@ -89,6 +100,13 @@ class EnergyComputeAgent:
             raise ValueError("问题不能为空。")
         if self._requires_non_sql_refusal(question):
             return self._out_of_scope(question)
+        return self.run_sql_fact(question)
+
+    def run_sql_fact(self, question: str) -> dict[str, Any]:
+        """Execute an explicitly isolated database-fact subtask for V0.3 BOTH."""
+
+        if not question.strip():
+            raise ValueError("问题不能为空。")
         resolved_question, entities = self.resolver.resolve(question)
         pipeline_result = self._pipeline_for_request().run(resolved_question)
         generated = pipeline_result["generated"]
