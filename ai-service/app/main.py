@@ -1,0 +1,155 @@
+"""FastAPI boundary for BankAI V0.4."""
+
+from __future__ import annotations
+
+import asyncio
+import time
+import uuid
+from datetime import UTC, datetime
+from typing import Any, Callable
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+
+from .audit import AuditLogger, AuditWriteError
+from .config import Settings
+from .core import AgentFactory, AgentProvider, CoreUnavailableError, health_details
+from .schemas import ChatRequest, ChatResponse, HealthResponse, SQLData, Source
+
+
+def _public_sources(rag_result: dict[str, Any] | None) -> list[Source]:
+    references = (rag_result or {}).get("references") or []
+    return [
+        Source(
+            document_name=str(item.get("source_filename") or item.get("title") or "未命名文件"),
+            page_start=item.get("page_start"),
+            page_end=item.get("page_end"),
+            authority=item.get("authority_code"),
+            quote=item.get("supporting_quote"),
+        )
+        for item in references
+    ]
+
+
+def _public_sql_data(sql_result: dict[str, Any] | None) -> SQLData | None:
+    query_result = (sql_result or {}).get("query_result")
+    if not query_result:
+        return None
+    return SQLData(
+        columns=list(query_result.get("columns") or []),
+        rows=list(query_result.get("rows") or []),
+    )
+
+
+def _public_warnings(result: dict[str, Any]) -> list[str]:
+    warnings: list[str] = []
+    rag_result = result.get("rag_result") or {}
+    if rag_result.get("answerable") is False:
+        warnings.append(str(rag_result.get("insufficiency_reason") or "政策证据不足。"))
+    synthesis = result.get("synthesis") or {}
+    dropped = synthesis.get("dropped_claims") or []
+    if dropped:
+        warnings.append(f"{len(dropped)} 条缺乏充分依据的结论未向用户展示。")
+    sql_result = result.get("sql_result") or {}
+    safety = sql_result.get("safety") or {}
+    if safety and not safety.get("safe", True):
+        warnings.append("SQL 安全校验未通过，未执行数据库查询。")
+    return warnings
+
+
+def _public_response(request_id: str, result: dict[str, Any], elapsed_ms: int) -> ChatResponse:
+    synthesis = result.get("synthesis") or {}
+    return ChatResponse(
+        request_id=request_id,
+        question=str(result["question"]),
+        route=str(result["route"]),
+        answer=str(result["final_answer"]),
+        data={"sql": _public_sql_data(result.get("sql_result"))},
+        sources=_public_sources(result.get("rag_result")),
+        claims=list(synthesis.get("claims") or []),
+        warnings=_public_warnings(result),
+        timing={"total_ms": elapsed_ms},
+    )
+
+
+def create_app(
+    settings: Settings | None = None,
+    agent_factory: AgentFactory | None = None,
+    audit_logger: AuditLogger | None = None,
+    health_checker: Callable[[Settings], dict[str, str]] = health_details,
+) -> FastAPI:
+    """Create a testable API without constructing the heavy legacy core at import time."""
+
+    settings = settings or Settings.from_environment()
+    provider = AgentProvider(settings, agent_factory) if agent_factory else AgentProvider(settings)
+    audit_logger = audit_logger or AuditLogger(settings.audit_dir)
+
+    app = FastAPI(title="EnergyComputeAI", version="0.1.0")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(settings.cors_allowed_origins),
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type", "X-Request-ID"],
+    )
+    app.state.run_gate = asyncio.Semaphore(settings.max_concurrency)
+
+    @app.get("/api/health", response_model=HealthResponse)
+    async def health() -> HealthResponse:
+        details = await asyncio.to_thread(health_checker, settings)
+        status = "ok" if details["database"] in {"ok", "not_checked"} and details["rag_index"] == "ok" else "degraded"
+        return HealthResponse(status=status, database=details["database"], rag_index=details["rag_index"])
+
+    @app.post("/api/chat", response_model=ChatResponse)
+    async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
+        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        started = time.perf_counter()
+        audit_base: dict[str, Any] = {
+            "request_id": request_id,
+            "received_at": datetime.now(UTC).isoformat(),
+            "question": payload.question,
+            "api_version": "0.1.0",
+        }
+        try:
+            async with app.state.run_gate:
+                result = await asyncio.to_thread(provider.run, payload.question)
+            elapsed_ms = round((time.perf_counter() - started) * 1_000)
+            response = _public_response(request_id, result, elapsed_ms)
+            audit_logger.write(
+                request_id,
+                {
+                    **audit_base,
+                    "status": "succeeded",
+                    "timing": response.timing,
+                    "route": response.route,
+                    "public_response": response.model_dump(mode="json"),
+                    "agent_result": result,
+                },
+            )
+            return response
+        except CoreUnavailableError as exc:
+            status_code, code, message = 503, "core_unavailable", str(exc)
+        except AuditWriteError as exc:
+            status_code, code, message = 500, "audit_write_failed", str(exc)
+        except Exception as exc:  # The full exception class stays in the audit record.
+            status_code, code, message = 502, "agent_execution_failed", "AI 服务执行失败，请稍后重试。"
+            audit_base["exception_type"] = type(exc).__name__
+        try:
+            audit_logger.write(
+                request_id,
+                {
+                    **audit_base,
+                    "status": "failed",
+                    "error_code": code,
+                    "error_message": message,
+                    "timing": {"total_ms": round((time.perf_counter() - started) * 1_000)},
+                },
+            )
+        except AuditWriteError:
+            pass
+        raise HTTPException(status_code=status_code, detail={"request_id": request_id, "code": code, "message": message})
+
+    return app
+
+
+app = create_app()
