@@ -7,6 +7,7 @@ project/
 ├── frontend/       Vue 3 + JavaScript 展示页
 ├── backend/        Spring Boot 只读数据库接口
 ├── compute/        算力研究前后端及算电协同说明
+├── ai-service/     BankAI V0.4 的 FastAPI 问答服务（V0.1 基线）
 ├── tools/          本地开发辅助工具，不存放任何密钥
 └── docker-compose.yml
 ```
@@ -30,6 +31,19 @@ npm run dev
 ```
 
 浏览器访问终端输出的本机局域网地址，例如 `http://172.20.10.2:5173`。
+
+## AI 智能问答（本地 V0.1）
+
+`ai-service/` 保持既有 BankAI V0.4 的 Router、RAG、SQL、BOTH、Claim
+Grounding 与 SQL 安全校验不变，并通过 HTTP 提供健康检查和问答接口。网页入口为
+`/ai-assistant`；本地 Vite 将 `/ai-api` 转发至 FastAPI 的 `8090` 端口。
+
+该阶段的 BankAI Core、FAISS 索引和模型仍在网站仓库外，需要通过不提交的运行环境
+变量 `BANKAI_CORE_DIR` 指向。API 密钥仅通过 `DEEPSEEK_API_KEY` 注入。具体启动、
+审计和测试命令见 [ai-service/README.md](ai-service/README.md)。
+
+当前 Docker Compose 尚未包含该服务：在完成电力/算力 SQL 和政策库迁移前，不将依赖
+旧 `bank_ai` 的基线服务部署到生产容器。
 
 ## Docker 预览
 

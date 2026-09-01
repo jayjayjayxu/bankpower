@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
@@ -21,6 +22,25 @@ class CoreUnavailableError(RuntimeError):
 
 
 AgentFactory = Callable[[Settings], AgentProtocol]
+_CORE_BUILD_DIRECTORY_LOCK = threading.Lock()
+
+
+@contextmanager
+def _legacy_core_working_directory(directory: Path):
+    """Resolve the legacy index's relative local-model path during construction.
+
+    `vector_index_v03/index_config.json` predates this API and records
+    `storage/models/...` as a relative path. The directory is changed only
+    while the single, lazily-created core is built, then restored immediately.
+    """
+
+    with _CORE_BUILD_DIRECTORY_LOCK:
+        previous = Path.cwd()
+        os.chdir(directory)
+        try:
+            yield
+        finally:
+            os.chdir(previous)
 
 
 def build_legacy_agent(settings: Settings) -> AgentProtocol:
@@ -53,13 +73,14 @@ def build_legacy_agent(settings: Settings) -> AgentProtocol:
     except ImportError as exc:
         raise CoreUnavailableError("无法加载 BankAI V0.4 依赖。") from exc
     try:
-        return build_default_agent_v04(
-            schema_path=settings.core_dir / "docs" / "text_to_sql_schema.md",
-            index_dir=settings.core_dir / "storage" / "vector_index_v03",
-            cache_dir=settings.core_dir / "storage" / "huggingface",
-            login_path=settings.sql_login_path,
-            metadata_path=settings.core_dir / "metadata.csv",
-        )
+        with _legacy_core_working_directory(settings.core_dir):
+            return build_default_agent_v04(
+                schema_path=settings.core_dir / "docs" / "text_to_sql_schema.md",
+                index_dir=settings.core_dir / "storage" / "vector_index_v03",
+                cache_dir=settings.core_dir / "storage" / "huggingface",
+                login_path=settings.sql_login_path,
+                metadata_path=settings.core_dir / "metadata.csv",
+            )
     except RuntimeError as exc:
         raise CoreUnavailableError("无法初始化 BankAI V0.4：" + str(exc)) from exc
 
@@ -88,7 +109,15 @@ def health_details(settings: Settings) -> dict[str, str]:
         rag_index = "not_configured"
     else:
         index_dir = settings.core_dir / "storage" / "vector_index_v03"
-        required = (index_dir / "chunks.faiss", index_dir / "records.jsonl")
+        model_dir = settings.core_dir / "storage" / "models" / "bge-small-zh-v1.5"
+        required = (
+            index_dir / "chunks.faiss",
+            index_dir / "records.jsonl",
+            index_dir / "index_config.json",
+            model_dir / "config.json",
+            model_dir / "model.safetensors",
+            model_dir / "tokenizer.json",
+        )
         rag_index = "ok" if all(item.is_file() for item in required) else "missing"
 
     if not settings.database_healthcheck:

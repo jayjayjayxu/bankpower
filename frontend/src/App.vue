@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import EnterpriseDataView from './components/EnterpriseDataView.vue'
 import DataCatalogView from './components/DataCatalogView.vue'
 import BankWorkbenchView from './components/BankWorkbenchView.vue'
+import AiAssistantView from './components/AiAssistantView.vue'
 import PowerSourceStructure from './components/PowerSourceStructure.vue'
 import { fetchHomeSummary, fetchLoadPriceWindow } from './services/enterpriseApi'
 
@@ -120,6 +121,7 @@ const selectedCompany = computed(() => companies.value.find((company) => company
 const detailCompanyId = computed(() => currentPath.value.match(/^\/enterprise\/([^/]+)$/)?.[1] || '')
 const dataRoute = computed(() => currentPath.value.match(/^\/data\/([^/]+)$/)?.[1] || '')
 const bankWorkbench = computed(() => currentPath.value === '/bank-workbench')
+const aiAssistant = computed(() => currentPath.value === '/ai-assistant')
 const loadPriceSeries = computed(() => (loadPriceWindow.value.series || []).map((row) => ({
   ...row,
   hour: Number(row.hourOfDay),
@@ -294,6 +296,13 @@ function openBankWorkbench() {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+function openAiAssistant() {
+  window.history.pushState({}, '', '/ai-assistant')
+  currentPath.value = window.location.pathname
+  document.title = 'AI 智能问答 · 电力能源金融'
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 function returnHome() {
   window.history.pushState({}, '', '/')
   currentPath.value = window.location.pathname
@@ -313,6 +322,8 @@ function returnHome() {
       @back="returnHome"
       @open-enterprise="navigateToEnterprise"
     />
+
+    <AiAssistantView v-else-if="aiAssistant" @back="returnHome" />
 
     <EnterpriseDataView
       v-else-if="detailCompanyId"
@@ -345,6 +356,7 @@ function returnHome() {
 
         <div class="site-switcher" aria-label="研究站点切换">
           <a :href="bankWorkbenchUrl" title="进入银行客户经理工作台">工作台</a>
+          <button type="button" title="进入可审计 AI 智能问答" @click="openAiAssistant">AI 问答</button>
           <b>电力研究</b>
           <a :href="computeSiteUrl" title="进入算力能源研究网站">算力研究</a>
         </div>
@@ -368,6 +380,7 @@ function returnHome() {
             <button class="button primary" type="button" @click="scrollToSection('energy-mix')">查看能源与市场逻辑 <span>↓</span></button>
             <button class="button ghost" type="button" @click="scrollToSection('enterprises')">浏览企业画像</button>
             <button class="button ghost" type="button" @click="openBankWorkbench">进入银行工作台 →</button>
+            <button class="button ghost" type="button" @click="openAiAssistant">AI 智能问答 →</button>
           </div>
           <p class="disclaimer"><span>研究边界</span> 当前展示为公开资料与研究情景下的模型结果，不构成授信承诺。</p>
         </div>

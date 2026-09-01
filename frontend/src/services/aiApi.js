@@ -1,0 +1,15 @@
+const AI_API_BASE = import.meta.env.VITE_AI_API_BASE_URL || '/ai-api'
+
+export async function askAi(question) {
+  const response = await fetch(`${AI_API_BASE}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ question }),
+  })
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const detail = body.detail || body
+    throw new Error(detail.message || body.message || `AI 请求失败（${response.status}）`)
+  }
+  return body
+}
