@@ -18,6 +18,8 @@ class Settings:
     core_dir: Path | None
     audit_dir: Path
     sql_login_path: str
+    spdb_sql_login_path: str
+    spdb_database: str
     mysql_binary: Path
     cors_allowed_origins: tuple[str, ...]
     max_concurrency: int
@@ -42,6 +44,8 @@ class Settings:
             core_dir=Path(core_dir_text).expanduser() if core_dir_text else None,
             audit_dir=audit_dir.expanduser(),
             sql_login_path=os.getenv("BANKAI_SQL_LOGIN_PATH", "bank_ai_reader").strip(),
+            spdb_sql_login_path=os.getenv("SPDB_SQL_LOGIN_PATH", "bank_ai_local").strip(),
+            spdb_database=os.getenv("SPDB_DATABASE", "spdb_power_finance").strip(),
             mysql_binary=Path(os.getenv("MYSQL_BINARY", "/usr/local/mysql/bin/mysql")),
             cors_allowed_origins=origins,
             max_concurrency=max_concurrency,

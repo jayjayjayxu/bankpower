@@ -30,6 +30,8 @@ class Source(BaseModel):
     page_end: int | None = None
     authority: str | None = None
     quote: str | None = None
+    locator: str | None = None
+    url: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -37,7 +39,7 @@ class ChatResponse(BaseModel):
     question: str
     route: str
     answer: str
-    data: dict[str, SQLData | None]
+    data: dict[str, SQLData | dict[str, Any] | None]
     sources: list[Source]
     claims: list[dict[str, Any]]
     warnings: list[str]
@@ -48,4 +50,5 @@ class HealthResponse(BaseModel):
     status: str
     agent_version: str = "V0.4"
     database: str
+    spdb_database: str
     rag_index: str

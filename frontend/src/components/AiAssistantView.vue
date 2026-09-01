@@ -9,14 +9,15 @@ const messages = ref([])
 const loading = ref(false)
 const requestError = ref('')
 const examples = [
-  '银行保险机构应如何进行数据分类分级？',
-  '2026年7月成功交易金额最高的3个网点是什么？',
-  '找出失败交易最多的3个网点，并结合业务连续性要求提出关注点。',
+  '深圳百旺信智算中心2025年的上架率和平均机柜价格是多少？',
+  '深圳训力券对算力服务商是否构成直接收入？',
+  '百旺信这种项目是否适合做绿色贷款，预计能做到多少贷款比例？',
 ]
 
 const canSubmit = computed(() => Boolean(question.value.trim()) && !loading.value)
 
 function sourcePages(source) {
+  if (source.locator) return source.locator
   if (source.page_start == null) return '页码待补充'
   return source.page_start === source.page_end ? `第 ${source.page_start} 页` : `第 ${source.page_start}–${source.page_end} 页`
 }
@@ -56,7 +57,7 @@ async function submit() {
     <header class="ai-topbar">
       <button type="button" class="ai-back" @click="$emit('back')">← 返回电力研究</button>
       <div><strong>AI 智能问答</strong><span>事实、政策与分析依据可追溯</span></div>
-      <em>EnergyComputeAI · V0.1</em>
+      <em>EnergyComputeAI · V0.2</em>
     </header>
 
     <main class="ai-shell">
@@ -85,9 +86,18 @@ async function submit() {
               <div class="ai-table-wrap"><table><thead><tr><th v-for="column in message.result.data.sql.columns" :key="column">{{ column }}</th></tr></thead><tbody><tr v-for="(row, rowIndex) in message.result.data.sql.rows" :key="rowIndex"><td v-for="(cell, cellIndex) in row" :key="cellIndex">{{ cell }}</td></tr></tbody></table></div>
             </section>
 
+            <section v-if="message.result.data?.finance" class="ai-evidence-block">
+              <h2>融资测算边界</h2>
+              <ul class="ai-claim-list">
+                <li><span>STATUS</span>{{ message.result.data.finance.status }}</li>
+                <li><span>FORMULA</span>{{ message.result.data.finance.formula }}</li>
+                <li v-for="(evidence, evidenceIndex) in message.result.data.finance.missing_evidence || []" :key="evidenceIndex"><span>NEEDED</span>{{ evidence }}</li>
+              </ul>
+            </section>
+
             <section v-if="message.result.sources?.length" class="ai-evidence-block">
               <h2>政策 / 文件依据</h2>
-              <ol class="ai-source-list"><li v-for="(source, sourceIndex) in message.result.sources" :key="`${source.document_name}-${sourceIndex}`"><div><b>{{ source.document_name }}</b><span>{{ sourcePages(source) }} · {{ source.authority || '文件来源' }}</span></div><q v-if="source.quote">{{ source.quote }}</q></li></ol>
+              <ol class="ai-source-list"><li v-for="(source, sourceIndex) in message.result.sources" :key="`${source.document_name}-${sourceIndex}`"><div><b>{{ source.document_name }}</b><span>{{ sourcePages(source) }} · {{ source.authority || '文件来源' }}</span></div><q v-if="source.quote">{{ source.quote }}</q><a v-if="source.url" :href="source.url" target="_blank" rel="noreferrer">查看官方链接</a></li></ol>
             </section>
 
             <section v-if="message.result.claims?.length" class="ai-evidence-block">

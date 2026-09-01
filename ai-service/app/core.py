@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Callable, Protocol
 
 from .config import Settings
+from .energy_compute import EnergyComputeAgent
 
 
 class AgentProtocol(Protocol):
@@ -85,10 +86,40 @@ def build_legacy_agent(settings: Settings) -> AgentProtocol:
         raise CoreUnavailableError("无法初始化 BankAI V0.4：" + str(exc)) from exc
 
 
+class HybridAgent:
+    """Route energy/compute questions to controlled tools before legacy BankAI.
+
+    The legacy core remains untouched and is only initialized when a question is
+    outside the energy/compute catalogue.  Consequently a structured database
+    fact never depends on an LLM API key or an LLM-generated SQL statement.
+    """
+
+    def __init__(self, settings: Settings) -> None:
+        self._settings = settings
+        self._energy_agent = EnergyComputeAgent(settings)
+        self._legacy_agent: AgentProtocol | None = None
+        self._legacy_lock = threading.Lock()
+
+    def run(self, question: str) -> dict[str, Any]:
+        if self._energy_agent.supports(question):
+            return self._energy_agent.run(question)
+        if self._legacy_agent is None:
+            with self._legacy_lock:
+                if self._legacy_agent is None:
+                    self._legacy_agent = build_legacy_agent(self._settings)
+        return self._legacy_agent.run(question)
+
+
+def build_default_agent(settings: Settings) -> AgentProtocol:
+    """Construct the V0.2 router without eagerly starting either heavy core."""
+
+    return HybridAgent(settings)
+
+
 class AgentProvider:
     """Lazily creates one core instance after the process has accepted health checks."""
 
-    def __init__(self, settings: Settings, factory: AgentFactory = build_legacy_agent) -> None:
+    def __init__(self, settings: Settings, factory: AgentFactory = build_default_agent) -> None:
         self._settings = settings
         self._factory = factory
         self._agent: AgentProtocol | None = None
@@ -120,19 +151,19 @@ def health_details(settings: Settings) -> dict[str, str]:
         )
         rag_index = "ok" if all(item.is_file() for item in required) else "missing"
 
-    if not settings.database_healthcheck:
-        database = "not_checked"
-    elif not settings.mysql_binary.is_file():
-        database = "missing_mysql_client"
-    else:
+    def check_database(login_path: str, database_name: str) -> str:
+        if not settings.database_healthcheck:
+            return "not_checked"
+        if not settings.mysql_binary.is_file():
+            return "missing_mysql_client"
         try:
             completed = subprocess.run(
                 [
                     str(settings.mysql_binary),
-                    f"--login-path={settings.sql_login_path}",
+                    f"--login-path={login_path}",
                     "--batch",
                     "--skip-column-names",
-                    "bank_ai",
+                    database_name,
                     "-e",
                     "SELECT 1",
                 ],
@@ -141,7 +172,12 @@ def health_details(settings: Settings) -> dict[str, str]:
                 timeout=3,
                 check=False,
             )
-            database = "ok" if completed.returncode == 0 else "unavailable"
+            return "ok" if completed.returncode == 0 else "unavailable"
         except (OSError, subprocess.TimeoutExpired):
-            database = "unavailable"
-    return {"rag_index": rag_index, "database": database}
+            return "unavailable"
+
+    return {
+        "rag_index": rag_index,
+        "database": check_database(settings.sql_login_path, "bank_ai"),
+        "spdb_database": check_database(settings.spdb_sql_login_path, settings.spdb_database),
+    }

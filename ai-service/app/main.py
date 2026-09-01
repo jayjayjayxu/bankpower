@@ -17,18 +17,40 @@ from .core import AgentFactory, AgentProvider, CoreUnavailableError, health_deta
 from .schemas import ChatRequest, ChatResponse, HealthResponse, SQLData, Source
 
 
-def _public_sources(rag_result: dict[str, Any] | None) -> list[Source]:
-    references = (rag_result or {}).get("references") or []
-    return [
-        Source(
-            document_name=str(item.get("source_filename") or item.get("title") or "未命名文件"),
-            page_start=item.get("page_start"),
-            page_end=item.get("page_end"),
-            authority=item.get("authority_code"),
-            quote=item.get("supporting_quote"),
-        )
-        for item in references
+def _public_sources(result: dict[str, Any]) -> list[Source]:
+    """Expose only document and database evidence, including its locator.
+
+    V0.4 uses ``rag_result.references`` while the controlled V0.2 tools also
+    return ``sources``.  Deduplicating here preserves one public evidence
+    model for both paths without exposing prompts, SQL text, or credentials.
+    """
+
+    references = [
+        *(result.get("sources") or []),
+        *((result.get("rag_result") or {}).get("references") or []),
     ]
+    sources: list[Source] = []
+    seen: set[tuple[str, str | None, str | None]] = set()
+    for item in references:
+        document_name = str(item.get("source_filename") or item.get("title") or "未命名文件")
+        locator = item.get("source_locator")
+        quote = item.get("supporting_quote")
+        key = (document_name, locator, quote)
+        if key in seen:
+            continue
+        seen.add(key)
+        sources.append(
+            Source(
+                document_name=document_name,
+                page_start=item.get("page_start"),
+                page_end=item.get("page_end"),
+                authority=item.get("authority_code"),
+                quote=quote,
+                locator=locator,
+                url=item.get("official_url"),
+            )
+        )
+    return sources
 
 
 def _public_sql_data(sql_result: dict[str, Any] | None) -> SQLData | None:
@@ -64,8 +86,11 @@ def _public_response(request_id: str, result: dict[str, Any], elapsed_ms: int) -
         question=str(result["question"]),
         route=str(result["route"]),
         answer=str(result["final_answer"]),
-        data={"sql": _public_sql_data(result.get("sql_result"))},
-        sources=_public_sources(result.get("rag_result")),
+        data={
+            "sql": _public_sql_data(result.get("sql_result")),
+            "finance": result.get("finance_result"),
+        },
+        sources=_public_sources(result),
         claims=list(synthesis.get("claims") or []),
         warnings=_public_warnings(result),
         timing={"total_ms": elapsed_ms},
@@ -97,8 +122,19 @@ def create_app(
     @app.get("/api/health", response_model=HealthResponse)
     async def health() -> HealthResponse:
         details = await asyncio.to_thread(health_checker, settings)
-        status = "ok" if details["database"] in {"ok", "not_checked"} and details["rag_index"] == "ok" else "degraded"
-        return HealthResponse(status=status, database=details["database"], rag_index=details["rag_index"])
+        status = (
+            "ok"
+            if details["database"] in {"ok", "not_checked"}
+            and details["spdb_database"] in {"ok", "not_checked"}
+            and details["rag_index"] == "ok"
+            else "degraded"
+        )
+        return HealthResponse(
+            status=status,
+            database=details["database"],
+            spdb_database=details["spdb_database"],
+            rag_index=details["rag_index"],
+        )
 
     @app.post("/api/chat", response_model=ChatResponse)
     async def chat(payload: ChatRequest, request: Request) -> ChatResponse:

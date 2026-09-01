@@ -73,6 +73,8 @@ def test_settings(audit_dir: Path) -> Settings:
         core_dir=None,
         audit_dir=audit_dir,
         sql_login_path="unused",
+        spdb_sql_login_path="unused",
+        spdb_database="spdb_power_finance",
         mysql_binary=Path("/missing/mysql"),
         cors_allowed_origins=("http://localhost:5173",),
         max_concurrency=1,
@@ -94,14 +96,23 @@ class ApiTests(unittest.TestCase):
                 settings=self.settings,
                 agent_factory=lambda _: agent,
                 audit_logger=AuditLogger(self.settings.audit_dir),
-                health_checker=lambda _: {"database": "ok", "rag_index": "ok"},
+                health_checker=lambda _: {"database": "ok", "spdb_database": "ok", "rag_index": "ok"},
             )
         )
 
     def test_health_reports_dependencies_without_constructing_agent(self) -> None:
         response = self.make_client(FakeAgent()).get("/api/health")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "ok", "agent_version": "V0.4", "database": "ok", "rag_index": "ok"})
+        self.assertEqual(
+            response.json(),
+            {
+                "status": "ok",
+                "agent_version": "V0.4",
+                "database": "ok",
+                "spdb_database": "ok",
+                "rag_index": "ok",
+            },
+        )
 
     def test_chat_returns_only_public_evidence_and_writes_complete_audit(self) -> None:
         agent = FakeAgent("BOTH")
@@ -202,7 +213,7 @@ class ApiTests(unittest.TestCase):
                 settings=self.settings,
                 agent_factory=unavailable,
                 audit_logger=AuditLogger(self.settings.audit_dir),
-                health_checker=lambda _: {"database": "ok", "rag_index": "ok"},
+                health_checker=lambda _: {"database": "ok", "spdb_database": "ok", "rag_index": "ok"},
             )
         )
         response = client.post(
