@@ -99,7 +99,7 @@ class PolicyWorkflowTests(unittest.TestCase):
 
         self.assertEqual(events, ["sql", "rag"])
         self.assertNotIn("政策", sql.questions[0])
-        self.assertEqual(rag.questions[0], "数据中心 PUE 能效阈值、适用范围以及国家枢纽项目要求是什么？")
+        self.assertEqual(rag.questions[0], "现行数据中心 PUE 能效阈值、适用范围以及国家枢纽项目要求是什么？")
         self.assertEqual(result["route"], "BOTH")
         comparison = result["policy_comparison"]
         self.assertEqual(comparison["status"], "INSUFFICIENT_EVIDENCE")
@@ -121,6 +121,31 @@ class PolicyWorkflowTests(unittest.TestCase):
         self.assertIn("PUE 这一单项指标", result["final_answer"])
         self.assertIn("不是项目整体政策资格", result["final_answer"])
 
+    def test_composite_sql_result_only_compares_rows_labeled_pue(self) -> None:
+        events: list[str] = []
+        sql = StubSQLAgent([["深圳百旺信智算中心", "PUE", "一期机房", "1.210", "ratio"]], events)
+        # Exercise the common UNION column used by the real composite query.
+        original_run = sql.run_sql_fact
+
+        def composite(question: str) -> dict[str, Any]:
+            result = original_run(question)
+            result["sql_result"]["query_result"] = {
+                "columns": ["metric_name", "metric_scope", "metric_value", "metric_unit"],
+                "rows": [
+                    ["PUE", "一期机房", "1.210", "RATIO"],
+                    ["上架率", "全设施", "0.6542", "RATIO"],
+                    ["平均机柜价格", "全设施", "5346", "CNY/RACK/MONTH"],
+                ],
+            }
+            return result
+
+        sql.run_sql_fact = composite  # type: ignore[method-assign]
+        agent = EnergyPolicyBothAgent(
+            test_settings(), sql_agent=sql, policy_agent=StubPolicyAgent("新建大型数据中心 PUE 不得高于1.25。", events)  # type: ignore[arg-type]
+        )
+        result = agent.run("百旺信2025年PUE、上架率和平均机柜价格是多少？结合政策说明。")
+        self.assertEqual(result["policy_comparison"]["project_values"], [{"value": "1.210", "metric_scope": "一期机房"}])
+
     def test_both_router_requires_a_resolved_project_entity(self) -> None:
         events: list[str] = []
         agent = EnergyPolicyBothAgent(
@@ -130,6 +155,27 @@ class PolicyWorkflowTests(unittest.TestCase):
         )
         self.assertFalse(agent.supports("新建数据中心 PUE 政策要求是什么？"))
         self.assertTrue(agent.supports("百旺信智算中心 PUE 政策要求是什么？"))
+
+    def test_sql_subtask_keeps_requested_operation_facts_without_policy_wording(self) -> None:
+        events: list[str] = []
+        agent = EnergyPolicyBothAgent(
+            test_settings(),
+            sql_agent=StubSQLAgent([], events),  # type: ignore[arg-type]
+            policy_agent=StubPolicyAgent("PUE 不高于1.25。", events),  # type: ignore[arg-type]
+        )
+        sql_question, _ = agent._sql_fact_question(
+            "百旺信2025年PUE、上架率和平均机柜价格是多少？结合政策说明。"
+        )
+        self.assertIn("2025年", sql_question)
+        self.assertIn("上架率", sql_question)
+        self.assertIn("平均机柜价格", sql_question)
+        self.assertNotIn("政策", sql_question)
+
+    def test_policy_subtask_preserves_explicit_geography(self) -> None:
+        self.assertEqual(
+            EnergyPolicyBothAgent._policy_question("深圳百旺信智算中心 PUE 是否符合政策要求？"),
+            "深圳现行数据中心 PUE 能效阈值、适用范围以及国家枢纽项目要求是什么？",
+        )
 
 
 if __name__ == "__main__":

@@ -164,6 +164,12 @@ Rules:
    When a user asks for a facility's annual metric without naming a building, select the whole-facility annual scope when it exists. For 深圳百旺信智算中心 this is operation_scope_code='WHOLE_FACILITY_BUILDING_1_4_SELF_BUILT' and fact_period='ANNUAL'; never mix it with BUILDING_1 or BUILDING_4 H1 values.
    For “平均机柜价格” or “平均机柜托管价格” without a specified building or power tier, use compute_facility_operation_fact_v1.average_rack_price_yuan_month in that same operation scope. Do not join compute_facility_rack_price_tier_fact_v1 unless the question explicitly asks for a building or power-tier price.
 5. PUE must filter metric_code='PUE' and return metric_scope, as_of_date, disclosure_status, and metric_unit.
+   When a single question asks PUE together with 上架率/平均机柜价格, every requested numeric value must be selected and returned.
+   Use a UNION ALL result with common columns metric_name, metric_scope, metric_value, metric_unit, as_of_date, disclosure_status when the values are in different tables:
+   - PUE: select m.metric_value and m.metric_unit from compute_facility_metric_v1 with metric_code='PUE'.
+   - 上架率: select o.rack_utilization_ratio AS metric_value and literal 'RATIO' AS metric_unit from compute_facility_operation_fact_v1.
+   - 平均机柜价格: select o.average_rack_price_yuan_month AS metric_value and literal 'CNY/RACK/MONTH' AS metric_unit from compute_facility_operation_fact_v1.
+   A year such as 2025 applies to operation facts through fact_year; do not filter PUE by as_of_date unless the user explicitly asks for the PUE disclosure date.
 6. Do not convert database units. Return raw field values with their documented unit columns or names.
 7. A product-to-facility mapping is an actual facility mapping only when mapping_status='CONFIRMED'. Other states are candidates.
    For questions such as “B200-C4-1对应哪个数据中心”, query the listing and candidate-mapping objects and return mapping_status and boundary_note even when no mapping is CONFIRMED; do not use NOT_ANSWERABLE_FROM_DB for this case.

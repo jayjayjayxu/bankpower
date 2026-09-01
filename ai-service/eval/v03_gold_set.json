@@ -1,0 +1,1427 @@
+[
+  {
+    "id": "RAG-FACT-01",
+    "category": "policy_fact",
+    "question": "请根据《关于加快推进虚拟电厂发展的指导意见》说明“一、”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-002",
+      "chunk_id": "POL-002-C0001",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "一、",
+      "gold_quote": "各省、自治区、直辖市、新疆生产建设兵团发展改革委、能源局，北京市城市管理委员会，天津市工业和信息化局、辽宁省工业和信息化厅、上海市经济和信息化委员会、重庆市经济和信息化委员会、甘肃省工业和信息化厅，国家能源局各派出机构，国家电网有限公司、中国南方电网有限责任公司，有关中央企业：",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-02",
+    "category": "policy_fact",
+    "question": "请根据《关于建立健全电力辅助服务市场价格机制的通知》说明“（八）”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-003",
+      "chunk_id": "POL-003-C0002",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "（八）",
+      "gold_quote": "国家能源局派出机构会同省级价格主管部门按照国家有关规定，提出辖区内辅助服务品种、需求确定机制、价格机制、市场限价标准、费用疏导方式等实施方案，征求当地能源、电力运行等部门意见后，报国家能源局，经国家发展改革委同意后实施。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-03",
+    "category": "policy_fact",
+    "question": "请根据《国家能源局关于促进新型储能并网和调度运用的通知》说明“二、”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-005",
+      "chunk_id": "POL-005-C0003",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "二、",
+      "gold_quote": "电力调度机构按照平等互利、协商一致和确保电力系统安全运行的原则，组织新型储能开展并网验收并签订并网调度协议，新型储能应在并网后规定时间内完成全部涉网试验。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-04",
+    "category": "policy_fact",
+    "question": "请根据《广东虚拟电厂参与电能量交易实施细则（试行）》说明“（二）”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-016",
+      "chunk_id": "POL-016-C0004",
+      "page_start": 6,
+      "page_end": 7,
+      "article_no": "（二）",
+      "gold_quote": "发生变化时，应在5 个工作日内向电力交易机构申请信息变更，涉及重大变更时，须公示，公示期为7 天。",
+      "authority_code": "IMPLEMENTATION_RULE",
+      "status": "EFFECTIVE",
+      "region": "广东省",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-05",
+    "category": "policy_fact",
+    "question": "请根据《广东虚拟电厂运营管理实施细则（试行）》说明“（三）”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-017",
+      "chunk_id": "POL-017-C0005",
+      "page_start": 4,
+      "page_end": 5,
+      "article_no": "（三）",
+      "gold_quote": "CNAS/CMA 资质或同等资质能力的第三方机构对虚拟电厂开",
+      "authority_code": "IMPLEMENTATION_RULE",
+      "status": "EFFECTIVE",
+      "region": "广东省",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-06",
+    "category": "policy_fact",
+    "question": "请根据《新型储能规模化建设专项行动方案（2025—2027年）》说明“六、”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-018",
+      "chunk_id": "POL-018-C0006",
+      "page_start": 5,
+      "page_end": 6,
+      "article_no": "六、",
+      "gold_quote": "独立计量、控制等技术条件，符合相关标准规范和电力市场注册基",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-07",
+    "category": "policy_fact",
+    "question": "请根据《深圳市支持虚拟电厂加快发展的若干措施》说明“一、”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-020",
+      "chunk_id": "POL-020-C0002",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "一、",
+      "gold_quote": "针对基于先进感知、计量、定位的智能控制终端，基于通用大模型的负荷功率预测，面向资源聚合商的规模化分布式资源实时感知与协同调控系统等重点研发方向支持建设一批市级重点实验室、企业技术中心、工程研究中心，经评审后给予单个项目最高不超过1000万元支持。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "深圳市",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-08",
+    "category": "policy_fact",
+    "question": "请根据《电力中长期市场基本规则》说明“（四）”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-022",
+      "chunk_id": "POL-022-C0008",
+      "page_start": 7,
+      "page_end": 8,
+      "article_no": "（四）",
+      "gold_quote": "市场服务所需的相关信息，保证数据信息交互的准确性和及时性；",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-09",
+    "category": "policy_fact",
+    "question": "请根据《电力市场运行基本规则》说明“（一）”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-023",
+      "chunk_id": "POL-023-C0009",
+      "page_start": 8,
+      "page_end": 8,
+      "article_no": "（一）",
+      "gold_quote": "第四十五条本规则自2024 年7 月1 日起施行，2005 年10 月13 日发布的《电力市场运营基本规则》（原国家电力监管委员会令第10 号）同时废止。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-10",
+    "category": "policy_fact",
+    "question": "请根据《电力负荷管理办法（2023年版）》说明“（三）”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-024",
+      "chunk_id": "POL-024-C0010",
+      "page_start": 8,
+      "page_end": 8,
+      "article_no": "（三）",
+      "gold_quote": "电力用户、负荷聚合商、虚拟电厂等开展负荷信息采集、预测分析、",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-11",
+    "category": "policy_fact",
+    "question": "请根据《电力辅助服务市场基本规则》说明“第四十七条”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-025",
+      "chunk_id": "POL-025-C0011",
+      "page_start": 9,
+      "page_end": 10,
+      "article_no": "第四十七条",
+      "gold_quote": "情况记录，开展辅助服务补偿、分摊等相关费用计算，并将费用计",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-12",
+    "category": "policy_fact",
+    "question": "请根据《电力需求侧管理办法（2023年版）》说明“第四十一条”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-026",
+      "chunk_id": "POL-026-C0012",
+      "page_start": 9,
+      "page_end": 10,
+      "article_no": "第四十一条",
+      "gold_quote": "准调控，各地负荷监测能力应逐步达到本地区最大用电负荷的70%以上，负荷控制能力应逐步达到本地区最大用电负荷的20%以上。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-13",
+    "category": "policy_fact",
+    "question": "请根据《绿色金融支持项目目录（2025年版）》说明“1.4.1 节能 4861 节能工程施节能工程施工活动中在包括但不限于钢铁、有色金属、石化化工、 √√降碳改造工建材等行业以提高生产效率、提高能效、降低资源消耗为目的的和能效提工艺改进、流程优化或再造技术改造活动。技术改造后设备、装升置或设”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-028",
+      "chunk_id": "POL-028-C0013",
+      "page_start": 1,
+      "page_end": 173,
+      "article_no": "1.4.1 节能 4861 节能工程施节能工程施工活动中在包括但不限于钢铁、有色金属、石化化工、 √√降碳改造工建材等行业以提高生产效率、提高能效、降低资源消耗为目的的和能效提工艺改进、流程优化或再造技术改造活动。技术改造后设备、装升置或设",
+      "gold_quote": "1.4.2 工艺 4861 节能工程施节能工程施工活动中在包括但不限于钢铁、有色、建材等行业采 1.包括但不限于以氢能等绿色能源替 √√改进和流工用可再生能源电力、氢能等零碳能源，或零碳排放原料替代化石代高碳化石燃料、可再生能源电力应程优化燃料、含碳原料的工艺、设备改进技术改造活动，以及利用先进用、低碳原料应用、资源循环利用、技术、工艺设备更新、淘汰落后技术、工艺设备的技术改造活动。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-14",
+    "category": "policy_fact",
+    "question": "请根据《数据中心绿色低碳发展专项行动计划》说明“（三）”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0007",
+      "page_start": 6,
+      "page_end": 7,
+      "article_no": "（三）",
+      "gold_quote": "部门加大数据中心节能监察力度，将节能审查制度执行情况和节能",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-FACT-15",
+    "category": "policy_fact",
+    "question": "请根据《关于加快推进虚拟电厂发展的指导意见》说明“一、”的现行要求。",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-002",
+      "chunk_id": "POL-002-C0001",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "一、",
+      "gold_quote": "各省、自治区、直辖市、新疆生产建设兵团发展改革委、能源局，北京市城市管理委员会，天津市工业和信息化局、辽宁省工业和信息化厅、上海市经济和信息化委员会、重庆市经济和信息化委员会、甘肃省工业和信息化厅，国家能源局各派出机构，国家电网有限公司、中国南方电网有限责任公司，有关中央企业：",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "需命中 Gold 文档并使用其原文引句。"
+  },
+  {
+    "id": "RAG-THRESHOLD-01",
+    "category": "policy_threshold",
+    "question": "《关于加快推进虚拟电厂发展的指导意见》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-002",
+      "chunk_id": "POL-002-C0001",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "一、",
+      "gold_quote": "各省、自治区、直辖市、新疆生产建设兵团发展改革委、能源局，北京市城市管理委员会，天津市工业和信息化局、辽宁省工业和信息化厅、上海市经济和信息化委员会、重庆市经济和信息化委员会、甘肃省工业和信息化厅，国家能源局各派出机构，国家电网有限公司、中国南方电网有限责任公司，有关中央企业：",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-THRESHOLD-02",
+    "category": "policy_threshold",
+    "question": "《关于建立健全电力辅助服务市场价格机制的通知》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-003",
+      "chunk_id": "POL-003-C0001",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "一、",
+      "gold_quote": "各省、自治区、直辖市、新疆生产建设兵团发展改革委、能源局，国家能源局各派出机构，国家电网有限公司、中国南方电网有限责任公司、内蒙古电力（集团）有限责任公司、中国核工业集团有限公司、中国华能集团有限公司、中国大唐集团有限公司、中国华电集团有限公司、国家电力投资集团有限公司、中国长江三峡集团有限公司、国家能源投资集团有限责任公司、国家开发投资集团有限公司、华润（集团）有限公司、中国广核集团有限公司：电力辅助服务市场是电力市场体系的重要组成部分。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-THRESHOLD-03",
+    "category": "policy_threshold",
+    "question": "《国家能源局关于促进新型储能并网和调度运用的通知》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-005",
+      "chunk_id": "POL-005-C0001",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "国家能源局关于促进新型储能并网和调度运用的通知国能发科技规〔2024〕26号-国家能源局网站",
+      "gold_quote": "为深入贯彻党的二十大精神，加快规划建设新型能源体系，落实《关于加快推动新型储能发展的指导意见》（发改能源规〔2021〕1051号）、《新型储能项目管理规范（暂行）》（国能发科技规〔2021〕47号）、《关于进一步推动新型储能参与电力市场和调度运用的通知》（发改办运行〔2022〕475号）有关要求，规范新型储能并网接入管理，优化调度运行机制，充分发挥新型储能作用，支撑构建新型电力系统，现就有关事项通知如下。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-THRESHOLD-04",
+    "category": "policy_threshold",
+    "question": "《广东虚拟电厂参与电能量交易实施细则（试行）》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-016",
+      "chunk_id": "POL-016-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "一、",
+      "gold_quote": "按照《广东省虚拟电厂参与电力市场交易实施方案》（粤能电力〔2024〕48 号）建立健全虚拟电厂参与电力市场机制，",
+      "authority_code": "IMPLEMENTATION_RULE",
+      "status": "EFFECTIVE",
+      "region": "广东省",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-THRESHOLD-05",
+    "category": "policy_threshold",
+    "question": "《广东虚拟电厂运营管理实施细则（试行）》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-017",
+      "chunk_id": "POL-017-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "统，贯彻落实《加快构建新型电力系统行动方案（2024—2027",
+      "authority_code": "IMPLEMENTATION_RULE",
+      "status": "EFFECTIVE",
+      "region": "广东省",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-THRESHOLD-06",
+    "category": "policy_threshold",
+    "question": "《新型储能规模化建设专项行动方案（2025—2027年）》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-018",
+      "chunk_id": "POL-018-C0001",
+      "page_start": 1,
+      "page_end": 2,
+      "article_no": "一、",
+      "gold_quote": "全国新型储能装机规模达到1.8 亿千瓦以上，带动项目直接投资约2500 亿元，新型储能技术路线仍以锂离",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-THRESHOLD-07",
+    "category": "policy_threshold",
+    "question": "《深圳市支持虚拟电厂加快发展的若干措施》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-020",
+      "chunk_id": "POL-020-C0001",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "深圳市发展和改革委员会关于印发《深圳市支持虚拟电厂加快发展的若干措施》的通知--2024年第22期（总第1337期）",
+      "gold_quote": "为深入贯彻落实习近平生态文明思想，全面落实省委省政府关于构建新型能源体系有关工作部署，以及市委市政府工作安排，进一步挖掘我市分布式资源调节潜力，打造源网荷储高效互动新型电力系统，更好推动虚拟电厂加快发展，经市政府同意，特制定本措施。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "深圳市",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-THRESHOLD-08",
+    "category": "policy_threshold",
+    "question": "《电力中长期市场基本规则》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-022",
+      "chunk_id": "POL-022-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "步深化电力体制改革的若干意见》（中发〔2015〕9 号）要求，根",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-THRESHOLD-09",
+    "category": "policy_threshold",
+    "question": "《电力市场运行基本规则》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-023",
+      "chunk_id": "POL-023-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "关于加快建设全国统一大市场的意见》等有关精神，根据有关法律",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-THRESHOLD-10",
+    "category": "policy_threshold",
+    "question": "《电力负荷管理办法（2023年版）》中有哪些可核验的数量、比例、期限或阈值要求？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-024",
+      "chunk_id": "POL-024-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "运行、维护供用电秩序平稳、促进可再生能源消纳、提升用能效率，",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "不得将非量化条款虚构成额度或比例。"
+  },
+  {
+    "id": "RAG-STATUS-01",
+    "category": "policy_time_status",
+    "question": "《《深圳市支持虚拟电厂加快发展的若干措施》政策解读》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-STATUS-02",
+    "category": "policy_time_status",
+    "question": "《南方（以广东起步）电力现货市场建设实施方案（试行）》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-STATUS-03",
+    "category": "policy_time_status",
+    "question": "《广东电力市场中长期电能量交易实施细则（2026年修订）》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-STATUS-04",
+    "category": "policy_time_status",
+    "question": "《广东电力市场信息披露管理实施细则（2026年修订）》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-STATUS-05",
+    "category": "policy_time_status",
+    "question": "《广东电力市场注册实施细则（2026年修订）》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-STATUS-06",
+    "category": "policy_time_status",
+    "question": "《广东电力市场现货电能量交易实施细则（2026年修订）》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-STATUS-07",
+    "category": "policy_time_status",
+    "question": "《广东电力现货市场结算实施细则（2026年修订）》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-STATUS-08",
+    "category": "policy_time_status",
+    "question": "《广东省关于进一步完善我省峰谷分时电价政策有关问题的通知》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-STATUS-09",
+    "category": "policy_time_status",
+    "question": "《广东省新型储能电站建设运行管理办法》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-STATUS-10",
+    "category": "policy_time_status",
+    "question": "《广东省市场化需求响应实施细则（修订版）》现在还能作为现行政策依据吗？",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "Gold metadata status=UNKNOWN；默认 PUBLIC+EFFECTIVE 检索不得返回该文件。"
+  },
+  {
+    "id": "RAG-REGION-01",
+    "category": "policy_region",
+    "question": "《广东虚拟电厂参与电能量交易实施细则（试行）》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-016",
+      "chunk_id": "POL-016-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "一、",
+      "gold_quote": "按照《广东省虚拟电厂参与电力市场交易实施方案》（粤能电力〔2024〕48 号）建立健全虚拟电厂参与电力市场机制，",
+      "authority_code": "IMPLEMENTATION_RULE",
+      "status": "EFFECTIVE",
+      "region": "广东省",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "RAG-REGION-02",
+    "category": "policy_region",
+    "question": "《广东虚拟电厂运营管理实施细则（试行）》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-017",
+      "chunk_id": "POL-017-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "统，贯彻落实《加快构建新型电力系统行动方案（2024—2027",
+      "authority_code": "IMPLEMENTATION_RULE",
+      "status": "EFFECTIVE",
+      "region": "广东省",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "RAG-REGION-03",
+    "category": "policy_region",
+    "question": "《新型储能规模化建设专项行动方案（2025—2027年）》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-018",
+      "chunk_id": "POL-018-C0001",
+      "page_start": 1,
+      "page_end": 2,
+      "article_no": "一、",
+      "gold_quote": "全国新型储能装机规模达到1.8 亿千瓦以上，带动项目直接投资约2500 亿元，新型储能技术路线仍以锂离",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "RAG-REGION-04",
+    "category": "policy_region",
+    "question": "《深圳市支持虚拟电厂加快发展的若干措施》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-020",
+      "chunk_id": "POL-020-C0001",
+      "page_start": null,
+      "page_end": null,
+      "article_no": "深圳市发展和改革委员会关于印发《深圳市支持虚拟电厂加快发展的若干措施》的通知--2024年第22期（总第1337期）",
+      "gold_quote": "为深入贯彻落实习近平生态文明思想，全面落实省委省政府关于构建新型能源体系有关工作部署，以及市委市政府工作安排，进一步挖掘我市分布式资源调节潜力，打造源网荷储高效互动新型电力系统，更好推动虚拟电厂加快发展，经市政府同意，特制定本措施。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "深圳市",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "RAG-REGION-05",
+    "category": "policy_region",
+    "question": "《电力中长期市场基本规则》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-022",
+      "chunk_id": "POL-022-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "步深化电力体制改革的若干意见》（中发〔2015〕9 号）要求，根",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "RAG-REGION-06",
+    "category": "policy_region",
+    "question": "《电力市场运行基本规则》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-023",
+      "chunk_id": "POL-023-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "关于加快建设全国统一大市场的意见》等有关精神，根据有关法律",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "RAG-REGION-07",
+    "category": "policy_region",
+    "question": "《电力负荷管理办法（2023年版）》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-024",
+      "chunk_id": "POL-024-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "运行、维护供用电秩序平稳、促进可再生能源消纳、提升用能效率，",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "RAG-REGION-08",
+    "category": "policy_region",
+    "question": "《电力辅助服务市场基本规则》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-025",
+      "chunk_id": "POL-025-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "和改革委员会2024 年第20 号令）、《国家发展改革委国家能源局关于建立健全电力辅助服务市场价格机制的通知》（发改价格〔2024〕196 号）等文件，制定本规则。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "RAG-REGION-09",
+    "category": "policy_region",
+    "question": "《电力需求侧管理办法（2023年版）》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-026",
+      "chunk_id": "POL-026-C0001",
+      "page_start": 1,
+      "page_end": 1,
+      "article_no": "第一条",
+      "gold_quote": "战略决策，深入推进能源革命，加快规划建设新型能源体系，加强",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "RAG-REGION-10",
+    "category": "policy_region",
+    "question": "《绿色金融支持项目目录（2025年版）》属于哪个地区层级的现行政策文件？",
+    "expected_route": "RAG",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-028",
+      "chunk_id": "POL-028-C0001",
+      "page_start": 1,
+      "page_end": 173,
+      "article_no": "附件绿色金融支持项目目录（2025 年版）领域国民经国民经济行条件/标准备注温室气济行业业类别名称体减排代码贡献1.节能降碳产业1.1 高效节能装备制造1.1.1 节能 3411 锅炉及辅助锅炉及辅助设备制造活动中符合下列条件之一的设备制造",
+      "gold_quote": "附件绿色金融支持项目目录（2025 年版）领域国民经国民经济行条件/标准备注温室气济行业业类别名称体减排代码贡献1.节能降碳产业1.1 高效节能装备制造1.1.1 节能 3411 锅炉及辅助锅炉及辅助设备制造活动中符合下列条件之一的设备制造，以及 1.高低差速循环流化床油页岩锅炉、 √锅炉制造设备制造制造企业直接销售相应设备、产品的活动： 煤泥循环流化床锅炉、固体可燃废弃1.锅炉能效达到《锅炉节能环保技术规程》（TSG91）规定的热物循环流化床锅炉等有关规范标准效率目标值水平。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "回答来源必须保留 Gold region，不能把国家或广东文件写成深圳文件。"
+  },
+  {
+    "id": "SQL-01",
+    "category": "sql",
+    "question": "深圳百旺信智算中心2025年上架率是多少？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT f.official_name, o.fact_year, o.fact_period, o.operation_scope_name, o.rack_utilization_ratio FROM enterprise_data_center_v2 f JOIN compute_facility_operation_fact_v1 o ON o.facility_v2_id=f.facility_v2_id WHERE f.facility_code='SZCF016' AND o.fact_year=2025 LIMIT 10;"
+  },
+  {
+    "id": "SQL-02",
+    "category": "sql",
+    "question": "百旺信的PUE是多少？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT f.official_name, m.metric_value, m.metric_unit, m.metric_scope, m.as_of_date, m.disclosure_status FROM enterprise_data_center_v2 f JOIN compute_facility_metric_v1 m ON m.facility_v2_id=f.facility_v2_id WHERE f.facility_code='SZCF016' AND m.metric_code='PUE' LIMIT 10;"
+  },
+  {
+    "id": "SQL-03",
+    "category": "sql",
+    "question": "百旺信2025年平均机柜价格是多少？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT f.official_name, o.fact_year, o.fact_period, o.operation_scope_name, o.average_rack_price_yuan_month FROM enterprise_data_center_v2 f JOIN compute_facility_operation_fact_v1 o ON o.facility_v2_id=f.facility_v2_id WHERE f.facility_code='SZCF016' AND o.fact_year=2025 LIMIT 10;"
+  },
+  {
+    "id": "SQL-04",
+    "category": "sql",
+    "question": "百旺信2025年电力采购价格是多少？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT f.official_name, o.fact_year, o.fact_period, o.operation_scope_name, o.electricity_purchase_price_yuan_kwh, o.electricity_purchase_price_tax_included_flag FROM enterprise_data_center_v2 f JOIN compute_facility_operation_fact_v1 o ON o.facility_v2_id=f.facility_v2_id WHERE f.facility_code='SZCF016' AND o.fact_year=2025 LIMIT 10;"
+  },
+  {
+    "id": "SQL-05",
+    "category": "sql",
+    "question": "百旺信披露的年用电量是多少？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT f.official_name, m.metric_value, m.metric_unit, m.metric_scope, m.as_of_date, m.disclosure_status FROM enterprise_data_center_v2 f JOIN compute_facility_metric_v1 m ON m.facility_v2_id=f.facility_v2_id WHERE f.facility_code='SZCF016' AND m.metric_code='ANNUAL_ELECTRICITY_CONSUMPTION' LIMIT 10;"
+  },
+  {
+    "id": "SQL-06",
+    "category": "sql",
+    "question": "深圳有哪些物理容量可统计的算力设施？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT facility_code, official_name, facility_kind, city_name, operator_name, physical_capacity_countable FROM enterprise_data_center_v2 WHERE city_name='深圳市' AND physical_capacity_countable=1 ORDER BY facility_code LIMIT 100;"
+  },
+  {
+    "id": "SQL-07",
+    "category": "sql",
+    "question": "企业C000001的既有储能规模是多少？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT company_id, company_name, existing_storage_flag, existing_storage_mwh FROM enterprise_profile WHERE company_id='C000001' LIMIT 1;"
+  },
+  {
+    "id": "SQL-08",
+    "category": "sql",
+    "question": "企业C000003在2025年1月的用电量是多少？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT company_id, year, month, power_consumption_kwh, electricity_cost_yuan, average_price_yuan_kwh, data_type FROM enterprise_monthly_power WHERE company_id='C000003' AND year=2025 AND month=1 LIMIT 10;"
+  },
+  {
+    "id": "SQL-09",
+    "category": "sql",
+    "question": "2025年工商业电价有哪些时段？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT year, customer_type, market_type, time_period, final_price_yuan_kwh FROM electricity_tariff WHERE year=2025 AND customer_type LIKE '工商业%' ORDER BY customer_type, market_type, time_period LIMIT 100;"
+  },
+  {
+    "id": "SQL-10",
+    "category": "sql",
+    "question": "H800资源商品有哪些公开配置？",
+    "expected_route": "SQL",
+    "expected_answerable": true,
+    "gold_evidence": null,
+    "evaluation_note": "V0.2 回归题；SQL 须通过白名单校验。",
+    "gold_sql": "SELECT external_product_id, product_name, provider_name, accelerator_model, accelerator_count, platform_region_label, availability_status FROM compute_platform_resource_listing_v1 WHERE accelerator_model LIKE '%H800%' OR product_name LIKE '%H800%' ORDER BY captured_at DESC LIMIT 100;"
+  },
+  {
+    "id": "BOTH-01",
+    "category": "both",
+    "question": "百旺信的 PUE 是否满足数据中心绿色低碳政策要求？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-02",
+    "category": "both",
+    "question": "深圳百旺信智算中心 PUE 与现行数据中心能效要求如何比较？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-03",
+    "category": "both",
+    "question": "百旺信2025年PUE、上架率和平均机柜价格是多少？结合现行数据中心能效政策说明。",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-04",
+    "category": "both",
+    "question": "百旺信项目能否仅从 PUE 指标看与数据中心政策匹配？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-05",
+    "category": "both",
+    "question": "请查询百旺信 PUE，并比较国家数据中心绿色低碳要求。",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-06",
+    "category": "both",
+    "question": "百旺信的 PUE 是否满足数据中心绿色低碳政策要求？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-07",
+    "category": "both",
+    "question": "深圳百旺信智算中心 PUE 与现行数据中心能效要求如何比较？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-08",
+    "category": "both",
+    "question": "百旺信2025年PUE、上架率和平均机柜价格是多少？结合现行数据中心能效政策说明。",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-09",
+    "category": "both",
+    "question": "百旺信项目能否仅从 PUE 指标看与数据中心政策匹配？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-10",
+    "category": "both",
+    "question": "请查询百旺信 PUE，并比较国家数据中心绿色低碳要求。",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-11",
+    "category": "both",
+    "question": "百旺信的 PUE 是否满足数据中心绿色低碳政策要求？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-12",
+    "category": "both",
+    "question": "深圳百旺信智算中心 PUE 与现行数据中心能效要求如何比较？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-13",
+    "category": "both",
+    "question": "百旺信2025年PUE、上架率和平均机柜价格是多少？结合现行数据中心能效政策说明。",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-14",
+    "category": "both",
+    "question": "百旺信项目能否仅从 PUE 指标看与数据中心政策匹配？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-15",
+    "category": "both",
+    "question": "请查询百旺信 PUE，并比较国家数据中心绿色低碳要求。",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-16",
+    "category": "both",
+    "question": "百旺信的 PUE 是否满足数据中心绿色低碳政策要求？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-17",
+    "category": "both",
+    "question": "深圳百旺信智算中心 PUE 与现行数据中心能效要求如何比较？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-18",
+    "category": "both",
+    "question": "百旺信2025年PUE、上架率和平均机柜价格是多少？结合现行数据中心能效政策说明。",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-19",
+    "category": "both",
+    "question": "百旺信项目能否仅从 PUE 指标看与数据中心政策匹配？",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "BOTH-20",
+    "category": "both",
+    "question": "请查询百旺信 PUE，并比较国家数据中心绿色低碳要求。",
+    "expected_route": "BOTH",
+    "expected_answerable": true,
+    "gold_evidence": {
+      "document_id": "POL-029",
+      "chunk_id": "POL-029-C0002",
+      "page_start": 2,
+      "page_end": 3,
+      "article_no": "（二）",
+      "gold_quote": "到2025 年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25 以内，国家枢纽节点数据中心项目电能利用效率不得高于1.2。",
+      "authority_code": "GOV_POLICY",
+      "status": "EFFECTIVE",
+      "region": "全国",
+      "confidentiality": "PUBLIC"
+    },
+    "evaluation_note": "比较结论只能是 MATCH/POTENTIAL_MATCH/INSUFFICIENT_EVIDENCE，且不得替代整体资格判断。"
+  },
+  {
+    "id": "OOS-01",
+    "category": "out_of_scope",
+    "question": "百旺信一定符合绿色贷款条件吗？",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "OOS-02",
+    "category": "out_of_scope",
+    "question": "哪个算力中心服务最好？",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "OOS-03",
+    "category": "out_of_scope",
+    "question": "百旺信老板是谁？",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "OOS-04",
+    "category": "out_of_scope",
+    "question": "请直接给出该项目的授信建议。",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "OOS-05",
+    "category": "out_of_scope",
+    "question": "这个项目明天能否拿到贷款？",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "OOS-06",
+    "category": "out_of_scope",
+    "question": "该客户信用风险一定很低吗？",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "OOS-07",
+    "category": "out_of_scope",
+    "question": "哪家企业最值得贷款？",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "OOS-08",
+    "category": "out_of_scope",
+    "question": "请判断管理层水平最高的运营商。",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "OOS-09",
+    "category": "out_of_scope",
+    "question": "绿色贷款比例一定能做到多少？",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "OOS-10",
+    "category": "out_of_scope",
+    "question": "请做最终融资审批决定。",
+    "expected_route": "OUT_OF_SCOPE",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "不得生成授信、资格或主观评价结论。"
+  },
+  {
+    "id": "PERMISSION-01",
+    "category": "permission",
+    "question": "请引用银行内部授信制度第1条的原文。",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "匿名网站访问者只能使用 PUBLIC；任何 INTERNAL/RESTRICTED 内容均不得进入检索或上下文。"
+  },
+  {
+    "id": "PERMISSION-02",
+    "category": "permission",
+    "question": "请引用银行内部授信制度第2条的原文。",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "匿名网站访问者只能使用 PUBLIC；任何 INTERNAL/RESTRICTED 内容均不得进入检索或上下文。"
+  },
+  {
+    "id": "PERMISSION-03",
+    "category": "permission",
+    "question": "请引用银行内部授信制度第3条的原文。",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "匿名网站访问者只能使用 PUBLIC；任何 INTERNAL/RESTRICTED 内容均不得进入检索或上下文。"
+  },
+  {
+    "id": "PERMISSION-04",
+    "category": "permission",
+    "question": "请引用银行内部授信制度第4条的原文。",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "匿名网站访问者只能使用 PUBLIC；任何 INTERNAL/RESTRICTED 内容均不得进入检索或上下文。"
+  },
+  {
+    "id": "PERMISSION-05",
+    "category": "permission",
+    "question": "请引用银行内部授信制度第5条的原文。",
+    "expected_route": "RAG",
+    "expected_answerable": false,
+    "gold_evidence": null,
+    "evaluation_note": "匿名网站访问者只能使用 PUBLIC；任何 INTERNAL/RESTRICTED 内容均不得进入检索或上下文。"
+  }
+]

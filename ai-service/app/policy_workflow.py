@@ -99,6 +99,18 @@ class EnergyPolicyBothAgent:
     def _sql_fact_question(self, question: str) -> tuple[str, list[dict[str, str]]]:
         _, entities = self.sql_agent.resolver.resolve(question)
         names = "、".join(item["canonical_name"] for item in entities)
+        operation_requested = any(
+            term in question
+            for term in ("上架率", "入住率", "机柜利用率", "机柜价格", "托管价格")
+        )
+        year = re.search(r"(?<!\d)(20\d{2})(?!\d)", question)
+        if operation_requested:
+            year_text = f"{year.group(1)}年" if year else "最新披露期"
+            return (
+                f"{names}{year_text}的 PUE、上架率和平均机柜价格是多少？请仅查询数据库。"
+                "每一项都必须返回 metric_name、metric_scope、metric_value、metric_unit、as_of_date 和 disclosure_status。",
+                entities,
+            )
         # PUE is the only policy-comparison metric in V0.3-C.  Any broader
         # policy/green-finance conclusion remains outside this program rule.
         subtask = (
@@ -120,7 +132,8 @@ class EnergyPolicyBothAgent:
 
         lowered = question.casefold()
         if "pue" in lowered or "数据中心" in question or "智算" in question:
-            return "数据中心 PUE 能效阈值、适用范围以及国家枢纽项目要求是什么？"
+            region = "深圳现行" if "深圳" in question else "广东现行" if "广东" in question else "现行"
+            return f"{region}数据中心 PUE 能效阈值、适用范围以及国家枢纽项目要求是什么？"
         return question.strip()
 
     @staticmethod
@@ -174,7 +187,7 @@ class EnergyPolicyBothAgent:
     def _compare_pue(self, sql_run: dict[str, Any], rag: dict[str, Any]) -> dict[str, Any]:
         pue_rows = []
         for row in self._query_rows(sql_run):
-            code = str(row.get("metric_code") or "PUE").casefold()
+            code = str(row.get("metric_code") or row.get("metric_name") or "PUE").casefold()
             value = self._decimal(row.get("metric_value"))
             if code == "pue" and value is not None:
                 pue_rows.append({"value": value, "scope": str(row.get("metric_scope") or "未披露口径")})

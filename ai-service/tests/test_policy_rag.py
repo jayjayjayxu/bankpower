@@ -88,6 +88,7 @@ class PolicyRAGTests(unittest.TestCase):
     def test_policy_intent_router_does_not_capture_plain_sql_question(self) -> None:
         self.assertTrue(PolicyRAGAgent.supports("深圳训力券的申报条件是什么？"))
         self.assertTrue(PolicyRAGAgent.supports("新建数据中心PUE能效要求是多少？"))
+        self.assertTrue(PolicyRAGAgent.supports("请引用银行内部授信制度的原文。"))
         self.assertFalse(PolicyRAGAgent.supports("深圳百旺信智算中心2025年PUE是多少？"))
 
 

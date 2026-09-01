@@ -105,6 +105,8 @@ class HybridAgent:
         self._legacy_lock = threading.Lock()
 
     def run(self, question: str) -> dict[str, Any]:
+        if self._requires_final_credit_determination(question):
+            return self._credit_boundary(question)
         if self._both_agent.supports(question):
             return self._both_agent.run(question)
         if self._policy_agent.supports(question):
@@ -116,6 +118,28 @@ class HybridAgent:
                 if self._legacy_agent is None:
                     self._legacy_agent = build_legacy_agent(self._settings)
         return self._legacy_agent.run(question)
+
+    @staticmethod
+    def _requires_final_credit_determination(question: str) -> bool:
+        lowered = question.casefold()
+        finality = ("一定", "最终", "直接")
+        finance = ("绿色贷款", "贷款", "授信", "融资审批", "融资比例")
+        return any(term in lowered for term in finality) and any(term in lowered for term in finance)
+
+    @staticmethod
+    def _credit_boundary(question: str) -> dict[str, Any]:
+        return {
+            "agent_version": "EnergyComputeAI-V0.3",
+            "question": question.strip(), "route": "OUT_OF_SCOPE",
+            "router": {"route": "OUT_OF_SCOPE", "reason": "V0.3 不作最终融资资格、授信或贷款比例决定。"},
+            "decomposition": None, "tool_calls": [], "sql_result": None, "rag_result": None,
+            "synthesis": None, "sources": [],
+            "final_answer": (
+                "当前版本可以查询项目事实和现行公开政策，但不能作最终绿色贷款资格、"
+                "授信审批或融资比例决定。仍需核验项目用途、资金投向、节能量证明、"
+                "建设与运营资料及完整融资材料。"
+            ),
+        }
 
     def debug_sql(self, question: str) -> dict[str, Any]:
         if not self._energy_agent.supports(question):
