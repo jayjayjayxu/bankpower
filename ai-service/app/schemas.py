@@ -32,6 +32,12 @@ class Source(BaseModel):
     quote: str | None = None
     locator: str | None = None
     url: str | None = None
+    issuing_authority: str | None = None
+    policy_level: str | None = None
+    policy_status: str | None = None
+    region: str | None = None
+    effective_date: str | None = None
+    expiry_date: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -48,7 +54,7 @@ class ChatResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
-    agent_version: str = "EnergyComputeAI-V0.2"
+    agent_version: str = "EnergyComputeAI-V0.3"
     database: str
     spdb_database: str
     rag_index: str

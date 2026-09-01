@@ -22,6 +22,11 @@ function sourcePages(source) {
   return source.page_start === source.page_end ? `第 ${source.page_start} 页` : `第 ${source.page_start}–${source.page_end} 页`
 }
 
+function sourceDetails(source) {
+  const parts = [source.issuing_authority, source.policy_status, source.policy_level, source.region, source.effective_date && `生效 ${source.effective_date}`].filter(Boolean)
+  return parts.length ? parts.join(' · ') : (source.authority || '文件来源')
+}
+
 function routeLabel(route) {
   return {
     SQL: '电力 / 算力结构化查询',
@@ -86,7 +91,7 @@ async function submit() {
 
             <section v-if="message.result.sources?.length" class="ai-evidence-block">
               <h2>数据来源</h2>
-              <ol class="ai-source-list"><li v-for="(source, sourceIndex) in message.result.sources" :key="`${source.document_name}-${sourceIndex}`"><div><b>{{ source.document_name }}</b><span>{{ sourcePages(source) }} · {{ source.authority || '文件来源' }}</span></div><q v-if="source.quote">{{ source.quote }}</q><a v-if="source.url" :href="source.url" target="_blank" rel="noreferrer">查看官方链接</a></li></ol>
+              <ol class="ai-source-list"><li v-for="(source, sourceIndex) in message.result.sources" :key="`${source.document_name}-${sourceIndex}`"><div><b>{{ source.document_name }}</b><span>{{ sourcePages(source) }} · {{ sourceDetails(source) }}</span></div><q v-if="source.quote">{{ source.quote }}</q><a v-if="source.url" :href="source.url" target="_blank" rel="noreferrer">查看官方链接</a></li></ol>
             </section>
 
             <section v-if="message.result.claims?.length" class="ai-evidence-block">

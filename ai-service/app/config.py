@@ -26,6 +26,7 @@ class Settings:
     database_healthcheck: bool
     sql_debug_enabled: bool
     sql_debug_token: str
+    policy_rag_index_dir: Path
     max_question_chars: int = 2_000
 
     @classmethod
@@ -56,4 +57,7 @@ class Settings:
             sql_debug_enabled=os.getenv("AI_API_ENABLE_SQL_DEBUG", "false").lower()
             in {"1", "true", "yes"},
             sql_debug_token=os.getenv("AI_API_SQL_DEBUG_TOKEN", "").strip(),
+            policy_rag_index_dir=Path(
+                os.getenv("POLICY_RAG_INDEX_DIR", "runtime/policy_vector_index/public_effective")
+            ).expanduser(),
         )

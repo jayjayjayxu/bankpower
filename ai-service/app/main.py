@@ -48,6 +48,12 @@ def _public_sources(result: dict[str, Any]) -> list[Source]:
                 quote=quote,
                 locator=locator,
                 url=item.get("official_url"),
+                issuing_authority=item.get("issuing_authority"),
+                policy_level=item.get("policy_level"),
+                policy_status=item.get("status"),
+                region=item.get("region"),
+                effective_date=item.get("effective_date"),
+                expiry_date=item.get("expiry_date"),
             )
         )
     return sources
@@ -108,7 +114,7 @@ def create_app(
     provider = AgentProvider(settings, agent_factory) if agent_factory else AgentProvider(settings)
     audit_logger = audit_logger or AuditLogger(settings.audit_dir)
 
-    app = FastAPI(title="EnergyComputeAI", version="0.2.0")
+    app = FastAPI(title="EnergyComputeAI", version="0.3.0")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.cors_allowed_origins),
@@ -143,7 +149,7 @@ def create_app(
             "request_id": request_id,
             "received_at": datetime.now(UTC).isoformat(),
             "question": payload.question,
-            "api_version": "0.2.0",
+            "api_version": "0.3.0",
         }
         try:
             async with app.state.run_gate:

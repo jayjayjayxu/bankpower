@@ -81,6 +81,7 @@ def test_settings(audit_dir: Path) -> Settings:
         database_healthcheck=False,
         sql_debug_enabled=False,
         sql_debug_token="",
+        policy_rag_index_dir=audit_dir / "policy-index",
     )
 
 
@@ -109,7 +110,7 @@ class ApiTests(unittest.TestCase):
             response.json(),
             {
                 "status": "ok",
-                "agent_version": "EnergyComputeAI-V0.2",
+                "agent_version": "EnergyComputeAI-V0.3",
                 "database": "ok",
                 "spdb_database": "ok",
                 "rag_index": "ok",

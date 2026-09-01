@@ -57,6 +57,7 @@ def test_settings() -> Settings:
         database_healthcheck=False,
         sql_debug_enabled=False,
         sql_debug_token="",
+        policy_rag_index_dir=Path("runtime/policy-index"),
     )
 
 

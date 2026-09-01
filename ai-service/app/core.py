@@ -12,6 +12,7 @@ from typing import Any, Callable, Protocol
 
 from .config import Settings
 from .energy_compute import EnergyComputeAgent
+from .policy_rag import PolicyRAGAgent
 
 
 class AgentProtocol(Protocol):
@@ -87,7 +88,7 @@ def build_legacy_agent(settings: Settings) -> AgentProtocol:
 
 
 class HybridAgent:
-    """Route energy/compute questions to controlled tools before legacy BankAI.
+    """Route V0.3 policy questions before SQL facts and the legacy fallback.
 
     The legacy core remains untouched and is only initialized when a question is
     outside the energy/compute catalogue.  Consequently a structured database
@@ -97,10 +98,13 @@ class HybridAgent:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._energy_agent = EnergyComputeAgent(settings)
+        self._policy_agent = PolicyRAGAgent(settings)
         self._legacy_agent: AgentProtocol | None = None
         self._legacy_lock = threading.Lock()
 
     def run(self, question: str) -> dict[str, Any]:
+        if self._policy_agent.supports(question):
+            return self._policy_agent.run(question)
         if self._energy_agent.supports(question):
             return self._energy_agent.run(question)
         if self._legacy_agent is None:
@@ -119,7 +123,7 @@ class HybridAgent:
 
 
 def build_default_agent(settings: Settings) -> AgentProtocol:
-    """Construct the V0.2 router without eagerly starting either heavy core."""
+    """Construct the V0.3 router without eagerly starting a model or index."""
 
     return HybridAgent(settings)
 
@@ -157,7 +161,7 @@ def health_details(settings: Settings) -> dict[str, str]:
     if settings.core_dir is None:
         rag_index = "not_configured"
     else:
-        index_dir = settings.core_dir / "storage" / "vector_index_v03"
+        index_dir = settings.policy_rag_index_dir
         model_dir = settings.core_dir / "storage" / "models" / "bge-small-zh-v1.5"
         required = (
             index_dir / "chunks.faiss",
