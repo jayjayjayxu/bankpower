@@ -13,3 +13,15 @@ export async function askAi(question) {
   }
   return body
 }
+
+export async function fetchDueDiligence(projectId) {
+  const response = await fetch(`${AI_API_BASE}/due-diligence/${encodeURIComponent(projectId)}`, {
+    headers: { Accept: 'application/json' },
+  })
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    const detail = body.detail || body
+    throw new Error(detail.message || body.message || String(detail) || `尽调请求失败（${response.status}）`)
+  }
+  return body
+}
