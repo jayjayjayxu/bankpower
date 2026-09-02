@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { askAi, clearFinanceAssumptions, resetConversationContext } from '../services/aiApi'
 
 defineEmits(['back', 'open-project-analysis'])
@@ -10,6 +10,7 @@ const loading = ref(false)
 const requestError = ref('')
 const sessionId = ref(null)
 const conversation = ref(null)
+const conversationViewport = ref(null)
 const examples = [
   '深圳百旺信智算中心2025年的上架率和平均机柜价格是多少？',
   '哪些算力中心PUE低于1.3？',
@@ -108,6 +109,7 @@ async function submit() {
   messages.value.push({ type: 'question', text: value })
   question.value = ''
   loading.value = true
+  await scrollConversationToLatest()
   try {
     const result = await askAi(value, sessionId.value)
     sessionId.value = result.session_id || sessionId.value
@@ -117,7 +119,14 @@ async function submit() {
     requestError.value = error instanceof Error ? error.message : 'AI 服务暂时不可用。'
   } finally {
     loading.value = false
+    await scrollConversationToLatest()
   }
+}
+
+async function scrollConversationToLatest() {
+  await nextTick()
+  const viewport = conversationViewport.value
+  if (viewport) viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' })
 }
 </script>
 
@@ -130,7 +139,8 @@ async function submit() {
     </header>
 
     <main class="ai-shell">
-      <section class="ai-conversation" aria-live="polite">
+      <section class="ai-chat-panel">
+      <section ref="conversationViewport" class="ai-conversation" aria-live="polite">
         <div v-if="contextItems.length" class="ai-context" aria-label="当前分析上下文">
           <span>当前上下文</span><b v-for="item in contextItems" :key="item.key">{{ item.label }}</b>
           <button v-if="conversation?.assumptions?.length" type="button" @click="clearAssumptions">清除融资假设 ×</button>
@@ -211,18 +221,18 @@ async function submit() {
         <div v-if="loading" class="ai-thinking"><i></i><span>正在识别问题类型并调用受控工具…</span></div>
         <p v-if="requestError" class="ai-request-error">{{ requestError }}</p>
       </section>
+      <form class="ai-composer" @submit.prevent="submit">
+        <label for="ai-question">请输入项目事实或政策问题</label>
+        <div><textarea id="ai-question" v-model="question" rows="3" maxlength="2000" placeholder="例如：哪些算力中心 PUE 低于 1.3？" @keydown.meta.enter.prevent="submit" @keydown.ctrl.enter.prevent="submit"></textarea><button type="submit" :disabled="!canSubmit">{{ loading ? '处理中…' : '发送 →' }}</button></div>
+        <small>⌘ / Ctrl + Enter 发送 · 系统会保存审计记录与来源依据。</small>
+      </form>
+      </section>
 
       <aside class="ai-sidebar">
         <section><span>工作方式</span><h2>程序负责正确，AI负责易读</h2><ol><li>解析设施、企业与商品别名</li><li>生成并校验只读 SQL</li><li>程序化解释数据口径、状态与缺失值</li></ol></section>
         <section><span>使用边界</span><p>系统可做数据库事实、现行公开政策解释及有限的指标比对；绿色贷款资格、授信建议与融资比例仍须人工复核。</p></section>
         <section class="ai-due-diligence-link"><span>项目工具</span><h2>进入项目初步尽调</h2><p>汇集项目事实、政策规则与待补材料，形成可追溯的尽调快照。</p><button type="button" @click="$emit('open-project-analysis')">打开项目尽调 →</button></section>
       </aside>
-
-      <form class="ai-composer" @submit.prevent="submit">
-        <label for="ai-question">请输入项目事实或政策问题</label>
-        <div><textarea id="ai-question" v-model="question" rows="3" maxlength="2000" placeholder="例如：哪些算力中心 PUE 低于 1.3？" @keydown.meta.enter.prevent="submit" @keydown.ctrl.enter.prevent="submit"></textarea><button type="submit" :disabled="!canSubmit">{{ loading ? '处理中…' : '发送 →' }}</button></div>
-        <small>⌘ / Ctrl + Enter 发送 · 系统会保存审计记录与来源依据。</small>
-      </form>
     </main>
   </div>
 </template>

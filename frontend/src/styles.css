@@ -229,10 +229,23 @@ footer { display: flex; justify-content: space-between; width: min(1180px, calc(
 .ai-context button { padding: 3px 5px; border: 0; color: #8a6a37; background: transparent; cursor: pointer; font-size: 9px; text-decoration: underline; }
 .ai-dd-summary { background: #f4faf8; }.ai-dd-summary > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 12px 0; background: #d5e8e5; }.ai-dd-summary > div span { padding: 9px; color: #6e868c; background: #fff; font-size: 10px; }.ai-dd-summary > div b { display: block; margin-top: 4px; color: #247a72; font-size: 16px; }.ai-dd-summary p { margin: 0; color: #718893; font-size: 10px; line-height: 1.6; }.ai-dd-summary button { margin-top: 12px; padding: 7px 9px; border: 1px solid #a9d4cf; border-radius: 4px; color: #1e736d; background: #fff; cursor: pointer; font-size: 10px; font-weight: 700; }
 
+/* AI chat uses an app-like viewport: messages scroll, the composer does not. */
+.ai-page { height: 100dvh; min-height: 0; overflow: hidden; }
+.ai-topbar { height: 74px; box-sizing: border-box; padding: 12px 0; }
+.ai-shell { height: calc(100dvh - 74px); min-height: 0; align-items: stretch; box-sizing: border-box; padding: 0 0 18px; overflow: hidden; }
+.ai-chat-panel { position: relative; min-height: 0; height: 100%; }
+.ai-conversation { min-height: 0; height: 100%; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; box-sizing: border-box; padding: 26px 26px 190px; }
+.ai-conversation::-webkit-scrollbar, .ai-sidebar::-webkit-scrollbar { width: 8px; }
+.ai-conversation::-webkit-scrollbar-thumb, .ai-sidebar::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 10px; background: #bdd4d4; background-clip: padding-box; }
+.ai-sidebar { min-height: 0; overflow-y: auto; padding-right: 3px; }
+.ai-composer { position: absolute; z-index: 3; right: 18px; bottom: 16px; left: 18px; grid-column: auto; margin: 0; padding: 15px 16px; border-color: #8bc9c2; background: rgba(237, 250, 247, .97); box-shadow: 0 14px 30px rgba(18, 60, 79, .18), 0 0 0 5px rgba(255,255,255,.76); backdrop-filter: blur(12px); }
+.ai-composer textarea { min-height: 70px; resize: none; }
+.ai-composer button { min-height: 70px; box-shadow: 0 5px 14px rgba(18, 95, 87, .22); }
+
 @media (max-width: 920px) {
-  .ai-topbar, .ai-shell { width: min(100% - 36px, 760px); }.ai-shell { grid-template-columns: 1fr; }.ai-sidebar { grid-template-columns: 1fr 1fr; }.ai-composer { grid-column: 1; }
+  .ai-topbar, .ai-shell { width: min(100% - 36px, 760px); }.ai-shell { grid-template-columns: 1fr; }.ai-sidebar { display: none; }
 }
 
 @media (max-width: 560px) {
-  .ai-topbar, .ai-shell { width: min(100% - 28px, 500px); }.ai-topbar { gap: 10px; }.ai-topbar em { display: none; }.ai-conversation { min-height: 440px; padding: 17px; }.ai-welcome { padding-top: 10px; }.ai-welcome h1 { font-size: 34px; }.ai-answer > header { display: grid; }.ai-answer header small { text-align: left; }.ai-answer-conclusion, .ai-evidence-block { padding: 15px; }.ai-source-list li > div { display: grid; gap: 4px; }.ai-source-list span { white-space: normal; }.ai-sidebar { grid-template-columns: 1fr; }.ai-composer { padding: 13px; }.ai-composer > div { display: grid; }.ai-composer button { min-height: 42px; }
+  .ai-topbar, .ai-shell { width: min(100% - 28px, 500px); }.ai-topbar { gap: 10px; }.ai-topbar em { display: none; }.ai-conversation { min-height: 0; padding: 17px 17px 188px; }.ai-welcome { padding-top: 10px; }.ai-welcome h1 { font-size: 34px; }.ai-answer > header { display: grid; }.ai-answer header small { text-align: left; }.ai-answer-conclusion, .ai-evidence-block { padding: 15px; }.ai-source-list li > div { display: grid; gap: 4px; }.ai-source-list span { white-space: normal; }.ai-composer { right: 10px; bottom: 10px; left: 10px; padding: 13px; }.ai-composer > div { display: grid; }.ai-composer textarea, .ai-composer button { min-height: 42px; }.ai-composer textarea { height: 58px; }.ai-composer button { min-height: 42px; }
 }
