@@ -90,6 +90,7 @@ class EnergyPolicyBothAgent:
             ],
             "sql_result": sql_run.get("sql_result"),
             "rag_result": rag,
+            "interpretation": sql_run.get("interpretation"),
             "policy_comparison": comparison,
             "synthesis": {"claims": self._claims(comparison), "dropped_claims": []},
             "sources": list(sql_run.get("sources") or []),

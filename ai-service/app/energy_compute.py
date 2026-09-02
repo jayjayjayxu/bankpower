@@ -10,6 +10,9 @@ import yaml
 
 from .config import Settings
 from .energy_sql import EnergyTextToSQLPipeline
+from .answer_validator import validate_or_fallback
+from .result_interpreter import interpret_sql_result
+from .sql_answer_renderer import render_sql_answer
 
 
 _RESOURCE_DIR = Path(__file__).resolve().parents[1] / "resources"
@@ -114,6 +117,18 @@ class EnergyComputeAgent:
         query_result = pipeline_result["result"]
         if pipeline_result["not_answerable"]:
             return self._out_of_scope(question, generated.raw_sql)
+        interpretation = None
+        presentation = None
+        answer = pipeline_result["answer"]
+        if query_result is not None:
+            interpreted = interpret_sql_result(question, query_result)
+            rendered = render_sql_answer(question, interpreted)
+            answer, validation, fallback_used = validate_or_fallback(rendered, interpreted)
+            interpretation = interpreted.public_dict()
+            presentation = {
+                "validator": {"valid": validation.valid, "errors": list(validation.errors)},
+                "fallback_used": fallback_used,
+            }
         sources = [
             {
                 "source_filename": f"spdb_power_finance.{table}",
@@ -153,11 +168,13 @@ class EnergyComputeAgent:
                     if query_result is not None
                     else None
                 ),
+                "presentation": presentation,
             },
             "rag_result": None,
+            "interpretation": interpretation,
             "synthesis": None,
             "sources": sources,
-            "final_answer": pipeline_result["answer"],
+            "final_answer": answer,
         }
 
     def debug_sql(self, question: str) -> dict[str, Any]:
@@ -196,6 +213,7 @@ class EnergyComputeAgent:
             "tool_calls": [],
             "sql_result": None,
             "rag_result": None,
+            "interpretation": None,
             "synthesis": None,
             "sources": [],
             "final_answer": (
