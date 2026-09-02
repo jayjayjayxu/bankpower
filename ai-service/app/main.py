@@ -192,6 +192,14 @@ def create_app(
         except KeyError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+    @app.delete("/api/chat/{session_id}")
+    async def reset_chat_context(session_id: str) -> dict[str, Any]:
+        try:
+            state = await asyncio.to_thread(conversation.reset_context, session_id)
+            return {"session_id": state.session_id, "conversation": state.public_dict()}
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
     async def _chat_with_conversation(
         payload: ChatRequest, request: Request, session_id: str | None
     ) -> ChatResponse:

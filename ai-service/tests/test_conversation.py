@@ -158,6 +158,41 @@ class ConversationTests(unittest.TestCase):
         self.assertIn("项目单独账套", third["final_answer"])
         self.assertEqual(runs, ["SZCF016"])
 
+    def test_two_year_comparison_and_numeric_provenance_reuse_completed_sql_results(self) -> None:
+        calls: list[str] = []
+
+        def agent(question: str) -> dict:
+            calls.append(question)
+            value = "0.6542" if "2025" in question else "0.555"
+            return {
+                "question": question, "route": "SQL",
+                "router": {"route": "SQL", "entity_resolution": [{"entity_type": "FACILITY", "entity_id": "SZCF016", "canonical_name": "深圳百旺信智算中心"}]},
+                "sql_result": {"query_result": {"columns": ["rack_utilization_ratio"], "rows": [[value]]}},
+                "rag_result": None, "interpretation": None, "sources": [{"title": "SQL 来源"}],
+                "synthesis": {"claims": [], "dropped_claims": []}, "final_answer": value,
+            }
+
+        service = ConversationService(agent)
+        state, _, _ = service.run("百旺信2025年上架率是多少？")
+        state, _, _ = service.run("2024呢？", state.session_id)
+        _, comparison, _ = service.run("两年差多少？", state.session_id)
+        self.assertEqual(comparison["route"], "COMPARISON_REUSE")
+        self.assertIn("+9.92 个百分点", comparison["final_answer"])
+        self.assertEqual(len(calls), 2)
+
+        _, provenance, _ = service.run("0.6542这个数据哪里来的？", state.session_id)
+        self.assertEqual(provenance["route"], "PROVENANCE")
+        self.assertIn("2025年", provenance["final_answer"])
+        self.assertEqual(len(calls), 2)
+
+    def test_context_reset_prevents_old_entity_and_results_from_being_reused(self) -> None:
+        state, _, _ = self.service.run("百旺信2025年上架率多少？")
+        cleared = self.service.reset_context(state.session_id)
+        self.assertEqual(cleared.active_entities, [])
+        self.assertEqual(cleared.turns, [])
+        _, result, _ = self.service.run("两年差多少？", state.session_id)
+        self.assertEqual(result["route"], "CLARIFICATION")
+
 
 if __name__ == "__main__":
     unittest.main()

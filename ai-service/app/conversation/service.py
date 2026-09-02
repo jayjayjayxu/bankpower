@@ -7,6 +7,7 @@ are intentionally never promoted into the next turn.
 from __future__ import annotations
 
 import re
+import json
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -112,12 +113,26 @@ class ConversationService:
             state.finance_context_valid = False
             return state
 
+    def reset_context(self, session_id: str) -> ConversationState:
+        with self._lock:
+            state = self._sessions.get(session_id)
+            if state is None:
+                raise KeyError("会话不存在或已失效，请重新开始提问。")
+            self._clear_analysis_context(state)
+            state.turns = []
+            return state
+
     @staticmethod
     def _new_state() -> ConversationState:
         return ConversationState(session_id=str(uuid.uuid4()))
 
     def _resolve_question(self, state: ConversationState, question: str) -> tuple[str, Any]:
         clean = question.strip()
+        if self._is_context_reset(clean):
+            self._clear_analysis_context(state)
+            return "LOCAL", self._reset_result(clean)
+        if self._is_entity_switch(clean):
+            self._clear_analysis_context(state)
         if self._is_due_diligence_request(clean):
             return "LOCAL", self._due_diligence_result(clean, state)
         if state.turns and self._is_due_diligence_follow_up(clean, state.turns[-1].result):
@@ -127,7 +142,11 @@ class ConversationService:
                 return "LOCAL", self._finance_follow_up(clean, state)
             return "LOCAL", self._clarification_result(clean, "融资假设已清除。请重新提供债务比例、利率、期限和逐年 CFADS，再进行测算。")
         if state.turns and _SOURCE_FOLLOW_UP.search(clean):
-            return "LOCAL", self._provenance_result(clean, state.turns[-1])
+            return "LOCAL", self._provenance_for_question(clean, state)
+        if self._is_comparison_follow_up(clean):
+            if state.turns:
+                return "LOCAL", self._comparison_result(clean, state)
+            return "LOCAL", self._clarification_result(clean, "当前没有可复用的历史结果。请先查询两个可比较的期间或对象。")
         lowered = clean.casefold()
         if "利用率" in clean and not any(term in lowered for _, terms, _ in _METRICS for term in terms):
             return "LOCAL", self._clarification_result(clean, "“利用率”可能指机柜上架率、GPU 利用率或算力资源利用率。请明确要查询的指标。")
@@ -147,7 +166,7 @@ class ConversationService:
         return "AGENT", clean
 
     def _update_state(self, state: ConversationState, question: str, effective_question: str, result: dict[str, Any]) -> None:
-        if result.get("route") not in {"CLARIFICATION", "PROVENANCE"}:
+        if result.get("route") not in {"CLARIFICATION", "PROVENANCE", "CONTEXT_RESET"}:
             router = result.get("router") or {}
             verified = list(router.get("entity_resolution") or [])
             # Resolver output is the only entity source permitted to overwrite state.
@@ -171,6 +190,37 @@ class ConversationService:
             state.turns.append(TurnRecord(question, effective_question, result, datetime.now(UTC).isoformat()))
 
     @staticmethod
+    def _clear_analysis_context(state: ConversationState) -> None:
+        state.active_entities = []
+        state.active_year = None
+        state.active_metrics = []
+        state.active_task = None
+        state.assumptions = []
+        state.finance_context_valid = False
+
+    @staticmethod
+    def _is_context_reset(question: str) -> bool:
+        return any(term in question.casefold() for term in ("重新开始", "清空上下文", "重置上下文"))
+
+    @staticmethod
+    def _is_entity_switch(question: str) -> bool:
+        return any(term in question.casefold() for term in ("不看百旺信", "换个项目", "换一个项目", "换成另一个"))
+
+    @staticmethod
+    def _reset_result(question: str) -> dict[str, Any]:
+        return {
+            "question": question, "route": "CONTEXT_RESET",
+            "router": {"route": "CONTEXT_RESET", "reason": "用户主动清除项目、时间、指标、融资假设和可复用结果。"},
+            "sql_result": None, "rag_result": None, "interpretation": None, "sources": [],
+            "synthesis": {"claims": [], "dropped_claims": []},
+            "final_answer": "已清除当前分析上下文。后续问题将作为新的分析起点，不会继承此前项目、年份、指标或融资假设。",
+        }
+
+    @staticmethod
+    def _is_comparison_follow_up(question: str) -> bool:
+        return any(term in question.casefold() for term in ("两年差多少", "两年相比", "和刚才相比", "差多少", "变化多少"))
+
+    @staticmethod
     def _has_entity(question: str) -> bool:
         return any(term in question for term in ("百旺信", "数据中心", "智算中心", "B200", "H800", "项目"))
 
@@ -188,6 +238,64 @@ class ConversationService:
     @staticmethod
     def _metric_label(key: str) -> str:
         return next((label for metric, _, label in _METRICS if metric == key), key)
+
+    def _comparison_result(self, question: str, state: ConversationState) -> dict[str, Any]:
+        metric = state.active_metrics[-1] if state.active_metrics else None
+        if metric is None:
+            return self._clarification_result(question, "请明确要比较的指标，例如“比较两年上架率差多少”。")
+        candidates = [turn for turn in reversed(state.turns) if self._extract_metric_value(turn.result, metric) is not None]
+        if len(candidates) < 2:
+            return self._clarification_result(question, "尚未找到同一指标的两次可核验结果，无法计算变化。")
+        current, baseline = candidates[0], candidates[1]
+        current_turn_year, baseline_turn_year = self._turn_year(current), self._turn_year(baseline)
+        if current_turn_year is not None and baseline_turn_year is not None and current_turn_year < baseline_turn_year:
+            current, baseline = baseline, current
+        current_value, current_source = self._extract_metric_value(current.result, metric)  # type: ignore[misc]
+        baseline_value, baseline_source = self._extract_metric_value(baseline.result, metric)  # type: ignore[misc]
+        delta = current_value - baseline_value
+        current_year = self._turn_year(current)
+        baseline_year = self._turn_year(baseline)
+        label = self._metric_label(metric)
+        if metric == "rack_occupancy_rate":
+            delta_text = f"{delta * Decimal('100'):+.2f} 个百分点"
+        else:
+            delta_text = f"{delta:+.4f}"
+        answer = f"{baseline_year or '前一轮'}至{current_year or '当前'}的{label}变化为 {delta_text}（{baseline_year or '前一轮'}：{baseline_value}；{current_year or '当前'}：{current_value}）。该比较仅基于两轮已执行 SQL 的原始数值。"
+        return {
+            "question": question, "route": "COMPARISON_REUSE",
+            "router": {"route": "COMPARISON_REUSE", "reason": "复用同一确认实体、同一指标的两轮已核验 SQL 结果，由程序计算差异。"},
+            "sql_result": None, "rag_result": None, "interpretation": None,
+            "sources": list(current.result.get("sources") or []),
+            "synthesis": {"claims": [{"claim_type": "DERIVED_COMPARISON", "text": answer, "support_ids": [current_source, baseline_source]}], "dropped_claims": []},
+            "final_answer": answer,
+        }
+
+    @staticmethod
+    def _turn_year(turn: TurnRecord) -> int | None:
+        matched = _YEAR.search(turn.effective_question)
+        return int(matched.group(1)) if matched else None
+
+    @staticmethod
+    def _extract_metric_value(result: dict[str, Any], metric: str) -> tuple[Decimal, str] | None:
+        query = (result.get("sql_result") or {}).get("query_result") or {}
+        columns = [str(item) for item in query.get("columns") or []]
+        preferred = {
+            "rack_occupancy_rate": ("rack_utilization_ratio", "metric_value"),
+            "rack_price": ("average_rack_price_yuan_month", "metric_value"),
+            "pue": ("metric_value",),
+        }.get(metric, ())
+        for row in query.get("rows") or []:
+            mapped = dict(zip(columns, row))
+            if metric == "pue" and str(mapped.get("metric_code") or "PUE").upper() != "PUE":
+                continue
+            for name in preferred:
+                if mapped.get(name) is None:
+                    continue
+                try:
+                    return Decimal(str(mapped[name])), f"SQL:{name}"
+                except Exception:
+                    continue
+        return None
 
     @staticmethod
     def _is_finance_modification(question: str) -> bool:
@@ -361,6 +469,26 @@ class ConversationService:
             "sql_result": None, "rag_result": None, "interpretation": None, "sources": [],
             "synthesis": {"claims": [], "dropped_claims": []}, "final_answer": message,
         }
+
+    def _provenance_for_question(self, question: str, state: ConversationState) -> dict[str, Any]:
+        target = re.search(r"(?<!\d)(\d+(?:\.\d+)?)(?!\d)", question)
+        previous = state.turns[-1]
+        if target:
+            target_text = target.group(1)
+            for turn in reversed(state.turns):
+                serialized = json.dumps(turn.result.get("sql_result") or {}, ensure_ascii=False, default=str)
+                if target_text in serialized:
+                    previous = turn
+                    break
+        result = self._provenance_result(question, previous)
+        if target:
+            result["final_answer"] = (
+                f"数值 {target.group(1)} 可在“{previous.question}”这轮的已执行结果中追溯。"
+                + result["final_answer"].replace("该结论", "该数值", 1)
+            )
+            result["synthesis"]["claims"][0]["text"] = result["final_answer"]
+            result["synthesis"]["claims"][0]["support_ids"] = ["TURN:matched_numeric_value"]
+        return result
 
     @staticmethod
     def _provenance_result(question: str, previous: TurnRecord) -> dict[str, Any]:

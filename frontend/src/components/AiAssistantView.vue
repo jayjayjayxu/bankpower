@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { askAi, clearFinanceAssumptions } from '../services/aiApi'
+import { askAi, clearFinanceAssumptions, resetConversationContext } from '../services/aiApi'
 
 defineEmits(['back', 'open-project-analysis'])
 
@@ -46,6 +46,17 @@ async function clearAssumptions() {
     conversation.value = result.conversation
   } catch (error) {
     requestError.value = error instanceof Error ? error.message : '无法清除融资假设。'
+  }
+}
+
+async function resetContext() {
+  if (!sessionId.value || loading.value) return
+  requestError.value = ''
+  try {
+    const result = await resetConversationContext(sessionId.value)
+    conversation.value = result.conversation
+  } catch (error) {
+    requestError.value = error instanceof Error ? error.message : '无法重置当前上下文。'
   }
 }
 
@@ -120,6 +131,7 @@ async function submit() {
         <div v-if="contextItems.length" class="ai-context" aria-label="当前分析上下文">
           <span>当前上下文</span><b v-for="item in contextItems" :key="item.key">{{ item.label }}</b>
           <button v-if="conversation?.assumptions?.length" type="button" @click="clearAssumptions">清除融资假设 ×</button>
+          <button type="button" @click="resetContext">重置上下文 ×</button>
           <small>仅继承已确认实体、明确时间与指标</small>
         </div>
         <div v-if="!messages.length" class="ai-welcome">

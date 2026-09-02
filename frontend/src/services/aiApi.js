@@ -36,3 +36,13 @@ export async function clearFinanceAssumptions(sessionId) {
   if (!response.ok) throw new Error(body.detail || `清除融资假设失败（${response.status}）`)
   return body
 }
+
+export async function resetConversationContext(sessionId) {
+  const response = await fetch(`${AI_API_BASE}/chat/${encodeURIComponent(sessionId)}`, {
+    method: 'DELETE',
+    headers: { Accept: 'application/json' },
+  })
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(body.detail || `重置上下文失败（${response.status}）`)
+  return body
+}
