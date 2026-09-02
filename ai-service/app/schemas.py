@@ -53,6 +53,8 @@ class ChatResponse(BaseModel):
     claims: list[dict[str, Any]]
     warnings: list[str]
     timing: dict[str, int]
+    session_id: str | None = None
+    conversation: dict[str, Any] | None = None
 
 
 class HealthResponse(BaseModel):

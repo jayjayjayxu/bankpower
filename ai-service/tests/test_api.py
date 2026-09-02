@@ -152,6 +152,20 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(audit["agent_result"]["router"], {"route": "BOTH"})
         self.assertIn("public_response", audit)
 
+    def test_chat_creates_a_session_and_followup_uses_same_session(self) -> None:
+        agent = FakeAgent("SQL")
+        client = self.make_client(agent)
+        first = client.post("/api/chat", json={"question": "百旺信2025年上架率是多少？"})
+        self.assertEqual(first.status_code, 200)
+        session_id = first.json()["session_id"]
+        self.assertTrue(session_id)
+        self.assertEqual(first.json()["conversation"]["turn_count"], 1)
+
+        second = client.post(f"/api/chat/{session_id}", json={"question": "那2024年呢？"})
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(second.json()["session_id"], session_id)
+        self.assertEqual(second.json()["conversation"]["turn_count"], 2)
+
     def test_rag_sql_and_out_of_scope_paths_keep_their_own_evidence(self) -> None:
         expectations = {
             "RAG": (None, 1),

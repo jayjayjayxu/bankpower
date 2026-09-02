@@ -1,0 +1,179 @@
+"""Program-owned multi-turn context resolution for EnergyComputeAI V6-A.
+
+Only verified entity resolutions, explicit user assumptions and completed public
+tool results enter state.  Candidate mappings, model guesses and failed calls
+are intentionally never promoted into the next turn.
+"""
+from __future__ import annotations
+
+import re
+import threading
+import uuid
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from typing import Any, Callable
+
+
+_YEAR = re.compile(r"(?<!\d)(20\d{2})(?:年)?")
+_FOLLOW_UP = re.compile(r"^(?:那|那么|再|也)?(?:[，,。？！!？\s]*)?(?:20\d{2}年?(?:呢|怎么样|多少)?)$")
+_SOURCE_FOLLOW_UP = re.compile(r"(?:这个|该|这)?(?:数字|数据|数值|结论)?.{0,6}(?:哪来的|哪里来的|来源|依据)(?:是什么|呢)?[？?]?$", re.I)
+_METRICS = (
+    ("rack_occupancy_rate", ("上架率", "入住率", "机柜利用率"), "上架率"),
+    ("rack_price", ("平均机柜价格", "机柜价格", "托管价格"), "平均机柜价格"),
+    ("pue", ("pue", "电能利用效率"), "PUE"),
+)
+
+
+@dataclass
+class TurnRecord:
+    question: str
+    effective_question: str
+    result: dict[str, Any]
+    created_at: str
+
+
+@dataclass
+class ConversationState:
+    session_id: str
+    active_entities: list[dict[str, str]] = field(default_factory=list)
+    active_year: int | None = None
+    active_metrics: list[str] = field(default_factory=list)
+    active_task: str | None = None
+    assumptions: list[dict[str, Any]] = field(default_factory=list)
+    turns: list[TurnRecord] = field(default_factory=list)
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    data_version: str = "spdb_power_finance:runtime"
+    policy_index_version: str = "public_effective:runtime"
+
+    def public_dict(self) -> dict[str, Any]:
+        return {
+            "session_id": self.session_id,
+            "active_entities": list(self.active_entities),
+            "active_time_range": {"year": self.active_year} if self.active_year else None,
+            "active_metrics": list(self.active_metrics),
+            "active_task": self.active_task,
+            "assumptions": list(self.assumptions),
+            "turn_count": len(self.turns),
+            "data_version": self.data_version,
+            "policy_index_version": self.policy_index_version,
+            "valid_for_followup": bool(self.turns),
+        }
+
+
+class ConversationService:
+    """In-memory session coordinator; persistence is deliberately a later V6 cut.
+
+    The service keeps no hidden chain-of-thought. It stores user questions,
+    final structured tool results and explicit context only.
+    """
+
+    def __init__(self, run_agent: Callable[[str], dict[str, Any]]) -> None:
+        self._run_agent = run_agent
+        self._sessions: dict[str, ConversationState] = {}
+        self._lock = threading.RLock()
+
+    def run(self, question: str, session_id: str | None = None) -> tuple[ConversationState, dict[str, Any], str]:
+        with self._lock:
+            state = self._new_state() if session_id is None else self._sessions.get(session_id)
+            if state is None:
+                raise KeyError("会话不存在或已失效，请重新开始提问。")
+            if session_id is None:
+                self._sessions[state.session_id] = state
+            effective = self._resolve_question(state, question)
+            if effective[0] == "LOCAL":
+                result = effective[1]
+                effective_question = question.strip()
+            else:
+                effective_question = effective[1]
+                result = self._run_agent(effective_question)
+            self._update_state(state, question, effective_question, result)
+            return state, result, effective_question
+
+    @staticmethod
+    def _new_state() -> ConversationState:
+        return ConversationState(session_id=str(uuid.uuid4()))
+
+    def _resolve_question(self, state: ConversationState, question: str) -> tuple[str, Any]:
+        clean = question.strip()
+        if state.turns and _SOURCE_FOLLOW_UP.search(clean):
+            return "LOCAL", self._provenance_result(clean, state.turns[-1])
+        lowered = clean.casefold()
+        if "利用率" in clean and not any(term in lowered for _, terms, _ in _METRICS for term in terms):
+            return "LOCAL", self._clarification_result(clean, "“利用率”可能指机柜上架率、GPU 利用率或算力资源利用率。请明确要查询的指标。")
+        year_match = _YEAR.search(clean)
+        metric = self._metric_for(clean)
+        short_year_follow_up = bool(year_match and (_FOLLOW_UP.match(clean) or len(clean) <= 12))
+        metric_follow_up = metric is not None and len(clean) <= 14 and not self._has_entity(clean)
+        if (short_year_follow_up or metric_follow_up) and state.active_entities:
+            name = "、".join(item["name"] for item in state.active_entities)
+            inherited_metric = metric or (state.active_metrics[-1] if state.active_metrics else None)
+            if inherited_metric is None:
+                return "LOCAL", self._clarification_result(clean, "请明确希望延续上一轮的哪项指标。")
+            inherited_year = int(year_match.group(1)) if year_match else state.active_year
+            label = self._metric_label(inherited_metric)
+            year_text = f"{inherited_year}年" if inherited_year else ""
+            return "AGENT", f"{name}{year_text}{label}是多少？请仅查询数据库。"
+        return "AGENT", clean
+
+    def _update_state(self, state: ConversationState, question: str, effective_question: str, result: dict[str, Any]) -> None:
+        if result.get("route") not in {"CLARIFICATION", "PROVENANCE"}:
+            router = result.get("router") or {}
+            verified = list(router.get("entity_resolution") or [])
+            # Resolver output is the only entity source permitted to overwrite state.
+            if verified:
+                state.active_entities = [
+                    {"type": str(item.get("entity_type")), "id": str(item.get("entity_id")), "name": str(item.get("canonical_name"))}
+                    for item in verified
+                    if item.get("entity_type") and item.get("entity_id") and item.get("canonical_name")
+                ]
+            year = _YEAR.search(effective_question)
+            if year:
+                state.active_year = int(year.group(1))
+            metrics = self._metrics_for(effective_question)
+            if metrics:
+                state.active_metrics = metrics
+            state.active_task = str(result.get("route") or state.active_task or "UNKNOWN")
+            state.turns.append(TurnRecord(question, effective_question, result, datetime.now(UTC).isoformat()))
+
+    @staticmethod
+    def _has_entity(question: str) -> bool:
+        return any(term in question for term in ("百旺信", "数据中心", "智算中心", "B200", "H800", "项目"))
+
+    @staticmethod
+    def _metric_for(question: str) -> str | None:
+        lowered = question.casefold()
+        for key, terms, _ in _METRICS:
+            if any(term in lowered for term in terms):
+                return key
+        return None
+
+    def _metrics_for(self, question: str) -> list[str]:
+        return [key for key, terms, _ in _METRICS if any(term in question.casefold() for term in terms)]
+
+    @staticmethod
+    def _metric_label(key: str) -> str:
+        return next((label for metric, _, label in _METRICS if metric == key), key)
+
+    @staticmethod
+    def _clarification_result(question: str, message: str) -> dict[str, Any]:
+        return {
+            "question": question, "route": "CLARIFICATION", "router": {"route": "CLARIFICATION", "reason": "关键指标存在多种会显著改变结果的解释。"},
+            "sql_result": None, "rag_result": None, "interpretation": None, "sources": [],
+            "synthesis": {"claims": [], "dropped_claims": []}, "final_answer": message,
+        }
+
+    @staticmethod
+    def _provenance_result(question: str, previous: TurnRecord) -> dict[str, Any]:
+        source_result = previous.result
+        sql = source_result.get("sql_result")
+        sources = list(source_result.get("sources") or [])
+        references = list((source_result.get("rag_result") or {}).get("references") or [])
+        source_kind = "受控只读 SQL 查询结果" if sql and sql.get("query_result") else "已检索的政策原文"
+        answer = f"该结论来自上一轮的{source_kind}。原问题为“{previous.question}”。下方保留同一批来源和结构化结果，未重新执行查询。"
+        return {
+            "question": question, "route": "PROVENANCE", "router": {"route": "PROVENANCE", "reason": "复用上一轮已完成结果的可追溯证据。"},
+            "sql_result": sql, "rag_result": {"references": references} if references else None,
+            "interpretation": source_result.get("interpretation"), "sources": sources,
+            "synthesis": {"claims": [{"claim_type": "CONVERSATIONAL_PROVENANCE", "text": answer, "support_ids": ["TURN:-1"]}], "dropped_claims": []},
+            "final_answer": answer,
+        }

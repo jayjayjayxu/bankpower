@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .audit import AuditLogger, AuditWriteError
 from .config import Settings
 from .core import AgentFactory, AgentProvider, CoreUnavailableError, health_details
+from .conversation import ConversationService
 from .due_diligence.orchestrator import DueDiligenceOrchestrator
 from .schemas import ChatRequest, ChatResponse, DebugSQLResponse, HealthResponse, SQLData, Source
 
@@ -93,13 +94,14 @@ def _public_warnings(result: dict[str, Any]) -> list[str]:
 
 
 def _public_response(
-    request_id: str, result: dict[str, Any], elapsed_ms: int, debug_available: bool = False
+    request_id: str, result: dict[str, Any], elapsed_ms: int, debug_available: bool = False,
+    display_question: str | None = None,
 ) -> ChatResponse:
     synthesis = result.get("synthesis") or {}
     interpretation = result.get("interpretation") or None
     return ChatResponse(
         request_id=request_id,
-        question=str(result["question"]),
+        question=display_question or str(result["question"]),
         route=str(result["route"]),
         answer=str(result["final_answer"]),
         data={
@@ -136,6 +138,7 @@ def create_app(
     settings = settings or Settings.from_environment()
     provider = AgentProvider(settings, agent_factory) if agent_factory else AgentProvider(settings)
     audit_logger = audit_logger or AuditLogger(settings.audit_dir)
+    conversation = ConversationService(provider.run)
 
     app = FastAPI(title="EnergyComputeAI", version="4.0-C")
     app.add_middleware(
@@ -146,6 +149,7 @@ def create_app(
         allow_headers=["Content-Type", "X-Request-ID", "X-Admin-Token"],
     )
     app.state.run_gate = asyncio.Semaphore(settings.max_concurrency)
+    app.state.conversation = conversation
 
     @app.get("/api/health", response_model=HealthResponse)
     async def health() -> HealthResponse:
@@ -166,19 +170,35 @@ def create_app(
 
     @app.post("/api/chat", response_model=ChatResponse)
     async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
+        return await _chat_with_conversation(payload, request, None)
+
+    @app.post("/api/chat/{session_id}", response_model=ChatResponse)
+    async def chat_follow_up(session_id: str, payload: ChatRequest, request: Request) -> ChatResponse:
+        return await _chat_with_conversation(payload, request, session_id)
+
+    async def _chat_with_conversation(
+        payload: ChatRequest, request: Request, session_id: str | None
+    ) -> ChatResponse:
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
         started = time.perf_counter()
         audit_base: dict[str, Any] = {
             "request_id": request_id,
             "received_at": datetime.now(UTC).isoformat(),
             "question": payload.question,
-            "api_version": "4.0-C",
+            "api_version": "6.0-A",
+            "session_id": session_id,
         }
         try:
             async with app.state.run_gate:
-                result = await asyncio.to_thread(provider.run, payload.question)
+                state, result, effective_question = await asyncio.to_thread(
+                    conversation.run, payload.question, session_id
+                )
             elapsed_ms = round((time.perf_counter() - started) * 1_000)
-            response = _public_response(request_id, result, elapsed_ms, settings.sql_debug_enabled)
+            response = _public_response(
+                request_id, result, elapsed_ms, settings.sql_debug_enabled, payload.question
+            )
+            response.session_id = state.session_id
+            response.conversation = state.public_dict()
             audit_logger.write(
                 request_id,
                 {
@@ -186,6 +206,9 @@ def create_app(
                     "status": "succeeded",
                     "timing": response.timing,
                     "route": response.route,
+                    "session_id": state.session_id,
+                    "effective_question": effective_question,
+                    "conversation": state.public_dict(),
                     "public_response": response.model_dump(mode="json"),
                     "agent_result": result,
                 },
@@ -193,6 +216,8 @@ def create_app(
             return response
         except CoreUnavailableError as exc:
             status_code, code, message = 503, "core_unavailable", str(exc)
+        except KeyError as exc:
+            status_code, code, message = 404, "conversation_not_found", str(exc)
         except AuditWriteError as exc:
             status_code, code, message = 500, "audit_write_failed", str(exc)
         except Exception as exc:  # The full exception class stays in the audit record.

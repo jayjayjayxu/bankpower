@@ -8,6 +8,8 @@ const question = ref('')
 const messages = ref([])
 const loading = ref(false)
 const requestError = ref('')
+const sessionId = ref(null)
+const conversation = ref(null)
 const examples = [
   '深圳百旺信智算中心2025年的上架率和平均机柜价格是多少？',
   '哪些算力中心PUE低于1.3？',
@@ -15,6 +17,18 @@ const examples = [
 ]
 
 const canSubmit = computed(() => Boolean(question.value.trim()) && !loading.value)
+const contextItems = computed(() => {
+  const state = conversation.value
+  if (!state) return []
+  const entities = (state.active_entities || []).map((item) => ({ key: `entity-${item.id}`, label: `项目：${item.name}` }))
+  const year = state.active_time_range?.year ? [{ key: 'year', label: `年份：${state.active_time_range.year}` }] : []
+  const metrics = (state.active_metrics || []).map((item) => ({ key: `metric-${item}`, label: `指标：${metricLabel(item)}` }))
+  return [...entities, ...year, ...metrics]
+})
+
+function metricLabel(metric) {
+  return { rack_occupancy_rate: '上架率', rack_price: '平均机柜价格', pue: 'PUE' }[metric] || metric
+}
 
 function sourcePages(source) {
   if (source.locator) return source.locator
@@ -48,7 +62,10 @@ async function submit() {
   question.value = ''
   loading.value = true
   try {
-    messages.value.push({ type: 'answer', result: await askAi(value) })
+    const result = await askAi(value, sessionId.value)
+    sessionId.value = result.session_id || sessionId.value
+    conversation.value = result.conversation || conversation.value
+    messages.value.push({ type: 'answer', result })
   } catch (error) {
     requestError.value = error instanceof Error ? error.message : 'AI 服务暂时不可用。'
   } finally {
@@ -67,6 +84,10 @@ async function submit() {
 
     <main class="ai-shell">
       <section class="ai-conversation" aria-live="polite">
+        <div v-if="contextItems.length" class="ai-context" aria-label="当前分析上下文">
+          <span>当前上下文</span><b v-for="item in contextItems" :key="item.key">{{ item.label }}</b>
+          <small>仅继承已确认实体、明确时间与指标</small>
+        </div>
         <div v-if="!messages.length" class="ai-welcome">
           <p>面向电力、算力与现行公开政策的可审计问答</p>
           <h1>先取证，再作答。</h1>

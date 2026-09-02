@@ -1,7 +1,8 @@
 const AI_API_BASE = import.meta.env.VITE_AI_API_BASE_URL || '/ai-api'
 
-export async function askAi(question) {
-  const response = await fetch(`${AI_API_BASE}/chat`, {
+export async function askAi(question, sessionId = null) {
+  const endpoint = sessionId ? `${AI_API_BASE}/chat/${encodeURIComponent(sessionId)}` : `${AI_API_BASE}/chat`
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({ question }),
