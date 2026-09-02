@@ -1,0 +1,52 @@
+[
+  {
+    "case_id": "UNIT-MANUAL-001",
+    "purpose": "等额本金与 DSCR 的手工复核基准",
+    "project_id": "UNIT-MANUAL-001",
+    "inputs": {
+      "capex_cny": "100",
+      "debt_ratio": "0.5",
+      "interest_rate": "0.10",
+      "loan_term_years": "2",
+      "annual_cfads_cny": ["40", "40"],
+      "required_min_dscr": "1.2"
+    },
+    "expected": {
+      "loan_amount": "50.0",
+      "min_dscr": "1.333333333333333333333333333333333333333",
+      "max_debt_ratio": "0.55555555"
+    }
+  },
+  {
+    "case_id": "BAIWANGXIN-PHASE3-ASSUMPTION-001",
+    "purpose": "百旺信云数据中心三期：已披露 CAPEX 与明示现金流假设的追溯性验证，不构成授信意见",
+    "project_id": "SZCF016-PHASE-III",
+    "input_provenance": {
+      "capex": {
+        "source_type": "FACT",
+        "source_id": "SQL:compute_facility_metric_v1:SZCF016:CAPEX:PHASE_III_EXCHANGE_DISCLOSURE",
+        "evidence": "上交所披露文件：百旺信云数据中心三期项目总投资 32000 万元"
+      },
+      "annual_cfads": {
+        "source_type": "ASSUMPTION",
+        "source_id": "SCENARIO:BAIWANGXIN-PHASE3-BASE-001",
+        "notice": "项目级 CFADS 尚无经核验的事实数据；以下现金流仅用于模型试算。"
+      }
+    },
+    "inputs": {
+      "capex_cny": "320000000",
+      "debt_ratio": "0.70",
+      "interest_rate": "0.035",
+      "loan_term_years": "8",
+      "annual_cfads_cny": ["48000000", "51000000", "54000000", "55000000", "56000000", "57000000", "58000000", "60000000"],
+      "required_min_dscr": "1.2"
+    },
+    "expected": {
+      "loan_amount": "224000000.00",
+      "year_1_debt_service": "35840000.00000",
+      "min_dscr": "1.339285714285714285714285714285714285714",
+      "max_debt_ratio": "0.78125",
+      "warning_contains": "CFADS 包含用户或研究假设"
+    }
+  }
+]
