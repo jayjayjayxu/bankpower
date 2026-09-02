@@ -65,12 +65,26 @@ function routeLabel(route) {
     SQL: '电力 / 算力结构化查询',
     RAG: '现行公开政策检索',
     BOTH: '数据库 + 政策证据比对',
+    DUE_DILIGENCE: '项目初步尽调',
+    DUE_DILIGENCE_FOLLOW_UP: '尽调结果复用',
+    FINANCE_FOLLOW_UP: '融资假设重算',
+    PROVENANCE: '上一轮证据追溯',
+    CLARIFICATION: '需澄清指标',
     OUT_OF_SCOPE: '能力边界提示',
   }[route] || route
 }
 
 function useExample(value) {
   question.value = value
+}
+
+function dueScore(due) {
+  const score = Number(due?.snapshot?.data_completeness?.score)
+  return Number.isFinite(score) ? `${score.toFixed(1)}%` : '—'
+}
+
+function highRiskCount(due) {
+  return (due?.risks || []).filter((item) => item.level === 'HIGH').length
 }
 
 async function submit() {
@@ -126,6 +140,13 @@ async function submit() {
               <small>{{ message.result.timing?.total_ms ?? '—' }} ms · {{ message.result.request_id }}</small>
             </header>
             <section class="ai-answer-conclusion"><h2>结论</h2><p>{{ message.result.interpretation?.primary_conclusion || message.result.answer }}</p></section>
+
+            <section v-if="message.result.data?.due_diligence" class="ai-evidence-block ai-dd-summary">
+              <h2>项目初步尽调</h2>
+              <div><span>资料完整度 <b>{{ dueScore(message.result.data.due_diligence) }}</b></span><span>高优先级风险 <b>{{ highRiskCount(message.result.data.due_diligence) }}</b></span><span>待补材料 <b>{{ message.result.data.due_diligence.evidence_gaps?.length || 0 }}</b></span></div>
+              <p>结果编号：{{ message.result.data.due_diligence.result_id }} · 可基于本结果继续询问“最大风险是什么？”或“还缺哪些资料？”。</p>
+              <button type="button" @click="$emit('open-project-analysis')">打开完整尽调看板 →</button>
+            </section>
 
             <section v-if="message.result.structured_data?.facts?.length" class="ai-evidence-block">
               <h2>关键数据</h2>

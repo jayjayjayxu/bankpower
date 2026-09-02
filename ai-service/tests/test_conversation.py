@@ -123,6 +123,41 @@ class ConversationTests(unittest.TestCase):
         self.assertIn("已清除", cleared["final_answer"])
         self.assertEqual(len(calls), 1)
 
+    def test_due_diligence_followup_reuses_completed_snapshot_without_rerun(self) -> None:
+        runs: list[str] = []
+
+        def due_runner(project_id: str) -> dict:
+            runs.append(project_id)
+            return {
+                "project_id": project_id,
+                "snapshot": {"data_completeness": {"score": "30", "status_counts": {}}},
+                "risks": [
+                    {"level": "MEDIUM", "trigger": "资料口径冲突"},
+                    {"level": "HIGH", "trigger": "缺少项目单独 CFADS"},
+                ],
+                "evidence_gaps": [{"required_evidence": "项目单独账套和现金流量表。"}],
+                "claims": [], "warning": "初步尽调辅助。",
+            }
+
+        def resolver(question: str):
+            return question, [{"entity_type": "FACILITY", "entity_id": "SZCF016", "canonical_name": "深圳百旺信智算中心"}]
+
+        service = ConversationService(lambda question: self.fail("不应调用通用 Agent"), due_runner, resolver)
+        state, first, _ = service.run("对百旺信做初步尽调")
+        self.assertEqual(first["route"], "DUE_DILIGENCE")
+        self.assertEqual(runs, ["SZCF016"])
+        self.assertTrue(first["due_diligence_result"]["valid_for_followup"])
+
+        _, second, _ = service.run("最大风险是什么？", state.session_id)
+        self.assertEqual(second["route"], "DUE_DILIGENCE_FOLLOW_UP")
+        self.assertIn("缺少项目单独 CFADS", second["final_answer"])
+        self.assertEqual(runs, ["SZCF016"])
+
+        _, third, _ = service.run("还缺哪些资料？", state.session_id)
+        self.assertEqual(third["route"], "DUE_DILIGENCE_FOLLOW_UP")
+        self.assertIn("项目单独账套", third["final_answer"])
+        self.assertEqual(runs, ["SZCF016"])
+
 
 if __name__ == "__main__":
     unittest.main()

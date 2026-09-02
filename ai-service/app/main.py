@@ -16,6 +16,7 @@ from .config import Settings
 from .core import AgentFactory, AgentProvider, CoreUnavailableError, health_details
 from .conversation import ConversationService
 from .due_diligence.orchestrator import DueDiligenceOrchestrator
+from .energy_compute import EntityResolver
 from .schemas import ChatRequest, ChatResponse, DebugSQLResponse, HealthResponse, SQLData, Source
 
 
@@ -90,6 +91,7 @@ def _public_warnings(result: dict[str, Any]) -> list[str]:
     warnings.extend(str(item) for item in (result.get("eligibility_result") or {}).get("warnings") or [])
     if result.get("finance_boundary"):
         warnings.append(str(result["finance_boundary"]))
+    warnings.extend(str(item) for item in (result.get("warnings") or []))
     return warnings
 
 
@@ -110,6 +112,7 @@ def _public_response(
             "finance": result.get("finance_result"),
             "max_debt": result.get("max_debt_result"),
             "eligibility": result.get("eligibility_result"),
+            "due_diligence": result.get("due_diligence_result"),
         },
         interpretation=interpretation,
         structured_data={
@@ -138,7 +141,12 @@ def create_app(
     settings = settings or Settings.from_environment()
     provider = AgentProvider(settings, agent_factory) if agent_factory else AgentProvider(settings)
     audit_logger = audit_logger or AuditLogger(settings.audit_dir)
-    conversation = ConversationService(provider.run)
+    entity_resolver = EntityResolver()
+    conversation = ConversationService(
+        provider.run,
+        run_due_diligence=lambda project_id: DueDiligenceOrchestrator(settings).run(project_id),
+        resolve_entities=entity_resolver.resolve,
+    )
 
     app = FastAPI(title="EnergyComputeAI", version="4.0-C")
     app.add_middleware(

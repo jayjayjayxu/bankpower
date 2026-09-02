@@ -72,8 +72,15 @@ class ConversationService:
     final structured tool results and explicit context only.
     """
 
-    def __init__(self, run_agent: Callable[[str], dict[str, Any]]) -> None:
+    def __init__(
+        self,
+        run_agent: Callable[[str], dict[str, Any]],
+        run_due_diligence: Callable[[str], dict[str, Any]] | None = None,
+        resolve_entities: Callable[[str], tuple[str, list[dict[str, str]]]] | None = None,
+    ) -> None:
         self._run_agent = run_agent
+        self._run_due_diligence = run_due_diligence
+        self._resolve_entities = resolve_entities
         self._sessions: dict[str, ConversationState] = {}
         self._lock = threading.RLock()
 
@@ -111,6 +118,10 @@ class ConversationService:
 
     def _resolve_question(self, state: ConversationState, question: str) -> tuple[str, Any]:
         clean = question.strip()
+        if self._is_due_diligence_request(clean):
+            return "LOCAL", self._due_diligence_result(clean, state)
+        if state.turns and self._is_due_diligence_follow_up(clean, state.turns[-1].result):
+            return "LOCAL", self._due_diligence_follow_up(clean, state.turns[-1].result)
         if state.turns and self._is_finance_modification(clean):
             if state.finance_context_valid:
                 return "LOCAL", self._finance_follow_up(clean, state)
@@ -183,6 +194,84 @@ class ConversationService:
         lowered = question.casefold()
         has_change = any(term in lowered for term in ("改成", "改为", "换成", "调整为"))
         return has_change and ("利率" in lowered or "%" in lowered or "年期" in lowered or "期限" in lowered)
+
+    @staticmethod
+    def _is_due_diligence_request(question: str) -> bool:
+        lowered = question.casefold()
+        return ("初步尽调" in lowered or "做尽调" in lowered or "项目尽调" in lowered) and not any(
+            term in lowered for term in ("最大风险", "主要风险", "缺什么资料", "补什么资料")
+        )
+
+    @staticmethod
+    def _is_due_diligence_follow_up(question: str, previous: dict[str, Any]) -> bool:
+        if not previous.get("due_diligence_result"):
+            return False
+        lowered = question.casefold()
+        return any(term in lowered for term in ("最大风险", "主要风险", "风险是什么", "缺什么资料", "缺哪些资料", "补什么资料", "待补材料"))
+
+    def _due_diligence_result(self, question: str, state: ConversationState) -> dict[str, Any]:
+        if self._run_due_diligence is None or self._resolve_entities is None:
+            return self._clarification_result(question, "当前服务未启用项目初步尽调工具。")
+        _, entities = self._resolve_entities(question)
+        if len(entities) != 1 or entities[0].get("entity_type") != "FACILITY":
+            return self._clarification_result(question, "请明确一个已确认的数据中心项目后再执行初步尽调。")
+        due = self._run_due_diligence(str(entities[0]["entity_id"]))
+        generated_at = datetime.now(UTC).isoformat()
+        due = {
+            **due,
+            "result_id": f"DD-{uuid.uuid4().hex[:12].upper()}",
+            "created_at": generated_at,
+            "data_version": state.data_version,
+            "policy_index_version": state.policy_index_version,
+            "valid_for_followup": True,
+        }
+        risks = list(due.get("risks") or [])
+        high = sum(1 for item in risks if item.get("level") == "HIGH")
+        gaps = list(due.get("evidence_gaps") or [])
+        answer = (
+            f"已为{entities[0]['canonical_name']}生成初步尽调快照：资料完整度为 "
+            f"{(due.get('snapshot') or {}).get('data_completeness', {}).get('score', '—')}%；"
+            f"确定性风险 {len(risks)} 项（其中高优先级 {high} 项），待补材料 {len(gaps)} 项。"
+            "该结果仅供初步尽调辅助，不构成自动授信或最终绿色贷款认定。"
+        )
+        return {
+            "question": question, "route": "DUE_DILIGENCE",
+            "router": {"route": "DUE_DILIGENCE", "reason": "已识别单一确认项目，执行 V5 受控初步尽调编排。", "entity_resolution": entities},
+            "sql_result": None, "rag_result": None, "interpretation": None,
+            "due_diligence_result": due,
+            "sources": [{"title": "V5 项目初步尽调快照", "source_filename": "受控 SQL 项目事实与政策规则", "authority_code": "DUE_DILIGENCE", "source_locator": due["result_id"], "supporting_quote": "快照仅使用受控 SQL、固定政策规则和程序化风险/缺口引擎。"}],
+            "synthesis": {"claims": list(due.get("claims") or []), "dropped_claims": []},
+            "final_answer": answer,
+            "warnings": [str(due.get("warning"))] if due.get("warning") else [],
+        }
+
+    @staticmethod
+    def _due_diligence_follow_up(question: str, previous: dict[str, Any]) -> dict[str, Any]:
+        due = previous["due_diligence_result"]
+        lowered = question.casefold()
+        if any(term in lowered for term in ("最大风险", "主要风险", "风险是什么")):
+            priority = {"HIGH": 0, "MEDIUM": 1, "LOW": 2, "UNKNOWN": 3}
+            risks = sorted(list(due.get("risks") or []), key=lambda item: priority.get(str(item.get("level")), 4))
+            selected = risks[:3]
+            if selected:
+                text = "；".join(f"{item.get('level')}：{item.get('trigger')}" for item in selected)
+                answer = f"基于结果 {due.get('result_id')}，当前优先风险为：{text}。这些是确定性规则提示，仍须结合原始材料人工复核。"
+            else:
+                answer = f"结果 {due.get('result_id')} 当前未触发风险标记。"
+            claim_type = "DUE_DILIGENCE_RISK_REUSE"
+        else:
+            gaps = list(due.get("evidence_gaps") or [])[:5]
+            text = "；".join(str(item.get("required_evidence")) for item in gaps)
+            answer = f"基于结果 {due.get('result_id')}，优先待补材料包括：{text or '当前没有待补材料'}。补齐后需重新生成尽调快照。"
+            claim_type = "DUE_DILIGENCE_GAP_REUSE"
+        return {
+            "question": question, "route": "DUE_DILIGENCE_FOLLOW_UP",
+            "router": {"route": "DUE_DILIGENCE_FOLLOW_UP", "reason": "复用同一份仍有效的项目尽调结构化结果，未重新执行工具链。"},
+            "sql_result": None, "rag_result": None, "interpretation": None, "due_diligence_result": due,
+            "sources": list(previous.get("sources") or []),
+            "synthesis": {"claims": [{"claim_type": claim_type, "text": answer, "support_ids": [str(due.get("result_id"))]}], "dropped_claims": []},
+            "final_answer": answer, "warnings": [str(due.get("warning"))] if due.get("warning") else [],
+        }
 
     @staticmethod
     def _public_assumptions(inputs: dict[str, Any]) -> list[dict[str, Any]]:
