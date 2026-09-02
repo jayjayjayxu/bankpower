@@ -90,6 +90,7 @@ class EnergyComputeAgentTests(unittest.TestCase):
         self.assertEqual(result["route"], "SQL")
         self.assertEqual(result["router"]["entity_resolution"][0]["entity_id"], "SZCF016")
         self.assertIn("SZCF016", generator.questions[0])
+        self.assertIn("enterprise_data_center_v2.facility_code", generator.questions[0])
         self.assertEqual(len(executor.queries), 1)
         self.assertEqual(result["sql_result"]["query_result"]["rows"][0][-1], "0.65420000")
         self.assertIn("compute_facility_operation_fact_v1", result["sql_result"]["safety"]["tables"])

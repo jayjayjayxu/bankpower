@@ -43,7 +43,12 @@ class EntityResolver:
         if not matches:
             return question.strip(), []
         details = "；".join(
-            f"{item['entity_type']} {item['entity_id']} = {item['canonical_name']}"
+            (
+                f"FACILITY: enterprise_data_center_v2.facility_code = '{item['entity_id']}'"
+                f"（{item['canonical_name']}）"
+                if item["entity_type"] == "FACILITY"
+                else f"{item['entity_type']} {item['entity_id']} = {item['canonical_name']}"
+            )
             for item in matches
         )
         return f"{question.strip()}\n\n系统已解析实体（必须按此标识查询）：{details}", matches
@@ -121,7 +126,7 @@ class EnergyComputeAgent:
         presentation = None
         answer = pipeline_result["answer"]
         if query_result is not None:
-            interpreted = interpret_sql_result(question, query_result)
+            interpreted = interpret_sql_result(question, query_result, entities)
             rendered = render_sql_answer(question, interpreted)
             answer, validation, fallback_used = validate_or_fallback(rendered, interpreted)
             interpretation = interpreted.public_dict()
@@ -140,7 +145,7 @@ class EnergyComputeAgent:
             for table in safety.tables
         ]
         return {
-            "agent_version": "EnergyComputeAI-V0.2-SQL",
+            "agent_version": "EnergyComputeAI-V0.3.1-SQL",
             "question": question.strip(),
             "route": "SQL",
             "router": {
@@ -202,7 +207,7 @@ class EnergyComputeAgent:
     @staticmethod
     def _out_of_scope(question: str, generated_sql: str | None = None) -> dict[str, Any]:
         result = {
-            "agent_version": "EnergyComputeAI-V0.2-SQL",
+            "agent_version": "EnergyComputeAI-V0.3.1-SQL",
             "question": question.strip(),
             "route": "OUT_OF_SCOPE",
             "router": {

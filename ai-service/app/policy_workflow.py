@@ -65,7 +65,7 @@ class EnergyPolicyBothAgent:
         comparison = self._compare_pue(sql_run, rag)
 
         return {
-            "agent_version": "EnergyComputeAI-V0.3-C",
+            "agent_version": "EnergyComputeAI-V0.3.1",
             "question": question.strip(),
             "route": "BOTH",
             "router": {

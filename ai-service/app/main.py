@@ -129,7 +129,7 @@ def create_app(
     provider = AgentProvider(settings, agent_factory) if agent_factory else AgentProvider(settings)
     audit_logger = audit_logger or AuditLogger(settings.audit_dir)
 
-    app = FastAPI(title="EnergyComputeAI", version="0.3.0")
+    app = FastAPI(title="EnergyComputeAI", version="0.3.1")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.cors_allowed_origins),
@@ -164,7 +164,7 @@ def create_app(
             "request_id": request_id,
             "received_at": datetime.now(UTC).isoformat(),
             "question": payload.question,
-            "api_version": "0.3.0",
+            "api_version": "0.3.1",
         }
         try:
             async with app.state.run_gate:

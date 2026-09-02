@@ -119,7 +119,7 @@ class ApiTests(unittest.TestCase):
             response.json(),
             {
                 "status": "ok",
-                "agent_version": "EnergyComputeAI-V0.3",
+                "agent_version": "EnergyComputeAI-V0.3.1",
                 "database": "ok",
                 "spdb_database": "ok",
                 "rag_index": "ok",

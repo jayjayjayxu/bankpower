@@ -39,6 +39,8 @@ class ResultInterpreterTests(unittest.TestCase):
         self.assertNotIn("NULL", answer)
         self.assertNotIn("candidate_facility_v2_id=", answer)
         self.assertTrue(validate_sql_answer(answer, interpreted).valid)
+        self.assertNotIn("raw_rows", interpreted.public_dict())
+        self.assertNotIn("raw_value", interpreted.public_dict()["facts"][0])
 
     def test_validator_rejects_mapping_status_upgrade_and_uses_fallback(self) -> None:
         result = QueryResult(
@@ -72,6 +74,14 @@ class ResultInterpreterTests(unittest.TestCase):
         self.assertIn("平均机柜价格为5,346 元/柜/月", interpreted.primary_conclusion)
         self.assertNotIn("metric_value=", answer)
         self.assertTrue(validate_sql_answer(answer, interpreted).valid)
+
+    def test_entity_resolution_supplies_human_subject_when_sql_does_not_select_name(self) -> None:
+        interpreted = interpret_sql_result(
+            "百旺信2025年上架率是多少？",
+            QueryResult(["fact_year", "rack_utilization_ratio"], [["2025", "0.6542"]]),
+            [{"canonical_name": "深圳百旺信智算中心"}],
+        )
+        self.assertTrue(interpreted.primary_conclusion.startswith("深圳百旺信智算中心2025年"))
 
     def test_seven_response_mode_heuristics(self) -> None:
         result = QueryResult(["official_name", "metric_value"], [["A中心", "1.21"]])

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Any
 
 from .domain_semantics import mapping_boundaries, normalized_mapping_status
@@ -29,7 +29,18 @@ class InterpretedSQLResult:
     raw_rows: list[list[str]]
 
     def public_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return {
+            "response_mode": self.response_mode,
+            "answer_status": self.answer_status,
+            "primary_conclusion": self.primary_conclusion,
+            "facts": [
+                {"key": item["key"], "label": item["label"], "value": item["value"]}
+                for item in self.facts
+            ],
+            "candidates": self.candidates,
+            "warnings": self.warnings,
+            "boundaries": self.boundaries,
+        }
 
 
 def _rows(result: QueryResult) -> list[dict[str, str]]:
@@ -119,13 +130,15 @@ def _metric_facts(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
     return facts
 
 
-def _general_interpretation(question: str, result: QueryResult, rows: list[dict[str, str]]) -> InterpretedSQLResult:
+def _general_interpretation(
+    question: str, result: QueryResult, rows: list[dict[str, str]], entity_name: str | None = None
+) -> InterpretedSQLResult:
     mode = _response_mode(question, result.columns)
     if not rows:
         return InterpretedSQLResult(mode, "NO_DATA", "没有查询到符合条件的可核验数据。", [], [], ["当前查询条件未返回记录。"], [], result.columns, result.rows)
     facts = _metric_facts(rows)
     first = rows[0]
-    facility = first.get("official_name") or first.get("facility_name") or "该查询对象"
+    facility = first.get("official_name") or first.get("facility_name") or entity_name or "该查询对象"
     year = format_field("fact_year", first.get("fact_year"))
     prefix = f"{facility}{year or ''}".strip()
     if facts:
@@ -151,7 +164,9 @@ def _general_interpretation(question: str, result: QueryResult, rows: list[dict[
     return InterpretedSQLResult(mode, "ANSWERED", conclusion, facts, [], [], [], result.columns, result.rows)
 
 
-def interpret_sql_result(question: str, result: QueryResult) -> InterpretedSQLResult:
+def interpret_sql_result(
+    question: str, result: QueryResult, entities: list[dict[str, str]] | None = None
+) -> InterpretedSQLResult:
     """Interpret executed evidence only; it never queries or infers new data."""
 
     rows = _rows(result)
@@ -161,4 +176,5 @@ def interpret_sql_result(question: str, result: QueryResult) -> InterpretedSQLRe
         or "对应哪个数据中心" in question
     ):
         return _mapping_interpretation(question, result, rows)
-    return _general_interpretation(question, result, rows)
+    entity_name = "、".join(item["canonical_name"] for item in entities or [] if item.get("canonical_name")) or None
+    return _general_interpretation(question, result, rows, entity_name)

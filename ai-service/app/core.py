@@ -129,7 +129,7 @@ class HybridAgent:
     @staticmethod
     def _credit_boundary(question: str) -> dict[str, Any]:
         return {
-            "agent_version": "EnergyComputeAI-V0.3",
+            "agent_version": "EnergyComputeAI-V0.3.1",
             "question": question.strip(), "route": "OUT_OF_SCOPE",
             "router": {"route": "OUT_OF_SCOPE", "reason": "V0.3 不作最终融资资格、授信或贷款比例决定。"},
             "decomposition": None, "tool_calls": [], "sql_result": None, "rag_result": None,

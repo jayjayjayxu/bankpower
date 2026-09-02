@@ -57,7 +57,7 @@ class ChatResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
-    agent_version: str = "EnergyComputeAI-V0.3"
+    agent_version: str = "EnergyComputeAI-V0.3.1"
     database: str
     spdb_database: str
     rag_index: str
