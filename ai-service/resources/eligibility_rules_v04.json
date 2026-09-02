@@ -1,0 +1,107 @@
+{
+  "catalog_version": "V4.0-B.1",
+  "rules": [
+    {
+      "rule_id": "DC_PUE_LARGE_001",
+      "policy_id": "POL-029",
+      "evidence_chunk_id": "POL-029-C0002",
+      "source_excerpt": "到2025年底，新建及改扩建大型和超大型数据中心电能利用效率降至1.25以内，",
+      "rule_type": "NUMERIC_THRESHOLD",
+      "target_field": "pue",
+      "operator": "<=",
+      "threshold_value": "1.25",
+      "unit": "RATIO",
+      "region": "全国",
+      "entity_type": "DATA_CENTER",
+      "mandatory": true,
+      "effective_date": "2024-07-03",
+      "expiry_date": null,
+      "description": "新建及改扩建大型和超大型数据中心 PUE 阈值",
+      "applicability": {
+        "project_stage": ["NEW", "RETROFIT"],
+        "facility_scale": ["LARGE", "MEGA"]
+      }
+    },
+    {
+      "rule_id": "DC_ENERGY_REVIEW_001",
+      "policy_id": "POL-029",
+      "evidence_chunk_id": "POL-029-C0002",
+      "source_excerpt": "严格数据中心项目节能审查，",
+      "rule_type": "BOOLEAN",
+      "target_field": "energy_review_completed",
+      "operator": "EQUALS",
+      "threshold_value": true,
+      "unit": "BOOLEAN",
+      "region": "全国",
+      "entity_type": "DATA_CENTER",
+      "mandatory": true,
+      "effective_date": "2024-07-03",
+      "expiry_date": null,
+      "description": "数据中心项目节能审查完成情况",
+      "applicability": {
+        "project_stage": ["NEW", "RETROFIT"]
+      }
+    },
+    {
+      "rule_id": "DC_SERVER_EFFICIENCY_001",
+      "policy_id": "POL-029",
+      "evidence_chunk_id": "POL-029-C0002",
+      "source_excerpt": "新建及改扩建数据中心应采用能效达到《塔式和机架式服务器能效限定值及能效等级》（GB43630-2023）和《服务器和数据存储设备能效“领跑者”评价要求》（T/CECA-G0284-2024）规定的节能水平及以上服务器产品。",
+      "rule_type": "ENUM",
+      "target_field": "server_energy_efficiency_level",
+      "operator": "IN",
+      "threshold_value": ["STANDARD_COMPLIANT", "LEADER"],
+      "unit": "ENUM",
+      "region": "全国",
+      "entity_type": "DATA_CENTER",
+      "mandatory": true,
+      "effective_date": "2024-07-03",
+      "expiry_date": null,
+      "description": "服务器产品节能水平登记结果",
+      "applicability": {
+        "project_stage": ["NEW", "RETROFIT"]
+      }
+    },
+    {
+      "rule_id": "DC_RENEWABLE_PLAN_001",
+      "policy_id": "POL-029",
+      "evidence_chunk_id": "POL-029-C0003",
+      "source_excerpt": "将新建及改扩建数据中心可再生能源利用目标和方案作为节能审查重要内容，",
+      "rule_type": "DOCUMENT_REQUIRED",
+      "target_field": "renewable_energy_plan",
+      "operator": "EQUALS",
+      "threshold_value": true,
+      "unit": "DOCUMENT",
+      "region": "全国",
+      "entity_type": "DATA_CENTER",
+      "mandatory": true,
+      "effective_date": "2024-07-03",
+      "expiry_date": null,
+      "description": "可再生能源利用目标和方案材料",
+      "applicability": {
+        "project_stage": ["NEW", "RETROFIT"]
+      }
+    },
+    {
+      "rule_id": "DC_HUB_GREEN_POWER_001",
+      "policy_id": "POL-029",
+      "evidence_chunk_id": "POL-029-C0003",
+      "source_excerpt": "到2025年底，算力电力双向协同机制初步形成，国家枢纽节点新建数据中心绿电占比超过80%。",
+      "rule_type": "NUMERIC_THRESHOLD",
+      "target_field": "green_power_ratio",
+      "operator": ">=",
+      "threshold_value": "0.80",
+      "unit": "RATIO",
+      "region": "国家枢纽节点",
+      "entity_type": "DATA_CENTER",
+      "mandatory": false,
+      "effective_date": "2024-07-03",
+      "expiry_date": null,
+      "description": "国家枢纽节点新建数据中心绿电占比目标",
+      "applicability": {
+        "project_stage": ["NEW"],
+        "is_national_hub": [true]
+      }
+    }
+  ]
+}
