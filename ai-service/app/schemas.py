@@ -19,6 +19,18 @@ class ChatRequest(BaseModel):
         return value
 
 
+class ConversationMessageRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2_000)
+
+    @field_validator("message")
+    @classmethod
+    def non_blank_message(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("消息不能为空。")
+        return value
+
+
 class SQLData(BaseModel):
     columns: list[str]
     rows: list[list[Any]]

@@ -14,10 +14,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from .audit import AuditLogger, AuditWriteError
 from .config import Settings
 from .core import AgentFactory, AgentProvider, CoreUnavailableError, health_details
-from .conversation import ConversationService
+from .conversation import ConversationService, SQLiteConversationStore
 from .due_diligence.orchestrator import DueDiligenceOrchestrator
 from .energy_compute import EntityResolver
-from .schemas import ChatRequest, ChatResponse, DebugSQLResponse, HealthResponse, SQLData, Source
+from .schemas import ChatRequest, ChatResponse, ConversationMessageRequest, DebugSQLResponse, HealthResponse, SQLData, Source
 
 
 def _public_sources(result: dict[str, Any]) -> list[Source]:
@@ -146,6 +146,7 @@ def create_app(
         provider.run,
         run_due_diligence=lambda project_id: DueDiligenceOrchestrator(settings).run(project_id),
         resolve_entities=entity_resolver.resolve,
+        store=SQLiteConversationStore(settings.audit_dir / "conversations.sqlite3"),
     )
 
     app = FastAPI(title="EnergyComputeAI", version="4.0-C")
@@ -179,6 +180,17 @@ def create_app(
     @app.post("/api/chat", response_model=ChatResponse)
     async def chat(payload: ChatRequest, request: Request) -> ChatResponse:
         return await _chat_with_conversation(payload, request, None)
+
+    @app.post("/api/conversations")
+    async def create_conversation() -> dict[str, Any]:
+        state = await asyncio.to_thread(conversation.create_session)
+        return {"session_id": state.session_id, "conversation": state.public_dict()}
+
+    @app.post("/api/conversations/{session_id}/messages", response_model=ChatResponse)
+    async def conversation_message(
+        session_id: str, payload: ConversationMessageRequest, request: Request
+    ) -> ChatResponse:
+        return await _chat_with_conversation(ChatRequest(question=payload.message), request, session_id)
 
     @app.post("/api/chat/{session_id}", response_model=ChatResponse)
     async def chat_follow_up(session_id: str, payload: ChatRequest, request: Request) -> ChatResponse:

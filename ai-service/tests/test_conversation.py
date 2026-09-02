@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -8,7 +9,7 @@ SERVICE_ROOT = Path(__file__).resolve().parents[1]
 if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
 
-from app.conversation import ConversationService
+from app.conversation import ConversationService, SQLiteConversationStore
 from app.finance import FinanceCalculator, FinanceInput, ProvenancedValue, RepaymentMethod, SourceType
 
 
@@ -192,6 +193,30 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(cleared.turns, [])
         _, result, _ = self.service.run("两年差多少？", state.session_id)
         self.assertEqual(result["route"], "CLARIFICATION")
+
+    def test_completed_context_survives_service_restart_without_private_agent_trace(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = SQLiteConversationStore(Path(directory) / "conversation.sqlite3")
+            calls: list[str] = []
+
+            def agent(question: str) -> dict:
+                calls.append(question)
+                return {
+                    "question": question, "route": "SQL",
+                    "router": {"route": "SQL", "entity_resolution": [{"entity_type": "FACILITY", "entity_id": "SZCF016", "canonical_name": "深圳百旺信智算中心"}]},
+                    "sql_result": {"generated_sql": "SELECT secret_prompt_trace", "query_result": {"columns": ["rack_utilization_ratio"], "rows": [["0.6542"]]}},
+                    "rag_result": None, "interpretation": None, "sources": [],
+                    "synthesis": {"claims": [], "dropped_claims": []}, "final_answer": "已查询。",
+                }
+
+            first_service = ConversationService(agent, store=store)
+            state, _, _ = first_service.run("百旺信2025年上架率是多少？")
+            recovered_service = ConversationService(agent, store=store)
+            _, _, effective = recovered_service.run("2024呢？", state.session_id)
+            self.assertIn("深圳百旺信智算中心2024年上架率", effective)
+            saved = store.load(state.session_id)
+            self.assertIsNotNone(saved)
+            self.assertNotIn("generated_sql", str(saved))
 
 
 if __name__ == "__main__":

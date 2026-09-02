@@ -166,6 +166,20 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(second.json()["session_id"], session_id)
         self.assertEqual(second.json()["conversation"]["turn_count"], 2)
 
+    def test_v6_conversation_endpoints_create_and_continue_session(self) -> None:
+        agent = FakeAgent("SQL")
+        client = self.make_client(agent)
+        created = client.post("/api/conversations")
+        self.assertEqual(created.status_code, 200)
+        session_id = created.json()["session_id"]
+        self.assertEqual(created.json()["conversation"]["turn_count"], 0)
+
+        response = client.post(
+            f"/api/conversations/{session_id}/messages", json={"message": "百旺信2025年上架率是多少？"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["session_id"], session_id)
+
     def test_rag_sql_and_out_of_scope_paths_keep_their_own_evidence(self) -> None:
         expectations = {
             "RAG": (None, 1),

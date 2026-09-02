@@ -16,6 +16,7 @@ from decimal import Decimal
 from typing import Any, Callable
 
 from app.finance import FinanceCalculator, FinanceInput, ProvenancedValue, RepaymentMethod, SourceType
+from .store import SQLiteConversationStore
 
 
 _YEAR = re.compile(r"(?<!\d)(20\d{2})(?:年)?")
@@ -78,16 +79,18 @@ class ConversationService:
         run_agent: Callable[[str], dict[str, Any]],
         run_due_diligence: Callable[[str], dict[str, Any]] | None = None,
         resolve_entities: Callable[[str], tuple[str, list[dict[str, str]]]] | None = None,
+        store: SQLiteConversationStore | None = None,
     ) -> None:
         self._run_agent = run_agent
         self._run_due_diligence = run_due_diligence
         self._resolve_entities = resolve_entities
+        self._store = store
         self._sessions: dict[str, ConversationState] = {}
         self._lock = threading.RLock()
 
     def run(self, question: str, session_id: str | None = None) -> tuple[ConversationState, dict[str, Any], str]:
         with self._lock:
-            state = self._new_state() if session_id is None else self._sessions.get(session_id)
+            state = self._new_state() if session_id is None else self._get_session(session_id)
             if state is None:
                 raise KeyError("会话不存在或已失效，请重新开始提问。")
             if session_id is None:
@@ -100,31 +103,104 @@ class ConversationService:
                 effective_question = effective[1]
                 result = self._run_agent(effective_question)
             self._update_state(state, question, effective_question, result)
+            self._persist(state)
             return state, result, effective_question
+
+    def create_session(self) -> ConversationState:
+        with self._lock:
+            state = self._new_state()
+            self._sessions[state.session_id] = state
+            self._persist(state)
+            return state
 
     def clear_finance_assumptions(self, session_id: str) -> ConversationState:
         with self._lock:
-            state = self._sessions.get(session_id)
+            state = self._get_session(session_id)
             if state is None:
                 raise KeyError("会话不存在或已失效，请重新开始提问。")
             state.assumptions = []
             # Clearing is an explicit reset: a bare “改成70%” must not revive
             # the former calculation's assumptions from a hidden prior turn.
             state.finance_context_valid = False
+            self._persist(state)
             return state
 
     def reset_context(self, session_id: str) -> ConversationState:
         with self._lock:
-            state = self._sessions.get(session_id)
+            state = self._get_session(session_id)
             if state is None:
                 raise KeyError("会话不存在或已失效，请重新开始提问。")
             self._clear_analysis_context(state)
             state.turns = []
+            self._persist(state)
             return state
 
     @staticmethod
     def _new_state() -> ConversationState:
         return ConversationState(session_id=str(uuid.uuid4()))
+
+    def _get_session(self, session_id: str) -> ConversationState | None:
+        cached = self._sessions.get(session_id)
+        if cached is not None:
+            return cached
+        if self._store is None:
+            return None
+        loaded = self._store.load(session_id)
+        if loaded is None:
+            return None
+        snapshot, turns = loaded
+        state = ConversationState(
+            session_id=str(snapshot["session_id"]),
+            active_entities=list(snapshot.get("active_entities") or []),
+            active_year=snapshot.get("active_year"),
+            active_metrics=list(snapshot.get("active_metrics") or []),
+            active_task=snapshot.get("active_task"),
+            assumptions=list(snapshot.get("assumptions") or []),
+            turns=[TurnRecord(**turn) for turn in turns],
+            created_at=str(snapshot.get("created_at") or datetime.now(UTC).isoformat()),
+            data_version=str(snapshot.get("data_version") or "spdb_power_finance:runtime"),
+            policy_index_version=str(snapshot.get("policy_index_version") or "public_effective:runtime"),
+            finance_context_valid=bool(snapshot.get("finance_context_valid", True)),
+        )
+        self._sessions[session_id] = state
+        return state
+
+    def _persist(self, state: ConversationState) -> None:
+        if self._store is None:
+            return
+        snapshot = {
+            "session_id": state.session_id,
+            "created_at": state.created_at,
+            "updated_at": datetime.now(UTC).isoformat(),
+            "active_entities": state.active_entities,
+            "active_year": state.active_year,
+            "active_metrics": state.active_metrics,
+            "active_task": state.active_task,
+            "assumptions": state.assumptions,
+            "data_version": state.data_version,
+            "policy_index_version": state.policy_index_version,
+            "finance_context_valid": state.finance_context_valid,
+        }
+        turns = [
+            {"question": turn.question, "effective_question": turn.effective_question, "result": self._compact_result(turn.result), "created_at": turn.created_at}
+            for turn in state.turns
+        ]
+        self._store.save(snapshot, turns)
+
+    @staticmethod
+    def _compact_result(result: dict[str, Any]) -> dict[str, Any]:
+        sql = result.get("sql_result") or {}
+        rag = result.get("rag_result") or {}
+        return {
+            "question": result.get("question"), "route": result.get("route"), "router": result.get("router"),
+            "sql_result": {key: sql.get(key) for key in ("query_result", "safety", "presentation") if sql.get(key) is not None} or None,
+            "rag_result": {key: rag.get(key) for key in ("answerable", "references") if rag.get(key) is not None} or None,
+            "interpretation": result.get("interpretation"), "finance_result": result.get("finance_result"),
+            "max_debt_result": result.get("max_debt_result"), "eligibility_result": result.get("eligibility_result"),
+            "due_diligence_result": result.get("due_diligence_result"), "sources": result.get("sources") or [],
+            "synthesis": result.get("synthesis") or {"claims": [], "dropped_claims": []},
+            "tool_calls": result.get("tool_calls") or [], "final_answer": result.get("final_answer"), "warnings": result.get("warnings") or [],
+        }
 
     def _resolve_question(self, state: ConversationState, question: str) -> tuple[str, Any]:
         clean = question.strip()
