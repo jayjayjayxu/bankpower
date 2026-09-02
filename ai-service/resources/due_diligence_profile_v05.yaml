@@ -1,0 +1,22 @@
+profile_version: V5.0-A.1
+project_type: DATA_CENTER
+fields:
+  - {field: project_name, domain: PROJECT_IDENTITY, label: 项目名称, required: true, weight: 1, source: {kind: MASTER, column: official_name}}
+  - {field: facility_kind, domain: PROJECT_IDENTITY, label: 项目类型, required: true, weight: 1, source: {kind: MASTER, column: facility_kind}}
+  - {field: city_name, domain: PROJECT_IDENTITY, label: 城市, required: true, weight: 1, source: {kind: MASTER, column: city_name}}
+  - {field: operator_name, domain: PROJECT_IDENTITY, label: 运营主体, required: true, weight: 3, source: {kind: MASTER, column: operator_name}}
+  - {field: lifecycle_status, domain: PROJECT_IDENTITY, label: 生命周期状态, required: true, weight: 2, source: {kind: MASTER, column: lifecycle_status}}
+  - {field: rack_capacity, domain: PROJECT_IDENTITY, label: 机柜规模, required: true, weight: 3, source: {kind: METRIC, metric_code: CABINET_COUNT}}
+  - {field: occupancy_rate, domain: OPERATION, label: 上架率, required: true, weight: 3, unit: RATIO, source: {kind: OPERATION, column: rack_utilization_ratio}}
+  - {field: rack_price, domain: OPERATION, label: 平均机柜价格, required: true, weight: 3, unit: CNY_PER_RACK_MONTH, source: {kind: OPERATION, column: average_rack_price_yuan_month}}
+  - {field: hosting_revenue, domain: OPERATION, label: 托管收入, required: true, weight: 4, unit: WANYUAN, source: {kind: OPERATION, column: hosting_revenue_wanyuan}}
+  - {field: pue, domain: ENERGY, label: PUE, required: true, weight: 5, unit: RATIO, source: {kind: METRIC, metric_code: PUE}}
+  - {field: annual_electricity_consumption, domain: ENERGY, label: 年用电量, required: true, weight: 3, unit: KWH, source: {kind: METRIC, metric_code: ANNUAL_ELECTRICITY_CONSUMPTION}}
+  - {field: electricity_price, domain: ENERGY, label: 电力采购均价, required: true, weight: 3, unit: CNY_PER_KWH, source: {kind: OPERATION, column: electricity_purchase_price_yuan_kwh}}
+  - {field: green_power_ratio, domain: ENERGY, label: 绿电比例, required: true, weight: 4, unit: RATIO, source: {kind: METRIC, metric_code: GREEN_POWER_RATIO}}
+  - {field: capex, domain: FINANCIAL, label: 项目 CAPEX, required: true, weight: 5, unit: WANYUAN, source: {kind: METRIC, metric_code: CAPEX}}
+  - {field: cfads, domain: FINANCIAL, label: 项目级 CFADS, required: true, weight: 5, unit: CNY, source: {kind: METRIC, metric_code: CFADS}}
+  - {field: financing_inputs, domain: FINANCING, label: 贷款比例、利率与期限, required: true, weight: 4, unit: RATIO, source: {kind: METRIC, metric_code: FINANCING_INPUTS}}
+  - {field: energy_review_document, domain: POLICY, label: 节能审查材料, required: true, weight: 4, unit: DOCUMENT, source: {kind: METRIC, metric_code: ENERGY_REVIEW_DOCUMENT}}
+  - {field: renewable_energy_plan, domain: POLICY, label: 可再生能源方案, required: true, weight: 3, unit: DOCUMENT, source: {kind: METRIC, metric_code: RENEWABLE_ENERGY_PLAN}}
+  - {field: last_verified_date, domain: DATA_QUALITY, label: 最近核验日期, required: true, weight: 2, source: {kind: MASTER, column: last_verified_date}}
