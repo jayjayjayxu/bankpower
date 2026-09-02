@@ -11,7 +11,10 @@ import threading
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any, Callable
+
+from app.finance import FinanceCalculator, FinanceInput, ProvenancedValue, RepaymentMethod, SourceType
 
 
 _YEAR = re.compile(r"(?<!\d)(20\d{2})(?:年)?")
@@ -44,6 +47,7 @@ class ConversationState:
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     data_version: str = "spdb_power_finance:runtime"
     policy_index_version: str = "public_effective:runtime"
+    finance_context_valid: bool = True
 
     def public_dict(self) -> dict[str, Any]:
         return {
@@ -57,6 +61,7 @@ class ConversationState:
             "data_version": self.data_version,
             "policy_index_version": self.policy_index_version,
             "valid_for_followup": bool(self.turns),
+            "finance_context_valid": self.finance_context_valid,
         }
 
 
@@ -89,12 +94,27 @@ class ConversationService:
             self._update_state(state, question, effective_question, result)
             return state, result, effective_question
 
+    def clear_finance_assumptions(self, session_id: str) -> ConversationState:
+        with self._lock:
+            state = self._sessions.get(session_id)
+            if state is None:
+                raise KeyError("会话不存在或已失效，请重新开始提问。")
+            state.assumptions = []
+            # Clearing is an explicit reset: a bare “改成70%” must not revive
+            # the former calculation's assumptions from a hidden prior turn.
+            state.finance_context_valid = False
+            return state
+
     @staticmethod
     def _new_state() -> ConversationState:
         return ConversationState(session_id=str(uuid.uuid4()))
 
     def _resolve_question(self, state: ConversationState, question: str) -> tuple[str, Any]:
         clean = question.strip()
+        if state.turns and self._is_finance_modification(clean):
+            if state.finance_context_valid:
+                return "LOCAL", self._finance_follow_up(clean, state)
+            return "LOCAL", self._clarification_result(clean, "融资假设已清除。请重新提供债务比例、利率、期限和逐年 CFADS，再进行测算。")
         if state.turns and _SOURCE_FOLLOW_UP.search(clean):
             return "LOCAL", self._provenance_result(clean, state.turns[-1])
         lowered = clean.casefold()
@@ -133,6 +153,10 @@ class ConversationService:
             if metrics:
                 state.active_metrics = metrics
             state.active_task = str(result.get("route") or state.active_task or "UNKNOWN")
+            finance = result.get("finance_result") or {}
+            if finance.get("inputs"):
+                state.assumptions = self._public_assumptions(finance["inputs"])
+                state.finance_context_valid = True
             state.turns.append(TurnRecord(question, effective_question, result, datetime.now(UTC).isoformat()))
 
     @staticmethod
@@ -153,6 +177,93 @@ class ConversationService:
     @staticmethod
     def _metric_label(key: str) -> str:
         return next((label for metric, _, label in _METRICS if metric == key), key)
+
+    @staticmethod
+    def _is_finance_modification(question: str) -> bool:
+        lowered = question.casefold()
+        has_change = any(term in lowered for term in ("改成", "改为", "换成", "调整为"))
+        return has_change and ("利率" in lowered or "%" in lowered or "年期" in lowered or "期限" in lowered)
+
+    @staticmethod
+    def _public_assumptions(inputs: dict[str, Any]) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        for field in ("debt_ratio", "interest_rate", "loan_term_years", "required_min_dscr"):
+            value = inputs.get(field) or {}
+            if value.get("source_type") == "ASSUMPTION":
+                rows.append({"field": field, "value": value.get("value"), "unit": value.get("unit"), "source_id": value.get("source_id")})
+        cfads = inputs.get("annual_cfads") or []
+        if cfads and all(item.get("source_type") == "ASSUMPTION" for item in cfads):
+            rows.append({"field": "annual_cfads", "value": [item.get("value") for item in cfads], "unit": "CNY", "source_id": "USER:annual_cfads"})
+        return rows
+
+    def _finance_follow_up(self, question: str, state: ConversationState) -> dict[str, Any]:
+        previous = state.turns[-1].result
+        finance = previous.get("finance_result")
+        if not finance or not finance.get("inputs"):
+            return self._clarification_result(question, "上一轮没有可复用的融资测算。请先提供项目、贷款比例、利率、期限和逐年 CFADS。")
+        if "电价" in question:
+            return self._clarification_result(question, "当前直接融资测算没有可复用的项目级电价成本输入；请使用项目情景压力测试，并提供或核验能耗与电价口径。")
+        try:
+            inputs, changed = self._modified_finance_inputs(finance["inputs"], question)
+            calculation = FinanceCalculator().calculate(inputs).public_dict()
+        except ValueError as exc:
+            return self._clarification_result(question, f"无法应用这项融资假设修改：{exc}")
+        eligibility = previous.get("eligibility_result") or {}
+        result = calculation.get("results") or {}
+        changed_text = "、".join(changed)
+        answer = (
+            f"已在上一轮同一项目、CAPEX 与 CFADS 输入基础上，仅将{changed_text}更新为用户明确值。"
+            f"重新计算结果：贷款金额为 {result.get('loan_amount')} CNY；最低 DSCR 为 {result.get('min_dscr')}，"
+            f"平均 DSCR 为 {result.get('avg_dscr')}。该结果不构成授信或绿色贷款认定。"
+        )
+        return {
+            "question": question, "route": "FINANCE_FOLLOW_UP",
+            "router": {"route": "FINANCE_FOLLOW_UP", "reason": "复用上一轮已核验项目事实与用户明确假设，仅重新执行确定性融资计算。", "entity_resolution": [
+                {"entity_type": item["type"], "entity_id": item["id"], "canonical_name": item["name"]} for item in state.active_entities
+            ]},
+            "sql_result": previous.get("sql_result"), "rag_result": previous.get("rag_result"),
+            "interpretation": previous.get("interpretation"), "finance_result": calculation,
+            "max_debt_result": None, "eligibility_result": eligibility,
+            "sources": list(previous.get("sources") or []),
+            "tool_calls": [{"order": 1, "tool": "FINANCE_CALCULATOR", "executed": True, "reused_completed_turn": len(state.turns)}],
+            "synthesis": {"claims": [{"claim_type": "CALC_RESULT", "text": answer, "support_ids": [calculation["calculation_id"]]}], "dropped_claims": []},
+            "final_answer": answer,
+        }
+
+    @staticmethod
+    def _modified_finance_inputs(raw: dict[str, Any], question: str) -> tuple[FinanceInput, list[str]]:
+        def pv(field: str) -> ProvenancedValue:
+            item = raw[field]
+            return ProvenancedValue(Decimal(str(item["value"])), str(item["unit"]), SourceType(str(item["source_type"])), str(item["source_id"]))
+
+        debt, rate, term = pv("debt_ratio"), pv("interest_rate"), pv("loan_term_years")
+        changed: list[str] = []
+        lowered = question.casefold()
+        percent = re.search(r"(?:改成|改为|换成|调整为)\s*(\d+(?:\.\d+)?)\s*%", lowered)
+        rate_match = re.search(r"利率[^。；，,]{0,12}?(?:改成|改为|换成|调整为)\s*(\d+(?:\.\d+)?)\s*%", lowered)
+        term_match = re.search(r"(?:年期|期限)[^。；，,]{0,12}?(?:改成|改为|换成|调整为)\s*(\d+)\s*年", lowered)
+        if rate_match:
+            rate = ProvenancedValue(Decimal(rate_match.group(1)) / Decimal("100"), "RATIO", SourceType.ASSUMPTION, "USER:interest_rate")
+            changed.append(f"年利率（{rate_match.group(1)}%）")
+        elif term_match:
+            term = ProvenancedValue(Decimal(term_match.group(1)), "YEAR", SourceType.ASSUMPTION, "USER:loan_term_years")
+            changed.append(f"贷款期限（{term_match.group(1)}年）")
+        elif percent:
+            debt = ProvenancedValue(Decimal(percent.group(1)) / Decimal("100"), "RATIO", SourceType.ASSUMPTION, "USER:debt_ratio")
+            changed.append(f"债务比例（{percent.group(1)}%）")
+        else:
+            raise ValueError("请明确“债务比例改成70%”或“利率改成4%”。")
+        annual_cfads = tuple(
+            ProvenancedValue(Decimal(str(item["value"])), str(item["unit"]), SourceType(str(item["source_type"])), str(item["source_id"]))
+            for item in raw.get("annual_cfads") or []
+        )
+        if len(annual_cfads) != int(term.value):
+            raise ValueError("修改期限后，需要同时提供与新期限一致的逐年 CFADS。")
+        return FinanceInput(
+            project_id=str(raw["project_id"]), capex=pv("capex"), debt_ratio=debt, interest_rate=rate,
+            loan_term_years=term, repayment_method=RepaymentMethod(str(raw["repayment_method"])),
+            annual_cfads=annual_cfads, required_min_dscr=pv("required_min_dscr"),
+        ), changed
 
     @staticmethod
     def _clarification_result(question: str, message: str) -> dict[str, Any]:

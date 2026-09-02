@@ -26,3 +26,13 @@ export async function fetchDueDiligence(projectId) {
   }
   return body
 }
+
+export async function clearFinanceAssumptions(sessionId) {
+  const response = await fetch(`${AI_API_BASE}/chat/${encodeURIComponent(sessionId)}/assumptions`, {
+    method: 'DELETE',
+    headers: { Accept: 'application/json' },
+  })
+  const body = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(body.detail || `清除融资假设失败（${response.status}）`)
+  return body
+}

@@ -145,7 +145,7 @@ def create_app(
         CORSMiddleware,
         allow_origins=list(settings.cors_allowed_origins),
         allow_credentials=False,
-        allow_methods=["GET", "POST"],
+        allow_methods=["GET", "POST", "DELETE"],
         allow_headers=["Content-Type", "X-Request-ID", "X-Admin-Token"],
     )
     app.state.run_gate = asyncio.Semaphore(settings.max_concurrency)
@@ -175,6 +175,14 @@ def create_app(
     @app.post("/api/chat/{session_id}", response_model=ChatResponse)
     async def chat_follow_up(session_id: str, payload: ChatRequest, request: Request) -> ChatResponse:
         return await _chat_with_conversation(payload, request, session_id)
+
+    @app.delete("/api/chat/{session_id}/assumptions")
+    async def clear_chat_assumptions(session_id: str) -> dict[str, Any]:
+        try:
+            state = await asyncio.to_thread(conversation.clear_finance_assumptions, session_id)
+            return {"session_id": state.session_id, "conversation": state.public_dict()}
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     async def _chat_with_conversation(
         payload: ChatRequest, request: Request, session_id: str | None

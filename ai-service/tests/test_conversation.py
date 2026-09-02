@@ -9,6 +9,7 @@ if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
 
 from app.conversation import ConversationService
+from app.finance import FinanceCalculator, FinanceInput, ProvenancedValue, RepaymentMethod, SourceType
 
 
 class ConversationTests(unittest.TestCase):
@@ -75,6 +76,52 @@ class ConversationTests(unittest.TestCase):
             }
         state, _, _ = ConversationService(candidate_agent).run("B200 对应哪里？")
         self.assertEqual(state.active_entities, [])
+
+    def test_finance_followup_changes_only_explicit_user_assumption(self) -> None:
+        inputs = FinanceInput(
+            project_id="SZCF016",
+            capex=ProvenancedValue.of("100000000", "CNY", SourceType.FACT, "SQL:CAPEX"),
+            debt_ratio=ProvenancedValue.of("0.60", "RATIO", SourceType.ASSUMPTION, "USER:debt_ratio"),
+            interest_rate=ProvenancedValue.of("0.035", "RATIO", SourceType.ASSUMPTION, "USER:interest_rate"),
+            loan_term_years=ProvenancedValue.of("2", "YEAR", SourceType.ASSUMPTION, "USER:loan_term_years"),
+            repayment_method=RepaymentMethod.EQUAL_PRINCIPAL,
+            annual_cfads=(
+                ProvenancedValue.of("50000000", "CNY", SourceType.ASSUMPTION, "USER:annual_cfads:1"),
+                ProvenancedValue.of("50000000", "CNY", SourceType.ASSUMPTION, "USER:annual_cfads:2"),
+            ),
+            required_min_dscr=ProvenancedValue.of("1.20", "RATIO", SourceType.ASSUMPTION, "USER:required_min_dscr"),
+        )
+        original = FinanceCalculator().calculate(inputs).public_dict()
+        calls: list[str] = []
+
+        def finance_agent(question: str) -> dict:
+            calls.append(question)
+            return {
+                "question": question, "route": "BOTH",
+                "router": {"route": "BOTH", "entity_resolution": [{"entity_type": "FACILITY", "entity_id": "SZCF016", "canonical_name": "深圳百旺信智算中心"}]},
+                "sql_result": {"query_result": {"columns": [], "rows": []}}, "rag_result": None,
+                "interpretation": None, "finance_result": original, "eligibility_result": {},
+                "sources": [], "synthesis": {"claims": [], "dropped_claims": []}, "final_answer": "初始测算。",
+            }
+
+        service = ConversationService(finance_agent)
+        state, _, _ = service.run("百旺信按60%贷款、2年期、3.5%利率，CFADS分别为5000、5000万元，最低DSCR是多少？")
+        state, modified, _ = service.run("改成70%。", state.session_id)
+        self.assertEqual(modified["route"], "FINANCE_FOLLOW_UP")
+        self.assertEqual(modified["finance_result"]["inputs"]["debt_ratio"]["value"], "0.7")
+        self.assertEqual(modified["finance_result"]["inputs"]["interest_rate"]["value"], "0.035")
+        self.assertEqual(len(calls), 1)
+
+        _, changed_rate, _ = service.run("利率改成4%。", state.session_id)
+        self.assertEqual(changed_rate["finance_result"]["inputs"]["debt_ratio"]["value"], "0.7")
+        self.assertEqual(changed_rate["finance_result"]["inputs"]["interest_rate"]["value"], "0.04")
+        self.assertEqual(len(calls), 1)
+
+        service.clear_finance_assumptions(state.session_id)
+        _, cleared, _ = service.run("改成80%。", state.session_id)
+        self.assertEqual(cleared["route"], "CLARIFICATION")
+        self.assertIn("已清除", cleared["final_answer"])
+        self.assertEqual(len(calls), 1)
 
 
 if __name__ == "__main__":

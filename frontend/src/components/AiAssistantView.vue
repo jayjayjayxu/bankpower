@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { askAi } from '../services/aiApi'
+import { askAi, clearFinanceAssumptions } from '../services/aiApi'
 
 defineEmits(['back', 'open-project-analysis'])
 
@@ -23,11 +23,30 @@ const contextItems = computed(() => {
   const entities = (state.active_entities || []).map((item) => ({ key: `entity-${item.id}`, label: `项目：${item.name}` }))
   const year = state.active_time_range?.year ? [{ key: 'year', label: `年份：${state.active_time_range.year}` }] : []
   const metrics = (state.active_metrics || []).map((item) => ({ key: `metric-${item}`, label: `指标：${metricLabel(item)}` }))
-  return [...entities, ...year, ...metrics]
+  const assumptions = (state.assumptions || []).map((item) => ({ key: `assumption-${item.field}`, label: `假设：${assumptionLabel(item)}` }))
+  return [...entities, ...year, ...metrics, ...assumptions]
 })
 
 function metricLabel(metric) {
   return { rack_occupancy_rate: '上架率', rack_price: '平均机柜价格', pue: 'PUE' }[metric] || metric
+}
+
+function assumptionLabel(item) {
+  const value = item.field === 'annual_cfads' ? '逐年 CFADS' : item.value
+  const label = { debt_ratio: '债务比例', interest_rate: '年利率', loan_term_years: '期限', required_min_dscr: '最低 DSCR' }[item.field] || item.field
+  if (item.field === 'debt_ratio' || item.field === 'interest_rate') return `${label} ${Number(item.value) * 100}%`
+  return `${label} ${value}${item.unit === 'YEAR' ? '年' : ''}`
+}
+
+async function clearAssumptions() {
+  if (!sessionId.value || loading.value) return
+  requestError.value = ''
+  try {
+    const result = await clearFinanceAssumptions(sessionId.value)
+    conversation.value = result.conversation
+  } catch (error) {
+    requestError.value = error instanceof Error ? error.message : '无法清除融资假设。'
+  }
 }
 
 function sourcePages(source) {
@@ -86,6 +105,7 @@ async function submit() {
       <section class="ai-conversation" aria-live="polite">
         <div v-if="contextItems.length" class="ai-context" aria-label="当前分析上下文">
           <span>当前上下文</span><b v-for="item in contextItems" :key="item.key">{{ item.label }}</b>
+          <button v-if="conversation?.assumptions?.length" type="button" @click="clearAssumptions">清除融资假设 ×</button>
           <small>仅继承已确认实体、明确时间与指标</small>
         </div>
         <div v-if="!messages.length" class="ai-welcome">

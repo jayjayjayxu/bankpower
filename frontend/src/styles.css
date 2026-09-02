@@ -226,6 +226,7 @@ footer { display: flex; justify-content: space-between; width: min(1180px, calc(
 .ai-due-diligence-link button { margin-top: 14px; padding: 8px 10px; border: 1px solid #8ccbc5; border-radius: 5px; color: #196f69; background: #fff; cursor: pointer; font-size: 11px; font-weight: 700; }
 .ai-due-diligence-link button:hover { background: #dff2ee; }
 .ai-context { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px 12px; border: 1px solid #cce5e1; border-radius: 6px; background: #f2faf8; }.ai-context > span { margin-right: 3px; color: #397b77; font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; }.ai-context b { padding: 4px 6px; border-radius: 3px; color: #315d6d; background: #fff; font-size: 9px; font-weight: 600; }.ai-context small { margin-left: auto; color: #83979d; font-size: 8px; }
+.ai-context button { padding: 3px 5px; border: 0; color: #8a6a37; background: transparent; cursor: pointer; font-size: 9px; text-decoration: underline; }
 
 @media (max-width: 920px) {
   .ai-topbar, .ai-shell { width: min(100% - 36px, 760px); }.ai-shell { grid-template-columns: 1fr; }.ai-sidebar { grid-template-columns: 1fr 1fr; }.ai-composer { grid-column: 1; }
