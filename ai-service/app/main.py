@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .audit import AuditLogger, AuditWriteError
 from .config import Settings
 from .core import AgentFactory, AgentProvider, CoreUnavailableError, health_details
+from .due_diligence.orchestrator import DueDiligenceOrchestrator
 from .schemas import ChatRequest, ChatResponse, DebugSQLResponse, HealthResponse, SQLData, Source
 
 
@@ -211,6 +212,13 @@ def create_app(
         except AuditWriteError:
             pass
         raise HTTPException(status_code=status_code, detail={"request_id": request_id, "code": code, "message": message})
+
+    @app.get("/api/due-diligence/{project_id}")
+    async def due_diligence(project_id: str) -> dict[str, Any]:
+        try:
+            return await asyncio.to_thread(DueDiligenceOrchestrator(settings).run, project_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.post("/api/debug/sql", response_model=DebugSQLResponse, include_in_schema=False)
     async def debug_sql(payload: ChatRequest, request: Request) -> DebugSQLResponse:
