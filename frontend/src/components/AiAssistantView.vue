@@ -81,6 +81,7 @@ function routeLabel(route) {
     FINANCE_FOLLOW_UP: '融资假设重算',
     PROVENANCE: '上一轮证据追溯',
     CLARIFICATION: '需澄清指标',
+    IN_SCOPE_DATA_MISSING: '领域内数据暂缺',
     OUT_OF_SCOPE: '能力边界提示',
   }[route] || route
 }
