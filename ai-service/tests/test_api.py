@@ -28,6 +28,7 @@ class FakeAgent:
         sql_result = None
         rag_result = None
         synthesis = None
+        interpretation = None
         if self.route in {"SQL", "BOTH"}:
             sql_result = {
                 "query_result": {
@@ -35,6 +36,13 @@ class FakeAgent:
                     "rows": [["深圳分行", "29"]],
                 },
                 "safety": {"safe": True},
+            }
+            interpretation = {
+                "response_mode": "FACT_LOOKUP",
+                "answer_status": "ANSWERED",
+                "primary_conclusion": "深圳分行共有29笔失败交易。",
+                "facts": [{"key": "failure_count", "label": "失败交易", "value": "29笔"}],
+                "candidates": [], "warnings": [], "boundaries": [],
             }
         if self.route in {"RAG", "BOTH"}:
             rag_result = {
@@ -63,6 +71,7 @@ class FakeAgent:
             "tool_calls": [],
             "sql_result": sql_result,
             "rag_result": rag_result,
+            "interpretation": interpretation,
             "synthesis": synthesis,
             "final_answer": "这是经过证据约束的测试答案。",
         }
@@ -129,6 +138,8 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(body["request_id"], "request-test-001")
         self.assertEqual(body["route"], "BOTH")
         self.assertEqual(body["data"]["sql"]["rows"], [["深圳分行", "29"]])
+        self.assertEqual(body["interpretation"]["response_mode"], "FACT_LOOKUP")
+        self.assertEqual(body["structured_data"]["facts"][0]["value"], "29笔")
         self.assertEqual(body["sources"][0]["page_start"], 12)
         self.assertEqual(body["claims"][0]["support_ids"], ["SQL"])
         self.assertEqual(body["warnings"], ["1 条缺乏充分依据的结论未向用户展示。"])

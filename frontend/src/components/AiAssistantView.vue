@@ -62,7 +62,7 @@ async function submit() {
     <header class="ai-topbar">
       <button type="button" class="ai-back" @click="$emit('back')">← 返回电力研究</button>
       <div><strong>AI 智能问答</strong><span>电力与算力数据库事实可追溯</span></div>
-      <em>EnergyComputeAI · V0.3</em>
+      <em>EnergyComputeAI · V0.3.1</em>
     </header>
 
     <main class="ai-shell">
@@ -70,7 +70,7 @@ async function submit() {
         <div v-if="!messages.length" class="ai-welcome">
           <p>面向电力、算力与现行公开政策的可审计问答</p>
           <h1>先取证，再作答。</h1>
-          <span>数字只来自已执行的只读 SQL；政策结论只来自现行公开原文；跨来源比较由规则引擎完成并保留证据。</span>
+          <span>数字只来自已执行的只读 SQL；系统会将原始结果转换为业务语义，并保留数据口径与证据边界。</span>
           <div class="ai-examples">
             <button v-for="example in examples" :key="example" type="button" @click="useExample(example)">{{ example }}</button>
           </div>
@@ -84,12 +84,24 @@ async function submit() {
               <div><span>AI 回答</span><b>{{ routeLabel(message.result.route) }}</b></div>
               <small>{{ message.result.timing?.total_ms ?? '—' }} ms · {{ message.result.request_id }}</small>
             </header>
-            <section class="ai-answer-conclusion"><h2>结论</h2><p>{{ message.result.answer }}</p></section>
+            <section class="ai-answer-conclusion"><h2>结论</h2><p>{{ message.result.interpretation?.primary_conclusion || message.result.answer }}</p></section>
 
-            <section v-if="message.result.data?.sql" class="ai-evidence-block">
-              <h2>数据依据</h2>
-              <div class="ai-table-wrap"><table><thead><tr><th v-for="column in message.result.data.sql.columns" :key="column">{{ column }}</th></tr></thead><tbody><tr v-for="(row, rowIndex) in message.result.data.sql.rows" :key="rowIndex"><td v-for="(cell, cellIndex) in row" :key="cellIndex">{{ cell }}</td></tr></tbody></table></div>
+            <section v-if="message.result.structured_data?.facts?.length" class="ai-evidence-block">
+              <h2>关键数据</h2>
+              <ul class="ai-claim-list"><li v-for="fact in message.result.structured_data.facts" :key="`${fact.key}-${fact.label}`"><span>{{ fact.label }}</span>{{ fact.value }}</li></ul>
             </section>
+
+            <section v-if="message.result.structured_data?.candidates?.length" class="ai-evidence-block">
+              <h2>候选参照</h2>
+              <ul class="ai-claim-list"><li v-for="candidate in message.result.structured_data.candidates" :key="candidate.name"><span>{{ candidate.role }}</span><b>{{ candidate.name }}</b><br>{{ candidate.reason }}</li></ul>
+            </section>
+
+            <aside v-if="message.result.structured_data?.boundaries?.length" class="ai-warnings"><b>证据边界</b><p v-for="boundary in message.result.structured_data.boundaries" :key="boundary.message">{{ boundary.message }}</p></aside>
+
+            <details v-if="message.result.data?.sql" class="ai-evidence-block ai-raw-data">
+              <summary>查看原始数据（只读）</summary>
+              <div class="ai-table-wrap"><table><thead><tr><th v-for="column in message.result.data.sql.columns" :key="column">{{ column }}</th></tr></thead><tbody><tr v-for="(row, rowIndex) in message.result.data.sql.rows" :key="rowIndex"><td v-for="(cell, cellIndex) in row" :key="cellIndex">{{ cell }}</td></tr></tbody></table></div>
+            </details>
 
             <section v-if="message.result.data?.comparison" class="ai-evidence-block">
               <h2>匹配分析</h2>
@@ -115,7 +127,7 @@ async function submit() {
       </section>
 
       <aside class="ai-sidebar">
-        <section><span>工作方式</span><h2>模型不猜数字</h2><ol><li>解析设施、企业与商品别名</li><li>生成并校验只读 SQL</li><li>原样展示数据库字段与结果</li></ol></section>
+        <section><span>工作方式</span><h2>程序负责正确，AI负责易读</h2><ol><li>解析设施、企业与商品别名</li><li>生成并校验只读 SQL</li><li>程序化解释数据口径、状态与缺失值</li></ol></section>
         <section><span>使用边界</span><p>系统可做数据库事实、现行公开政策解释及有限的指标比对；绿色贷款资格、授信建议与融资比例仍须人工复核。</p></section>
       </aside>
 

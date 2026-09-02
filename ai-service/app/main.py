@@ -82,11 +82,16 @@ def _public_warnings(result: dict[str, Any]) -> list[str]:
     safety = sql_result.get("safety") or {}
     if safety and not safety.get("safe", True):
         warnings.append("SQL 安全校验未通过，未执行数据库查询。")
+    interpretation = result.get("interpretation") or {}
+    warnings.extend(str(item) for item in interpretation.get("warnings") or [])
     return warnings
 
 
-def _public_response(request_id: str, result: dict[str, Any], elapsed_ms: int) -> ChatResponse:
+def _public_response(
+    request_id: str, result: dict[str, Any], elapsed_ms: int, debug_available: bool = False
+) -> ChatResponse:
     synthesis = result.get("synthesis") or {}
+    interpretation = result.get("interpretation") or None
     return ChatResponse(
         request_id=request_id,
         question=str(result["question"]),
@@ -96,6 +101,15 @@ def _public_response(request_id: str, result: dict[str, Any], elapsed_ms: int) -
             "sql": _public_sql_data(result.get("sql_result")),
             "comparison": result.get("policy_comparison"),
         },
+        interpretation=interpretation,
+        structured_data={
+            "facts": list((interpretation or {}).get("facts") or []),
+            "candidates": list((interpretation or {}).get("candidates") or []),
+            "boundaries": [
+                {"message": str(item)} for item in ((interpretation or {}).get("boundaries") or [])
+            ],
+        },
+        debug_available=debug_available,
         sources=_public_sources(result),
         claims=list(synthesis.get("claims") or []),
         warnings=_public_warnings(result),
@@ -156,7 +170,7 @@ def create_app(
             async with app.state.run_gate:
                 result = await asyncio.to_thread(provider.run, payload.question)
             elapsed_ms = round((time.perf_counter() - started) * 1_000)
-            response = _public_response(request_id, result, elapsed_ms)
+            response = _public_response(request_id, result, elapsed_ms, settings.sql_debug_enabled)
             audit_logger.write(
                 request_id,
                 {

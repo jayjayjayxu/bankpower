@@ -46,6 +46,9 @@ class ChatResponse(BaseModel):
     route: str
     answer: str
     data: dict[str, SQLData | dict[str, Any] | None]
+    interpretation: dict[str, Any] | None = None
+    structured_data: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
+    debug_available: bool = False
     sources: list[Source]
     claims: list[dict[str, Any]]
     warnings: list[str]
