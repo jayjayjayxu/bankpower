@@ -1,0 +1,838 @@
+[
+  {
+    "id": "FACT-01",
+    "category": "FACT_LOOKUP",
+    "question": "百旺信PUE是多少？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.21000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": "PUE为1.21"
+  },
+  {
+    "id": "FACT-02",
+    "category": "FACT_LOOKUP",
+    "question": "百旺信2025年PUE是多少？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.21000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": "PUE为1.21"
+  },
+  {
+    "id": "FACT-03",
+    "category": "FACT_LOOKUP",
+    "question": "深圳百旺信智算中心能效指标是什么？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.21000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": "PUE为1.21"
+  },
+  {
+    "id": "FACT-04",
+    "category": "FACT_LOOKUP",
+    "question": "百旺信上架率和机柜价格是多少？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.21000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": "PUE为1.21"
+  },
+  {
+    "id": "FACT-05",
+    "category": "FACT_LOOKUP",
+    "question": "百旺信机柜运营指标查询",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.21000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": "PUE为1.21"
+  },
+  {
+    "id": "FACT-06",
+    "category": "FACT_LOOKUP",
+    "question": "查询百旺信PUE披露值",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.21000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": "PUE为1.21"
+  },
+  {
+    "id": "FACT-07",
+    "category": "FACT_LOOKUP",
+    "question": "百旺信数据中心指标是什么？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.21000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": "PUE为1.21"
+  },
+  {
+    "id": "FACT-08",
+    "category": "FACT_LOOKUP",
+    "question": "百旺信最新PUE是多少？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.21000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": "PUE为1.21"
+  },
+  {
+    "id": "LIST-01",
+    "category": "LIST",
+    "question": "哪些中心PUE低于1.3？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.22000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "LIST",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "LIST-02",
+    "category": "LIST",
+    "question": "列出深圳已披露PUE的中心",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.22000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "LIST",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "LIST-03",
+    "category": "LIST",
+    "question": "所有低PUE设施",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.22000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "LIST",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "LIST-04",
+    "category": "LIST",
+    "question": "哪些设施有上架率数据？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.22000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "LIST",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "LIST-05",
+    "category": "LIST",
+    "question": "列出可核验的算力中心",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.22000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "LIST",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "RANK-01",
+    "category": "RANKING",
+    "question": "PUE最低的3个中心",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.18000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "RANKING",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "RANK-02",
+    "category": "RANKING",
+    "question": "PUE最高的设施排名",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.18000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "RANKING",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "RANK-03",
+    "category": "RANKING",
+    "question": "TOP 5 数据中心PUE",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.18000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "RANKING",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "RANK-04",
+    "category": "RANKING",
+    "question": "按上架率排序",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.18000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "RANKING",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "RANK-05",
+    "category": "RANKING",
+    "question": "排名前3的算力中心",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.18000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "RANKING",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "COMPARE-01",
+    "category": "COMPARISON",
+    "question": "百旺信和A中心PUE比较",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.19000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "COMPARISON",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "COMPARE-02",
+    "category": "COMPARISON",
+    "question": "哪个中心PUE更低？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.19000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "COMPARISON",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "COMPARE-03",
+    "category": "COMPARISON",
+    "question": "对比两个机柜价格",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.19000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "COMPARISON",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "COMPARE-04",
+    "category": "COMPARISON",
+    "question": "上架率差异是什么？",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.19000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "COMPARISON",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "COMPARE-05",
+    "category": "COMPARISON",
+    "question": "PUE指标比较",
+    "columns": [
+      "official_name",
+      "metric_name",
+      "metric_value",
+      "metric_unit"
+    ],
+    "rows": [
+      [
+        "深圳百旺信智算中心",
+        "PUE",
+        "1.19000000",
+        "RATIO"
+      ]
+    ],
+    "expected_response_mode": "COMPARISON",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "AGG-01",
+    "category": "AGGREGATION",
+    "question": "深圳设施平均PUE多少？",
+    "columns": [
+      "average_pue"
+    ],
+    "rows": [
+      [
+        "1.23000000"
+      ]
+    ],
+    "expected_response_mode": "AGGREGATION",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "AGG-02",
+    "category": "AGGREGATION",
+    "question": "数据中心总数量是多少？",
+    "columns": [
+      "average_pue"
+    ],
+    "rows": [
+      [
+        "1.23000000"
+      ]
+    ],
+    "expected_response_mode": "AGGREGATION",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "AGG-03",
+    "category": "AGGREGATION",
+    "question": "平均机柜价格是多少？",
+    "columns": [
+      "average_pue"
+    ],
+    "rows": [
+      [
+        "1.23000000"
+      ]
+    ],
+    "expected_response_mode": "AGGREGATION",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "AGG-04",
+    "category": "AGGREGATION",
+    "question": "合计用电量是多少？",
+    "columns": [
+      "average_pue"
+    ],
+    "rows": [
+      [
+        "1.23000000"
+      ]
+    ],
+    "expected_response_mode": "AGGREGATION",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "TIME-01",
+    "category": "TIME_SERIES",
+    "question": "百旺信2023-2025上架率变化",
+    "columns": [
+      "fact_year",
+      "rack_utilization_ratio"
+    ],
+    "rows": [
+      [
+        "2023",
+        "0.3762"
+      ],
+      [
+        "2025",
+        "0.6542"
+      ]
+    ],
+    "expected_response_mode": "TIME_SERIES",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "TIME-02",
+    "category": "TIME_SERIES",
+    "question": "百旺信PUE趋势",
+    "columns": [
+      "fact_year",
+      "rack_utilization_ratio"
+    ],
+    "rows": [
+      [
+        "2023",
+        "0.3762"
+      ],
+      [
+        "2025",
+        "0.6542"
+      ]
+    ],
+    "expected_response_mode": "TIME_SERIES",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "TIME-03",
+    "category": "TIME_SERIES",
+    "question": "历年机柜价格变化",
+    "columns": [
+      "fact_year",
+      "rack_utilization_ratio"
+    ],
+    "rows": [
+      [
+        "2023",
+        "0.3762"
+      ],
+      [
+        "2025",
+        "0.6542"
+      ]
+    ],
+    "expected_response_mode": "TIME_SERIES",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "TIME-04",
+    "category": "TIME_SERIES",
+    "question": "时间序列上架率",
+    "columns": [
+      "fact_year",
+      "rack_utilization_ratio"
+    ],
+    "rows": [
+      [
+        "2023",
+        "0.3762"
+      ],
+      [
+        "2025",
+        "0.6542"
+      ]
+    ],
+    "expected_response_mode": "TIME_SERIES",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "TIME-05",
+    "category": "TIME_SERIES",
+    "question": "百旺信运营指标趋势",
+    "columns": [
+      "fact_year",
+      "rack_utilization_ratio"
+    ],
+    "rows": [
+      [
+        "2023",
+        "0.3762"
+      ],
+      [
+        "2025",
+        "0.6542"
+      ]
+    ],
+    "expected_response_mode": "TIME_SERIES",
+    "expected_answer_status": "ANSWERED",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "MAP-CONFIRMED",
+    "category": "ENTITY_MAPPING",
+    "question": "B200-C4-1对应哪个数据中心？",
+    "columns": [
+      "external_product_id",
+      "mapping_status",
+      "candidate_name",
+      "official_name",
+      "boundary_note"
+    ],
+    "rows": [
+      [
+        "B200-C4-1",
+        "CONFIRMED",
+        "",
+        "深圳百旺信智算中心",
+        "已完成直接映射。"
+      ]
+    ],
+    "expected_response_mode": "ENTITY_MAPPING",
+    "expected_answer_status": "CONFIRMED_MAPPING",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "MAP-CANDIDATE",
+    "category": "ENTITY_MAPPING",
+    "question": "B200-C4-1对应哪个数据中心？",
+    "columns": [
+      "external_product_id",
+      "mapping_status",
+      "candidate_name",
+      "official_name",
+      "boundary_note"
+    ],
+    "rows": [
+      [
+        "B200-C4-1",
+        "CANDIDATE",
+        "北京超级云计算中心 N61B2B分区",
+        "NULL",
+        "候选关联待核验。"
+      ]
+    ],
+    "expected_response_mode": "ENTITY_MAPPING",
+    "expected_answer_status": "UNCONFIRMED_MAPPING",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "MAP-UNMAPPED",
+    "category": "ENTITY_MAPPING",
+    "question": "B200-C4-1对应哪个数据中心？",
+    "columns": [
+      "external_product_id",
+      "mapping_status",
+      "candidate_name",
+      "official_name",
+      "boundary_note"
+    ],
+    "rows": [
+      [
+        "B200-C4-1",
+        "UNMAPPED",
+        "北京超级云计算中心 N61B2B分区",
+        "NULL",
+        "未找到直接对应证据。"
+      ]
+    ],
+    "expected_response_mode": "ENTITY_MAPPING",
+    "expected_answer_status": "UNCONFIRMED_MAPPING",
+    "required_conclusion_text": "目前无法确认 B200-C4-1 对应具体数据中心。"
+  },
+  {
+    "id": "MAP-CONFLICTING",
+    "category": "ENTITY_MAPPING",
+    "question": "B200-C4-1对应哪个数据中心？",
+    "columns": [
+      "external_product_id",
+      "mapping_status",
+      "candidate_name",
+      "official_name",
+      "boundary_note"
+    ],
+    "rows": [
+      [
+        "B200-C4-1",
+        "CONFLICTING",
+        "候选A",
+        "NULL",
+        "不同来源存在冲突。"
+      ]
+    ],
+    "expected_response_mode": "ENTITY_MAPPING",
+    "expected_answer_status": "UNCONFIRMED_MAPPING",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "MAP-NO_DATA",
+    "category": "ENTITY_MAPPING",
+    "question": "B200-C4-1对应哪个数据中心？",
+    "columns": [
+      "external_product_id",
+      "mapping_status",
+      "candidate_name",
+      "official_name",
+      "boundary_note"
+    ],
+    "rows": [
+      [
+        "B200-C4-1",
+        "NO_DATA",
+        "",
+        "NULL",
+        ""
+      ]
+    ],
+    "expected_response_mode": "ENTITY_MAPPING",
+    "expected_answer_status": "NO_DATA",
+    "required_conclusion_text": ""
+  },
+  {
+    "id": "NODATA-01",
+    "category": "NULL_NO_DATA",
+    "question": "百旺信上架率是多少？",
+    "columns": [
+      "metric_value"
+    ],
+    "rows": [],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "NO_DATA",
+    "required_conclusion_text": "没有查询到"
+  },
+  {
+    "id": "NODATA-02",
+    "category": "NULL_NO_DATA",
+    "question": "B200-C4-1对应哪个数据中心？",
+    "columns": [
+      "metric_value"
+    ],
+    "rows": [],
+    "expected_response_mode": "ENTITY_MAPPING",
+    "expected_answer_status": "NO_DATA",
+    "required_conclusion_text": "当前数据库中尚无"
+  },
+  {
+    "id": "NODATA-03",
+    "category": "NULL_NO_DATA",
+    "question": "深圳设施PUE是多少？",
+    "columns": [
+      "metric_value"
+    ],
+    "rows": [],
+    "expected_response_mode": "FACT_LOOKUP",
+    "expected_answer_status": "NO_DATA",
+    "required_conclusion_text": "没有查询到"
+  }
+]
