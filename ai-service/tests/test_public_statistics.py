@@ -13,6 +13,14 @@ from app.energy_sql import QueryResult
 from app.public_statistics import PublicStatisticsAgent
 
 
+COLUMNS = [
+    "region_code", "region_name", "stat_year", "metric_basis", "scope_code",
+    "statistical_scope", "energy_type_code", "energy_type_name", "metric_value",
+    "metric_unit", "value_operator", "disclosure_status", "source_locator",
+    "data_quality", "source_title", "source_url", "source_org",
+]
+
+
 def settings() -> Settings:
     return Settings(
         core_dir=None, audit_dir=SERVICE_ROOT / "runtime" / "test-audit", sql_login_path="unused",
@@ -22,38 +30,55 @@ def settings() -> Settings:
     )
 
 
+def row(energy_type: str, value: str, *, scope: str = "CN_ALL_GROSS_GENERATION") -> list[str]:
+    label = {"TOTAL": "全部电源", "THERMAL": "火电", "WIND": "风电"}[energy_type]
+    return ["CN", "全国", "2024", "GROSS_GENERATION", scope, "全国全口径年度发电量", energy_type, label, value, "GWh", "EQ", "DISCLOSED", "p.1", "A", "国家能源局公开统计", "https://example.gov", "国家能源局"]
+
+
 class StubExecutor:
-    def __init__(self, result: QueryResult) -> None:
-        self.result = result
+    def __init__(self, records: dict[str, list[str]]) -> None:
+        self.records = records
         self.sql: list[str] = []
 
     def execute(self, sql: str) -> QueryResult:
         self.sql.append(sql)
-        return self.result
+        energy_type = next((code for code in self.records if f"energy_type_code='{code}'" in sql), None)
+        return QueryResult(COLUMNS, [self.records[energy_type]]) if energy_type else QueryResult([], [])
 
 
 class PublicStatisticsTests(unittest.TestCase):
-    def test_national_generation_is_in_scope_sql_and_preserves_industrial_scope(self) -> None:
-        executor = StubExecutor(QueryResult(
-            ["region_code", "region_name", "region_level", "year", "metric_value", "unit_original", "data_quality", "notes", "source_title", "source_url"],
-            [["CN", "全国", "COUNTRY", "2024", "9418100", "电量", "A/B", "", "规模以上工业发电量", "https://example.gov"]],
-        ))
+    def test_direct_generation_uses_registered_v2_metric_and_scope(self) -> None:
+        executor = StubExecutor({"TOTAL": row("TOTAL", "10086880")})
         result = PublicStatisticsAgent(settings(), executor).run("全国2024年的发电总量是多少？")
         self.assertEqual(result["route"], "SQL")
-        self.assertEqual(result["router"]["domain"], "POWER")
-        self.assertEqual(result["router"]["scope"], "IN_SCOPE")
-        self.assertEqual(result["router"]["source_plan"], "PUBLIC_STATISTICS_SQL")
-        self.assertIn("94,181.00", result["final_answer"])
-        self.assertIn("规模以上工业发电量", result["final_answer"])
-        self.assertIn("不能替代", result["final_answer"])
-        self.assertIn("region_code='CN'", executor.sql[0])
+        self.assertEqual(result["router"]["metric_code"], "total_generation")
+        self.assertEqual(result["router"]["statistical_scope"], "全国全口径年度发电量")
+        self.assertIn("100,868.80", result["final_answer"])
+        self.assertIn("power_source_structure_v2", result["tool_calls"][0]["table"])
 
-    def test_missing_local_statistic_is_in_scope_data_missing_not_out_of_scope(self) -> None:
-        executor = StubExecutor(QueryResult([], []))
-        result = PublicStatisticsAgent(settings(), executor).run("全国2020年发电总量是多少？")
+    def test_thermal_share_is_program_calculated_from_compatible_inputs(self) -> None:
+        executor = StubExecutor({"THERMAL": row("THERMAL", "6374260"), "TOTAL": row("TOTAL", "10086880")})
+        result = PublicStatisticsAgent(settings(), executor).run("全国2024年火力发电占比是多少？")
+        self.assertEqual(result["route"], "SQL_CALC")
+        self.assertEqual(result["router"]["calculation_status"], "CALCULABLE")
+        self.assertEqual(result["calculation_result"]["display_value"], "63.19%")
+        self.assertEqual(result["calculation_result"]["formula"], "火力发电量 ÷ 发电总量 × 100%")
+        self.assertEqual(result["synthesis"]["claims"][0]["claim_type"], "CALC_RESULT")
+        self.assertEqual(len(executor.sql), 2)
+
+    def test_incompatible_scope_is_never_calculated(self) -> None:
+        executor = StubExecutor({"THERMAL": row("THERMAL", "6374260", scope="CN_INDUSTRIAL"), "TOTAL": row("TOTAL", "10086880")})
+        result = PublicStatisticsAgent(settings(), executor).run("全国2024年火电占比是多少？")
         self.assertEqual(result["route"], "IN_SCOPE_DATA_MISSING")
-        self.assertEqual(result["router"]["domain"], "POWER")
-        self.assertEqual(result["router"]["scope"], "IN_SCOPE")
+        self.assertEqual(result["router"]["calculation_status"], "INCOMPATIBLE_SCOPE")
+        self.assertIn("不能直接计算", result["final_answer"])
+        self.assertFalse(result["tool_calls"][1]["executed"])
+
+    def test_missing_numerator_is_in_scope_data_missing_not_out_of_scope(self) -> None:
+        executor = StubExecutor({"TOTAL": row("TOTAL", "10086880")})
+        result = PublicStatisticsAgent(settings(), executor).run("全国2024年火力发电占比是多少？")
+        self.assertEqual(result["route"], "IN_SCOPE_DATA_MISSING")
+        self.assertEqual(result["router"]["calculation_status"], "MISSING_NUMERATOR")
         self.assertNotEqual(result["route"], "OUT_OF_SCOPE")
 
     def test_weather_is_not_claimed_as_public_power_statistic(self) -> None:

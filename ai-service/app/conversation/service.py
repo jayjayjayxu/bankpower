@@ -16,12 +16,20 @@ from decimal import Decimal
 from typing import Any, Callable
 
 from app.finance import FinanceCalculator, FinanceInput, ProvenancedValue, RepaymentMethod, SourceType
+from app.public_statistics import (
+    public_metric_for,
+    public_metric_label,
+    public_region_for,
+    public_region_label,
+    related_public_metric_for,
+)
 from .store import SQLiteConversationStore
 
 
 _YEAR = re.compile(r"(?<!\d)(20\d{2})(?:年)?")
 _FOLLOW_UP = re.compile(r"^(?:那|那么|再|也)?(?:[，,。？！!？\s]*)?(?:20\d{2}年?(?:呢|怎么样|多少)?)$")
 _SOURCE_FOLLOW_UP = re.compile(r"(?:这个|该|这)?(?:数字|数据|数值|结论)?.{0,6}(?:哪来的|哪里来的|来源|依据)(?:是什么|呢)?[？?]?$", re.I)
+_CALCULATION_FOLLOW_UP = re.compile(r"(?:这个|该|这)?(?:占比|指标|结果)?.{0,8}(?:怎么算|如何计算|计算公式)(?:的|呢)?[？?]?$", re.I)
 _METRICS = (
     ("rack_occupancy_rate", ("上架率", "入住率", "机柜利用率"), "上架率"),
     ("rack_price", ("平均机柜价格", "机柜价格", "托管价格"), "平均机柜价格"),
@@ -41,6 +49,8 @@ class TurnRecord:
 class ConversationState:
     session_id: str
     active_entities: list[dict[str, str]] = field(default_factory=list)
+    active_public_region: dict[str, str] | None = None
+    active_statistical_scope: str | None = None
     active_year: int | None = None
     active_metrics: list[str] = field(default_factory=list)
     active_task: str | None = None
@@ -55,6 +65,8 @@ class ConversationState:
         return {
             "session_id": self.session_id,
             "active_entities": list(self.active_entities),
+            "active_public_region": dict(self.active_public_region) if self.active_public_region else None,
+            "active_statistical_scope": self.active_statistical_scope,
             "active_time_range": {"year": self.active_year} if self.active_year else None,
             "active_metrics": list(self.active_metrics),
             "active_task": self.active_task,
@@ -152,6 +164,8 @@ class ConversationService:
         state = ConversationState(
             session_id=str(snapshot["session_id"]),
             active_entities=list(snapshot.get("active_entities") or []),
+            active_public_region=dict(snapshot["active_public_region"]) if snapshot.get("active_public_region") else None,
+            active_statistical_scope=snapshot.get("active_statistical_scope"),
             active_year=snapshot.get("active_year"),
             active_metrics=list(snapshot.get("active_metrics") or []),
             active_task=snapshot.get("active_task"),
@@ -173,6 +187,8 @@ class ConversationService:
             "created_at": state.created_at,
             "updated_at": datetime.now(UTC).isoformat(),
             "active_entities": state.active_entities,
+            "active_public_region": state.active_public_region,
+            "active_statistical_scope": state.active_statistical_scope,
             "active_year": state.active_year,
             "active_metrics": state.active_metrics,
             "active_task": state.active_task,
@@ -196,6 +212,7 @@ class ConversationService:
             "sql_result": {key: sql.get(key) for key in ("query_result", "safety", "presentation") if sql.get(key) is not None} or None,
             "rag_result": {key: rag.get(key) for key in ("answerable", "references") if rag.get(key) is not None} or None,
             "interpretation": result.get("interpretation"), "finance_result": result.get("finance_result"),
+            "calculation_result": result.get("calculation_result"),
             "max_debt_result": result.get("max_debt_result"), "eligibility_result": result.get("eligibility_result"),
             "due_diligence_result": result.get("due_diligence_result"), "sources": result.get("sources") or [],
             "synthesis": result.get("synthesis") or {"claims": [], "dropped_claims": []},
@@ -217,12 +234,17 @@ class ConversationService:
             if state.finance_context_valid:
                 return "LOCAL", self._finance_follow_up(clean, state)
             return "LOCAL", self._clarification_result(clean, "融资假设已清除。请重新提供债务比例、利率、期限和逐年 CFADS，再进行测算。")
+        if state.turns and _CALCULATION_FOLLOW_UP.search(clean):
+            return "LOCAL", self._calculation_provenance(clean, state.turns[-1].result)
         if state.turns and _SOURCE_FOLLOW_UP.search(clean):
             return "LOCAL", self._provenance_for_question(clean, state)
         if self._is_comparison_follow_up(clean):
             if state.turns:
                 return "LOCAL", self._comparison_result(clean, state)
             return "LOCAL", self._clarification_result(clean, "当前没有可复用的历史结果。请先查询两个可比较的期间或对象。")
+        public_follow_up = self._public_statistics_follow_up(state, clean)
+        if public_follow_up is not None:
+            return "AGENT", public_follow_up
         lowered = clean.casefold()
         if "利用率" in clean and not any(term in lowered for _, terms, _ in _METRICS for term in terms):
             return "LOCAL", self._clarification_result(clean, "“利用率”可能指机柜上架率、GPU 利用率或算力资源利用率。请明确要查询的指标。")
@@ -252,12 +274,22 @@ class ConversationService:
                     for item in verified
                     if item.get("entity_type") and item.get("entity_id") and item.get("canonical_name")
                 ]
+            public_region = router.get("region_code")
+            if router.get("domain") == "POWER" and public_region:
+                try:
+                    state.active_public_region = {"code": str(public_region), "name": public_region_label(str(public_region))}
+                except StopIteration:
+                    state.active_public_region = None
+                state.active_statistical_scope = str(router.get("statistical_scope")) if router.get("statistical_scope") else None
             year = _YEAR.search(effective_question)
             if year:
                 state.active_year = int(year.group(1))
             metrics = self._metrics_for(effective_question)
             if metrics:
                 state.active_metrics = metrics
+            public_metric = str(router.get("metric_code") or "")
+            if public_metric_for(public_metric_label(public_metric)) == public_metric:
+                state.active_metrics = [public_metric]
             state.active_task = str(result.get("route") or state.active_task or "UNKNOWN")
             finance = result.get("finance_result") or {}
             if finance.get("inputs"):
@@ -268,6 +300,8 @@ class ConversationService:
     @staticmethod
     def _clear_analysis_context(state: ConversationState) -> None:
         state.active_entities = []
+        state.active_public_region = None
+        state.active_statistical_scope = None
         state.active_year = None
         state.active_metrics = []
         state.active_task = None
@@ -297,6 +331,27 @@ class ConversationService:
         return any(term in question.casefold() for term in ("两年差多少", "两年相比", "和刚才相比", "差多少", "变化多少"))
 
     @staticmethod
+    def _calculation_provenance(question: str, previous: dict[str, Any]) -> dict[str, Any]:
+        calculation = previous.get("calculation_result") or {}
+        if calculation.get("calculation_type") != "RATIO":
+            return ConversationService._clarification_result(question, "当前上一轮没有可复用的程序化派生指标计算。")
+        numerator = calculation.get("numerator") or {}
+        denominator = calculation.get("denominator") or {}
+        answer = (
+            f"计算公式：{calculation.get('formula')}。结果为 {calculation.get('display_value')}。"
+            f"分子取 {numerator.get('value')} {numerator.get('unit')}，分母取 {denominator.get('value')} {denominator.get('unit')}；"
+            "程序已核验两项数据的地区、年份、统计基础、统计口径和单位一致后才执行计算。"
+        )
+        return {
+            "question": question, "route": "CALC_PROVENANCE",
+            "router": {"route": "CALC_PROVENANCE", "reason": "复用已完成的程序化派生指标计算及其结构化输入。"},
+            "sql_result": None, "rag_result": None, "interpretation": None,
+            "calculation_result": calculation, "sources": list(previous.get("sources") or []),
+            "synthesis": {"claims": [{"claim_type": "CALC_PROVENANCE", "text": answer, "support_ids": [str(calculation.get("calculation_id"))]}], "dropped_claims": []},
+            "final_answer": answer,
+        }
+
+    @staticmethod
     def _has_entity(question: str) -> bool:
         return any(term in question for term in ("百旺信", "数据中心", "智算中心", "B200", "H800", "项目"))
 
@@ -314,6 +369,31 @@ class ConversationService:
     @staticmethod
     def _metric_label(key: str) -> str:
         return next((label for metric, _, label in _METRICS if metric == key), key)
+
+    @staticmethod
+    def _public_statistics_follow_up(state: ConversationState, question: str) -> str | None:
+        """Expand short public-statistics turns using only verified state."""
+        if state.active_public_region is None or not state.active_metrics:
+            return None
+        metric = public_metric_for(question)
+        requested_region = public_region_for(question)
+        year_match = _YEAR.search(question)
+        active_metric = state.active_metrics[-1]
+        is_registered_active_metric = public_metric_for(public_metric_label(active_metric)) == active_metric
+        metric = metric or related_public_metric_for(question, active_metric)
+        short_follow_up = bool(_FOLLOW_UP.match(question) or len(question) <= 14 or "其中" in question)
+        if not (metric is not None or requested_region is not None or (year_match and is_registered_active_metric)):
+            return None
+        if not short_follow_up and metric is None:
+            return None
+        metric = metric or (active_metric if is_registered_active_metric else None)
+        if metric is None:
+            return None
+        region = requested_region or state.active_public_region["code"]
+        year = int(year_match.group(1)) if year_match else state.active_year
+        if year is None:
+            return None
+        return f"{public_region_label(region)}{year}年{public_metric_label(metric)}是多少？"
 
     def _comparison_result(self, question: str, state: ConversationState) -> dict[str, Any]:
         metric = state.active_metrics[-1] if state.active_metrics else None

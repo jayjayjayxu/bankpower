@@ -113,6 +113,7 @@ def _public_response(
             "max_debt": result.get("max_debt_result"),
             "eligibility": result.get("eligibility_result"),
             "due_diligence": result.get("due_diligence_result"),
+            "calculation": result.get("calculation_result"),
         },
         interpretation=interpretation,
         structured_data={

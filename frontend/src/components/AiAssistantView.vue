@@ -80,6 +80,8 @@ function routeLabel(route) {
     DUE_DILIGENCE_FOLLOW_UP: '尽调结果复用',
     FINANCE_FOLLOW_UP: '融资假设重算',
     PROVENANCE: '上一轮证据追溯',
+    SQL_CALC: '公开统计程序计算',
+    CALC_PROVENANCE: '计算过程追溯',
     CLARIFICATION: '需澄清指标',
     IN_SCOPE_DATA_MISSING: '领域内数据暂缺',
     OUT_OF_SCOPE: '能力边界提示',
@@ -164,6 +166,15 @@ async function submit() {
             <section v-if="message.result.structured_data?.facts?.length" class="ai-evidence-block">
               <h2>关键数据</h2>
               <ul class="ai-claim-list"><li v-for="fact in message.result.structured_data.facts" :key="`${fact.key}-${fact.label}`"><span>{{ fact.label }}</span>{{ fact.value }}</li></ul>
+            </section>
+
+            <section v-if="message.result.data?.calculation" class="ai-evidence-block">
+              <h2>程序计算</h2>
+              <ul class="ai-claim-list">
+                <li><span>{{ message.result.data.calculation.calculation_type }}</span>{{ message.result.data.calculation.formula }} = <b>{{ message.result.data.calculation.display_value }}</b></li>
+                <li><span>分子</span>{{ message.result.data.calculation.numerator?.value }} {{ message.result.data.calculation.numerator?.unit }} · {{ message.result.data.calculation.numerator?.statistical_scope }}</li>
+                <li><span>分母</span>{{ message.result.data.calculation.denominator?.value }} {{ message.result.data.calculation.denominator?.unit }} · {{ message.result.data.calculation.denominator?.statistical_scope }}</li>
+              </ul>
             </section>
 
             <section v-if="message.result.structured_data?.candidates?.length" class="ai-evidence-block">

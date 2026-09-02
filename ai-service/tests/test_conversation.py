@@ -11,6 +11,7 @@ if str(SERVICE_ROOT) not in sys.path:
 
 from app.conversation import ConversationService, SQLiteConversationStore
 from app.finance import FinanceCalculator, FinanceInput, ProvenancedValue, RepaymentMethod, SourceType
+from app.public_statistics import public_metric_for, public_region_for
 
 
 class ConversationTests(unittest.TestCase):
@@ -185,6 +186,71 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(provenance["route"], "PROVENANCE")
         self.assertIn("2025年", provenance["final_answer"])
         self.assertEqual(len(calls), 2)
+
+    def test_public_derived_metric_followups_inherit_region_year_and_metric(self) -> None:
+        calls: list[str] = []
+
+        def public_agent(question: str) -> dict:
+            calls.append(question)
+            metric = public_metric_for(question)
+            region = public_region_for(question)
+            route = "SQL_CALC" if metric and metric.endswith("_share") else "SQL"
+            return {
+                "question": question, "route": route,
+                "router": {
+                    "route": route, "domain": "POWER", "region_code": region,
+                    "year": 2023 if "2023" in question else 2024, "metric_code": metric,
+                    "statistical_scope": "同口径公开发电统计", "scope_code": "TEST_SCOPE",
+                },
+                "sql_result": {"query_result": {"columns": [], "rows": []}}, "rag_result": None,
+                "interpretation": None, "sources": [], "synthesis": {"claims": [], "dropped_claims": []},
+                "final_answer": "受控公开统计结果。",
+            }
+
+        service = ConversationService(public_agent)
+        state, _, _ = service.run("全国2024年的发电总量是多少？")
+        self.assertEqual(state.active_public_region, {"code": "CN", "name": "全国"})
+        self.assertEqual(state.active_metrics, ["total_generation"])
+
+        state, _, second_effective = service.run("其中火力发电占比呢？", state.session_id)
+        self.assertEqual(second_effective, "全国2024年火力发电占比是多少？")
+        self.assertEqual(state.active_metrics, ["thermal_generation_share"])
+
+        state, _, third_effective = service.run("那风电呢？", state.session_id)
+        self.assertEqual(third_effective, "全国2024年风力发电占比是多少？")
+        self.assertEqual(state.active_metrics, ["wind_generation_share"])
+
+        state, _, fourth_effective = service.run("广东呢？", state.session_id)
+        self.assertEqual(fourth_effective, "广东2024年风力发电占比是多少？")
+        self.assertEqual(state.active_public_region, {"code": "GD", "name": "广东"})
+
+        _, _, fifth_effective = service.run("2023年是多少？", state.session_id)
+        self.assertEqual(fifth_effective, "广东2023年风力发电占比是多少？")
+        self.assertEqual(len(calls), 5)
+
+    def test_derived_metric_formula_followup_reuses_program_result(self) -> None:
+        calls: list[str] = []
+
+        def agent(question: str) -> dict:
+            calls.append(question)
+            return {
+                "question": question, "route": "SQL_CALC",
+                "router": {"route": "SQL_CALC", "domain": "POWER", "region_code": "CN", "year": 2024, "metric_code": "thermal_generation_share"},
+                "sql_result": None, "rag_result": None, "interpretation": None, "sources": [{"title": "公开统计"}],
+                "calculation_result": {
+                    "calculation_id": "CALC:CN:2024:thermal_generation_share", "calculation_type": "RATIO",
+                    "formula": "火力发电量 ÷ 发电总量 × 100%", "display_value": "63.19%",
+                    "numerator": {"value": "6374260", "unit": "GWh"}, "denominator": {"value": "10086880", "unit": "GWh"},
+                },
+                "synthesis": {"claims": [], "dropped_claims": []}, "final_answer": "63.19%。",
+            }
+
+        service = ConversationService(agent)
+        state, _, _ = service.run("全国2024年火力发电占比是多少？")
+        _, result, _ = service.run("这个占比怎么算的？", state.session_id)
+        self.assertEqual(result["route"], "CALC_PROVENANCE")
+        self.assertIn("火力发电量 ÷ 发电总量 × 100%", result["final_answer"])
+        self.assertEqual(len(calls), 1)
 
     def test_context_reset_prevents_old_entity_and_results_from_being_reused(self) -> None:
         state, _, _ = self.service.run("百旺信2025年上架率多少？")
