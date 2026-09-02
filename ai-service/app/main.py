@@ -84,6 +84,10 @@ def _public_warnings(result: dict[str, Any]) -> list[str]:
         warnings.append("SQL 安全校验未通过，未执行数据库查询。")
     interpretation = result.get("interpretation") or {}
     warnings.extend(str(item) for item in interpretation.get("warnings") or [])
+    warnings.extend(str(item) for item in (result.get("finance_result") or {}).get("warnings") or [])
+    warnings.extend(str(item) for item in (result.get("eligibility_result") or {}).get("warnings") or [])
+    if result.get("finance_boundary"):
+        warnings.append(str(result["finance_boundary"]))
     return warnings
 
 
@@ -100,6 +104,9 @@ def _public_response(
         data={
             "sql": _public_sql_data(result.get("sql_result")),
             "comparison": result.get("policy_comparison"),
+            "finance": result.get("finance_result"),
+            "max_debt": result.get("max_debt_result"),
+            "eligibility": result.get("eligibility_result"),
         },
         interpretation=interpretation,
         structured_data={
@@ -129,7 +136,7 @@ def create_app(
     provider = AgentProvider(settings, agent_factory) if agent_factory else AgentProvider(settings)
     audit_logger = audit_logger or AuditLogger(settings.audit_dir)
 
-    app = FastAPI(title="EnergyComputeAI", version="0.3.1")
+    app = FastAPI(title="EnergyComputeAI", version="4.0-C")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(settings.cors_allowed_origins),
@@ -164,7 +171,7 @@ def create_app(
             "request_id": request_id,
             "received_at": datetime.now(UTC).isoformat(),
             "question": payload.question,
-            "api_version": "0.3.1",
+            "api_version": "4.0-C",
         }
         try:
             async with app.state.run_gate:

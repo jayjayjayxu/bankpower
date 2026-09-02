@@ -14,6 +14,7 @@ from .config import Settings
 from .energy_compute import EnergyComputeAgent
 from .policy_rag import PolicyRAGAgent
 from .policy_workflow import EnergyPolicyBothAgent
+from .v4_workflow import V4ProjectWorkflow
 
 
 class AgentProtocol(Protocol):
@@ -101,10 +102,13 @@ class HybridAgent:
         self._energy_agent = EnergyComputeAgent(settings)
         self._policy_agent = PolicyRAGAgent(settings)
         self._both_agent = EnergyPolicyBothAgent(settings, self._energy_agent, self._policy_agent)
+        self._v4_agent = V4ProjectWorkflow(settings, self._energy_agent, self._policy_agent)
         self._legacy_agent: AgentProtocol | None = None
         self._legacy_lock = threading.Lock()
 
     def run(self, question: str) -> dict[str, Any]:
+        if self._v4_agent.supports(question):
+            return self._v4_agent.run(question)
         if self._requires_final_credit_determination(question):
             return self._credit_boundary(question)
         if self._both_agent.supports(question):
