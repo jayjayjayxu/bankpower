@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { askAi } from '../services/aiApi'
 
-defineEmits(['back'])
+defineEmits(['back', 'open-project-analysis'])
 
 const question = ref('')
 const messages = ref([])
@@ -129,6 +129,7 @@ async function submit() {
       <aside class="ai-sidebar">
         <section><span>工作方式</span><h2>程序负责正确，AI负责易读</h2><ol><li>解析设施、企业与商品别名</li><li>生成并校验只读 SQL</li><li>程序化解释数据口径、状态与缺失值</li></ol></section>
         <section><span>使用边界</span><p>系统可做数据库事实、现行公开政策解释及有限的指标比对；绿色贷款资格、授信建议与融资比例仍须人工复核。</p></section>
+        <section class="ai-due-diligence-link"><span>项目工具</span><h2>进入项目初步尽调</h2><p>汇集项目事实、政策规则与待补材料，形成可追溯的尽调快照。</p><button type="button" @click="$emit('open-project-analysis')">打开项目尽调 →</button></section>
       </aside>
 
       <form class="ai-composer" @submit.prevent="submit">

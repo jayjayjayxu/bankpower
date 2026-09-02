@@ -222,6 +222,10 @@ footer { display: flex; justify-content: space-between; width: min(1180px, calc(
   .detail-topbar, .enterprise-data-shell, .enterprise-detail-footer, .catalog-shell { width: min(100% - 28px, 500px); }.detail-back-button { padding: 7px 9px; font-size: 10px; }.enterprise-search-results { grid-template-columns: 1fr; }.enterprise-profile-hero { min-height: auto; display: grid; align-items: start; padding: 25px 20px; }.profile-rating { min-width: 0; }.enterprise-key-metrics, .enterprise-data-grid, .field-catalog-grid { grid-template-columns: 1fr; }.enterprise-data-card { min-height: auto; }.catalog-heading { display: grid; gap: 9px; align-items: start; }.enterprise-page-boundary { grid-template-columns: 1fr; gap: 7px; }.catalog-hero { min-height: auto; display: grid; align-items: start; padding: 25px 20px; }.catalog-hero aside { min-width: 0; }.catalog-toolbar { display: grid; }.catalog-toolbar form { flex-wrap: wrap; }.catalog-toolbar label { min-width: 100%; }.catalog-record-detail dl { grid-template-columns: 1fr; }.catalog-boundary { grid-template-columns: 1fr; gap: 7px; }
 }
 
+.ai-due-diligence-link { border-color: #b9ddd8 !important; background: #edf8f6 !important; }
+.ai-due-diligence-link button { margin-top: 14px; padding: 8px 10px; border: 1px solid #8ccbc5; border-radius: 5px; color: #196f69; background: #fff; cursor: pointer; font-size: 11px; font-weight: 700; }
+.ai-due-diligence-link button:hover { background: #dff2ee; }
+
 @media (max-width: 920px) {
   .ai-topbar, .ai-shell { width: min(100% - 36px, 760px); }.ai-shell { grid-template-columns: 1fr; }.ai-sidebar { grid-template-columns: 1fr 1fr; }.ai-composer { grid-column: 1; }
 }
