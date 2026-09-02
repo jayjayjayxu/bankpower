@@ -232,9 +232,9 @@ footer { display: flex; justify-content: space-between; width: min(1180px, calc(
 /* AI chat uses an app-like viewport: messages scroll, the composer does not. */
 .ai-page { height: 100dvh; min-height: 0; overflow: hidden; }
 .ai-topbar { height: 74px; box-sizing: border-box; padding: 12px 0; }
-.ai-shell { height: calc(100dvh - 74px); min-height: 0; align-items: stretch; box-sizing: border-box; padding: 0 0 18px; overflow: hidden; }
-.ai-chat-panel { position: relative; min-height: 0; height: 100%; }
-.ai-conversation { min-height: 0; height: 100%; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; box-sizing: border-box; padding: 26px 26px 190px; }
+.ai-shell { height: calc(100dvh - 74px); min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; box-sizing: border-box; padding: 0 0 18px; overflow: hidden; }
+.ai-chat-panel { position: relative; min-height: 0; height: 100%; display: flex; overflow: hidden; }
+.ai-conversation { min-height: 0; flex: 1 1 auto; height: auto; max-height: 100%; overflow-y: scroll; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; box-sizing: border-box; padding: 26px 26px 190px; }
 .ai-conversation::-webkit-scrollbar, .ai-sidebar::-webkit-scrollbar { width: 8px; }
 .ai-conversation::-webkit-scrollbar-thumb, .ai-sidebar::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 10px; background: #bdd4d4; background-clip: padding-box; }
 .ai-sidebar { min-height: 0; overflow-y: auto; padding-right: 3px; }
