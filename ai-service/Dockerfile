@@ -13,13 +13,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ai-service/requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt \
-    && pip install --no-cache-dir \
-      numpy==2.5.2 \
-      faiss-cpu==1.15.0 \
-      torch==2.11.0 \
-      transformers==5.12.0 \
-      huggingface_hub==1.19.0
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY ai-service /app
 

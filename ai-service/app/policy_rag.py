@@ -52,6 +52,54 @@ class Backend(Protocol):
     def complete(self, system_prompt: str, user_prompt: str) -> tuple[str, dict[str, Any]]: ...
 
 
+class LocalPolicyIndexSearcher:
+    """Dependency-free fallback over the same public/effective policy records.
+
+    Production can use this when an embedding runtime is intentionally not
+    installed on a small server.  It never broadens the corpus: scoring is
+    performed only against the pre-built FAISS index's accompanying records.
+    The answerer still applies the normal Top-5, quote validation and LLM
+    evidence-boundary rules.
+    """
+
+    def __init__(self, index_dir: Path) -> None:
+        records_path = index_dir / "records.jsonl"
+        if not records_path.is_file():
+            raise PolicyRAGError(f"政策索引记录缺失：{records_path}")
+        self.records = [
+            json.loads(line)
+            for line in records_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.records = [
+            item for item in self.records
+            if item.get("confidentiality") == "PUBLIC" and item.get("status") == "EFFECTIVE"
+        ]
+        if not self.records:
+            raise PolicyRAGError("政策索引中不存在 PUBLIC 且 EFFECTIVE 的记录。")
+
+    @staticmethod
+    def _terms(value: str) -> set[str]:
+        compact = _compact(value).casefold()
+        terms = set(re.findall(r"[a-z0-9]+", compact))
+        for run in re.findall(r"[\u4e00-\u9fff]+", compact):
+            terms.update(run[index : index + 2] for index in range(max(0, len(run) - 1)))
+            if len(run) == 1:
+                terms.add(run)
+        return {term for term in terms if term}
+
+    def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
+        terms = self._terms(query)
+        ranked: list[tuple[int, int, dict[str, Any]]] = []
+        for position, item in enumerate(self.records):
+            title = str(item.get("title") or "")
+            text = str(item.get("text") or "")
+            score = sum((3 if term in title else 0) + text.count(term) for term in terms)
+            ranked.append((score, -position, item))
+        ranked.sort(key=lambda value: (value[0], value[1]), reverse=True)
+        return [dict(item, rank=index, similarity=float(score)) for index, (score, _, item) in enumerate(ranked[:top_k], 1)]
+
+
 @dataclass(frozen=True)
 class PolicyRAGResult:
     answerable: bool
@@ -254,6 +302,12 @@ class PolicyRAGAgent:
         if self._answerer is None:
             with self._lock:
                 if self._answerer is None:
+                    if os.getenv("POLICY_RAG_SEARCH_MODE", "").casefold() == "lexical":
+                        self._answerer = PolicyRAGAnswerer(
+                            LocalPolicyIndexSearcher(self.settings.policy_rag_index_dir),
+                            DeepSeekPolicyBackend(),
+                        )
+                        return self._answerer
                     if self.settings.core_dir is None:
                         raise PolicyRAGError("未设置 BANKAI_CORE_DIR，无法加载本地 BGE 检索器。")
                     source_dir = self.settings.core_dir / "src"

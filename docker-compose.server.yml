@@ -55,6 +55,9 @@ services:
     environment:
       BANKAI_CORE_DIR: /opt/bank-ai
       POLICY_RAG_INDEX_DIR: /opt/policy-index/public_effective
+      # This 3.4GB server uses the same PUBLIC+EFFECTIVE policy records with a
+      # deterministic local fallback, avoiding a large CPU embedding runtime.
+      POLICY_RAG_SEARCH_MODE: lexical
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:?请在服务器.env中设置DEEPSEEK_API_KEY}
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-flash}
       DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
