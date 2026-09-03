@@ -114,12 +114,12 @@ class HybridAgent:
     def run(self, question: str) -> dict[str, Any]:
         if self._public_statistics_agent.supports(question):
             return self._public_statistics_agent.run(question)
-        if self._v4_agent.supports(question):
-            return self._v4_agent.run(question)
         if self._requires_final_credit_determination(question):
             return self._credit_boundary(question)
         if self._corporate_agent.supports(question):
             return self._corporate_agent.run(question)
+        if self._v4_agent.supports(question):
+            return self._v4_agent.run(question)
         if self._both_agent.supports(question):
             return self._both_agent.run(question)
         if self._policy_agent.supports(question):

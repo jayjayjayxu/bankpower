@@ -36,6 +36,8 @@ FIELD_DISPLAY: dict[str, dict[str, str]] = {
     "total_liabilities_wanyuan": {"label": "总负债", "display": "wanyuan"},
     "debt_ratio": {"label": "资产负债率", "display": "percent"},
     "operating_cashflow_wanyuan": {"label": "经营现金流", "display": "wanyuan"},
+    "npv_wanyuan": {"label": "储能项目 NPV", "display": "wanyuan"},
+    "base_min_dscr": {"label": "最低 DSCR"},
 }
 
 MAPPING_STATUS_LABELS = {

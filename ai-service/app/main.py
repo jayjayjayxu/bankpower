@@ -93,7 +93,10 @@ def _public_warnings(result: dict[str, Any]) -> list[str]:
     if result.get("finance_boundary"):
         warnings.append(str(result["finance_boundary"]))
     warnings.extend(str(item) for item in (result.get("warnings") or []))
-    return warnings
+    # A controlled agent can place the same warning in both its interpretation
+    # and top-level result.  The public response should state it once, while
+    # preserving the first (most specific) occurrence and ordering.
+    return list(dict.fromkeys(warnings))
 
 
 def _public_response(
