@@ -68,10 +68,15 @@ ALLOWED_COLUMNS: dict[str, set[str]] = {
     },
     "enterprise_profile": {
         "company_id", "company_name", "company_alias", "city_name", "district_name", "industry_name",
-        "power_chain_role", "energy_customer_type", "high_power_user_flag", "data_center_flag",
+        "ownership_type", "parent_company", "power_chain_role", "energy_customer_type", "high_power_user_flag", "data_center_flag",
         "manufacturing_flag", "energy_company_flag", "existing_solar_flag", "existing_solar_mw",
         "existing_storage_flag", "existing_storage_mwh", "vpp_participant_flag", "green_power_flag",
         "green_power_ratio", "verification_priority", "business_verification_status", "notes",
+    },
+    "enterprise_financial": {
+        "company_id", "financial_year", "revenue_wanyuan", "revenue_growth", "net_profit_wanyuan",
+        "total_assets_wanyuan", "total_liabilities_wanyuan", "total_equity_wanyuan", "debt_ratio",
+        "operating_cashflow_wanyuan", "currency", "source_id", "data_quality", "statistical_scope", "notes",
     },
     "enterprise_monthly_power": {
         "record_id", "company_id", "load_scenario_id", "year", "month", "power_consumption_kwh",

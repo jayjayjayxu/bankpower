@@ -129,6 +129,17 @@ Fields:
 - vpp_participant_flag, green_power_flag, green_power_ratio — disclosed participation and green-power ratio.
 - verification_priority, business_verification_status, notes — verification metadata.
 
+## 7A. enterprise_financial — enterprise annual financial facts
+
+One row is one enterprise's disclosed or authorised annual financial record. Join company_id to enterprise_profile.company_id. A missing row means that the financial fact is unavailable; it must never be inferred from an energy or project-model record.
+
+Fields:
+- company_id, financial_year — enterprise and reporting-year identity.
+- revenue_wanyuan, revenue_growth, net_profit_wanyuan — operating results, in 万元 except the decimal growth ratio.
+- total_assets_wanyuan, total_liabilities_wanyuan, total_equity_wanyuan, debt_ratio — balance-sheet facts; debt_ratio is a decimal ratio.
+- operating_cashflow_wanyuan — operating cash flow, in 万元.
+- currency, source_id, data_quality, statistical_scope, notes — currency, source and disclosure boundary.
+
 ## 8. enterprise_monthly_power — monthly enterprise consumption
 
 One row is one company, year, month, and load scenario. Join company_id to enterprise_profile.company_id.
@@ -207,6 +218,7 @@ Fields:
 - enterprise_monthly_power.company_id = enterprise_profile.company_id
 - v_enterprise_annual_energy_summary.company_id = enterprise_profile.company_id
 - analysis_result_snapshot.company_id = enterprise_profile.company_id
+- enterprise_financial.company_id = enterprise_profile.company_id
 - analysis_result_snapshot.run_id = analysis_run.run_id
 
 ## Entity aliases

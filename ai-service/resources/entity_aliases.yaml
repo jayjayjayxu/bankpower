@@ -42,3 +42,12 @@ entities:
     canonical_name: 深圳电信深汕数据中心（腾讯鹅埠数据中心5号楼）
     aliases:
       - 深圳电信深汕数据中心
+  - entity_type: COMPANY
+    entity_id: C000020
+    canonical_name: 深圳市地铁集团有限公司
+    aliases:
+      - 深圳地铁
+      - 深圳地铁集团
+      - 深圳市地铁公司
+      - 深圳市地铁集团
+      - 深铁集团

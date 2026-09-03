@@ -28,6 +28,14 @@ FIELD_DISPLAY: dict[str, dict[str, str]] = {
     "disclosure_status": {"label": "披露状态"},
     "mapping_status": {"label": "映射状态", "display": "mapping_status"},
     "candidate_name": {"label": "候选参照"},
+    "company_name": {"label": "企业名称"},
+    "financial_year": {"label": "财务年度", "display": "year"},
+    "revenue_wanyuan": {"label": "营业收入", "display": "wanyuan"},
+    "net_profit_wanyuan": {"label": "净利润", "display": "wanyuan"},
+    "total_assets_wanyuan": {"label": "总资产", "display": "wanyuan"},
+    "total_liabilities_wanyuan": {"label": "总负债", "display": "wanyuan"},
+    "debt_ratio": {"label": "资产负债率", "display": "percent"},
+    "operating_cashflow_wanyuan": {"label": "经营现金流", "display": "wanyuan"},
 }
 
 MAPPING_STATUS_LABELS = {
@@ -112,6 +120,9 @@ def format_field(field: str, value: Any) -> str | None:
         return format_rack_price(value)
     if display_type == "year":
         return f"{value}年"
+    if display_type == "wanyuan":
+        number = _decimal(value)
+        return None if number is None else f"{_plain_decimal(number, 4)} 万元"
     if display_type == "mapping_status":
         return MAPPING_STATUS_LABELS.get(str(value).upper(), str(value))
     return str(value)

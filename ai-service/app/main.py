@@ -116,6 +116,7 @@ def _public_response(
             "eligibility": result.get("eligibility_result"),
             "due_diligence": result.get("due_diligence_result"),
             "calculation": result.get("calculation_result"),
+            "corporate": result.get("corporate_result"),
         },
         interpretation=interpretation,
         structured_data={

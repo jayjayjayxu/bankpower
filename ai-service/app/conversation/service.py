@@ -34,6 +34,13 @@ _METRICS = (
     ("rack_occupancy_rate", ("上架率", "入住率", "机柜利用率"), "上架率"),
     ("rack_price", ("平均机柜价格", "机柜价格", "托管价格"), "平均机柜价格"),
     ("pue", ("pue", "电能利用效率"), "PUE"),
+    ("corporate_revenue", ("营收", "营业收入"), "营业收入"),
+    ("corporate_net_profit", ("净利润",), "净利润"),
+    ("corporate_total_assets", ("总资产", "资产总额"), "总资产"),
+    ("corporate_total_liabilities", ("总负债", "负债总额"), "总负债"),
+    ("corporate_debt_ratio", ("资产负债率", "负债率"), "资产负债率"),
+    ("corporate_operating_cashflow", ("经营现金流", "经营活动现金流"), "经营现金流"),
+    ("corporate_passenger_volume", ("客运量", "客流", "客运"), "客运量"),
 )
 
 
@@ -353,7 +360,10 @@ class ConversationService:
 
     @staticmethod
     def _has_entity(question: str) -> bool:
-        return any(term in question for term in ("百旺信", "数据中心", "智算中心", "B200", "H800", "项目"))
+        return any(term in question for term in (
+            "百旺信", "数据中心", "智算中心", "B200", "H800", "项目",
+            "深圳地铁", "深铁集团", "地铁集团", "公司", "企业",
+        ))
 
     @staticmethod
     def _metric_for(question: str) -> str | None:
@@ -439,6 +449,13 @@ class ConversationService:
             "rack_occupancy_rate": ("rack_utilization_ratio", "metric_value"),
             "rack_price": ("average_rack_price_yuan_month", "metric_value"),
             "pue": ("metric_value",),
+            "corporate_revenue": ("revenue_wanyuan",),
+            "corporate_net_profit": ("net_profit_wanyuan",),
+            "corporate_total_assets": ("total_assets_wanyuan",),
+            "corporate_total_liabilities": ("total_liabilities_wanyuan",),
+            "corporate_debt_ratio": ("debt_ratio",),
+            "corporate_operating_cashflow": ("operating_cashflow_wanyuan",),
+            "corporate_passenger_volume": ("passenger_volume",),
         }.get(metric, ())
         for row in query.get("rows") or []:
             mapped = dict(zip(columns, row))

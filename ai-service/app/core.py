@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Callable, Protocol
 
 from .config import Settings
+from .corporate_analysis import CorporateAnalysisAgent
 from .energy_compute import EnergyComputeAgent
 from .energy_sql import mysql_command, mysql_environment
 from .policy_rag import PolicyRAGAgent
@@ -106,6 +107,7 @@ class HybridAgent:
         self._both_agent = EnergyPolicyBothAgent(settings, self._energy_agent, self._policy_agent)
         self._v4_agent = V4ProjectWorkflow(settings, self._energy_agent, self._policy_agent)
         self._public_statistics_agent = PublicStatisticsAgent(settings)
+        self._corporate_agent = CorporateAnalysisAgent(settings)
         self._legacy_agent: AgentProtocol | None = None
         self._legacy_lock = threading.Lock()
 
@@ -116,6 +118,8 @@ class HybridAgent:
             return self._v4_agent.run(question)
         if self._requires_final_credit_determination(question):
             return self._credit_boundary(question)
+        if self._corporate_agent.supports(question):
+            return self._corporate_agent.run(question)
         if self._both_agent.supports(question):
             return self._both_agent.run(question)
         if self._policy_agent.supports(question):

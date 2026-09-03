@@ -47,7 +47,12 @@ class EntityResolver:
                 f"FACILITY: enterprise_data_center_v2.facility_code = '{item['entity_id']}'"
                 f"（{item['canonical_name']}）"
                 if item["entity_type"] == "FACILITY"
-                else f"{item['entity_type']} {item['entity_id']} = {item['canonical_name']}"
+                else (
+                    f"COMPANY: enterprise_profile.company_id = '{item['entity_id']}'"
+                    f"（{item['canonical_name']}）"
+                    if item["entity_type"] == "COMPANY"
+                    else f"{item['entity_type']} {item['entity_id']} = {item['canonical_name']}"
+                )
             )
             for item in matches
         )

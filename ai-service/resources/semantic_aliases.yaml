@@ -56,6 +56,27 @@ max_debt_ratio:
   table: analysis_result_snapshot
   unit: ratio
   boundary: 情景模型输出，不是银行承诺或推荐贷款比例。
+revenue_wanyuan:
+  aliases:
+    - 营收
+    - 营业收入
+  table: enterprise_financial
+  unit: 万元
+  boundary: 仅可使用已披露或授权入库的企业年度财务记录。
+total_liabilities_wanyuan:
+  aliases:
+    - 总负债
+    - 负债总额
+  table: enterprise_financial
+  unit: 万元
+  boundary: 不得用项目融资情景或能源数据推断集团负债。
+debt_ratio:
+  aliases:
+    - 资产负债率
+    - 负债率
+  table: enterprise_financial
+  unit: ratio
+  boundary: 仅代表入库年度财务口径。
 mapping_status:
   aliases:
     - 商品设施映射

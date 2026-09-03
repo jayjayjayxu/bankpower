@@ -15,13 +15,14 @@ const examples = [
   '深圳百旺信智算中心2025年的上架率和平均机柜价格是多少？',
   '哪些算力中心PUE低于1.3？',
   'B200-C4-1对应哪个数据中心？',
+  '深圳地铁集团2024年营收、负债、客运量是多少？',
 ]
 
 const canSubmit = computed(() => Boolean(question.value.trim()) && !loading.value)
 const contextItems = computed(() => {
   const state = conversation.value
   if (!state) return []
-  const entities = (state.active_entities || []).map((item) => ({ key: `entity-${item.id}`, label: `项目：${item.name}` }))
+  const entities = (state.active_entities || []).map((item) => ({ key: `entity-${item.id}`, label: `${item.type === 'COMPANY' ? '企业' : '项目'}：${item.name}` }))
   const year = state.active_time_range?.year ? [{ key: 'year', label: `年份：${state.active_time_range.year}` }] : []
   const metrics = (state.active_metrics || []).map((item) => ({ key: `metric-${item}`, label: `指标：${metricLabel(item)}` }))
   const assumptions = (state.assumptions || []).map((item) => ({ key: `assumption-${item.field}`, label: `假设：${assumptionLabel(item)}` }))
@@ -29,7 +30,12 @@ const contextItems = computed(() => {
 })
 
 function metricLabel(metric) {
-  return { rack_occupancy_rate: '上架率', rack_price: '平均机柜价格', pue: 'PUE' }[metric] || metric
+  return {
+    rack_occupancy_rate: '上架率', rack_price: '平均机柜价格', pue: 'PUE',
+    corporate_revenue: '营业收入', corporate_net_profit: '净利润', corporate_total_assets: '总资产',
+    corporate_total_liabilities: '总负债', corporate_debt_ratio: '资产负债率',
+    corporate_operating_cashflow: '经营现金流', corporate_passenger_volume: '客运量',
+  }[metric] || metric
 }
 
 function assumptionLabel(item) {
@@ -82,6 +88,8 @@ function routeLabel(route) {
     FINANCE_FOLLOW_UP: '融资假设重算',
     PROVENANCE: '上一轮证据追溯',
     SQL_CALC: '公开统计程序计算',
+    CORPORATE_FACT: '企业结构化查询',
+    CORPORATE_ANALYSIS: '企业受控分析',
     CALC_PROVENANCE: '计算过程追溯',
     CLARIFICATION: '需澄清指标',
     IN_SCOPE_DATA_MISSING: '领域内数据暂缺',
@@ -141,8 +149,8 @@ async function scrollConversationToLatest() {
   <div class="ai-page">
     <header class="ai-topbar">
       <button type="button" class="ai-back" @click="$emit('back')">← 返回电力研究</button>
-      <div><strong>AI 智能问答</strong><span>电力与算力数据库事实可追溯</span></div>
-      <em>EnergyComputeAI · V0.3.1</em>
+      <div><strong>AI 智能问答</strong><span>电力、算力与企业数据分析可追溯</span></div>
+      <em>EnergyComputeAI · V6.3</em>
     </header>
 
     <main class="ai-shell">
@@ -155,7 +163,7 @@ async function scrollConversationToLatest() {
           <small>仅继承已确认实体、明确时间与指标</small>
         </div>
         <div v-if="!messages.length" class="ai-welcome">
-          <p>面向电力、算力与现行公开政策的可审计问答</p>
+          <p>面向电力、算力、企业数据与现行公开政策的可审计问答</p>
           <h1>先取证，再作答。</h1>
           <span>数字只来自已执行的只读 SQL；系统会将原始结果转换为业务语义，并保留数据口径与证据边界。</span>
           <div class="ai-examples">
@@ -191,6 +199,19 @@ async function scrollConversationToLatest() {
                 <li><span>{{ message.result.data.calculation.calculation_type }}</span>{{ message.result.data.calculation.formula }} = <b>{{ message.result.data.calculation.display_value }}</b></li>
                 <li><span>分子</span>{{ message.result.data.calculation.numerator?.value }} {{ message.result.data.calculation.numerator?.unit }} · {{ message.result.data.calculation.numerator?.statistical_scope }}</li>
                 <li><span>分母</span>{{ message.result.data.calculation.denominator?.value }} {{ message.result.data.calculation.denominator?.unit }} · {{ message.result.data.calculation.denominator?.statistical_scope }}</li>
+              </ul>
+            </section>
+
+            <section v-if="message.result.data?.corporate" class="ai-evidence-block">
+              <h2>企业分析摘要</h2>
+              <ul v-if="message.result.data.corporate.positive_factors?.length" class="ai-claim-list">
+                <li v-for="(item, itemIndex) in message.result.data.corporate.positive_factors" :key="`positive-${itemIndex}`"><span>有利因素</span>{{ item }}</li>
+              </ul>
+              <ul v-if="message.result.data.corporate.risk_factors?.length" class="ai-claim-list">
+                <li v-for="(item, itemIndex) in message.result.data.corporate.risk_factors" :key="`risk-${itemIndex}`"><span>主要风险</span>{{ item }}</li>
+              </ul>
+              <ul v-if="message.result.data.corporate.evidence_gaps?.length" class="ai-claim-list">
+                <li v-for="(item, itemIndex) in message.result.data.corporate.evidence_gaps" :key="`gap-${itemIndex}`"><span>待补证据</span>{{ item }}</li>
               </ul>
             </section>
 
@@ -237,7 +258,7 @@ async function scrollConversationToLatest() {
 
       <aside class="ai-sidebar">
         <section><span>工作方式</span><h2>程序负责正确，AI负责易读</h2><ol><li>解析设施、企业与商品别名</li><li>生成并校验只读 SQL</li><li>程序化解释数据口径、状态与缺失值</li></ol></section>
-        <section><span>使用边界</span><p>系统可做数据库事实、现行公开政策解释及有限的指标比对；绿色贷款资格、授信建议与融资比例仍须人工复核。</p></section>
+        <section><span>使用边界</span><p>系统可做数据库事实、现行公开政策解释、已注册企业的受控分析及有限的指标比对；绿色贷款资格、授信建议与融资比例仍须人工复核。</p></section>
         <section class="ai-due-diligence-link"><span>项目工具</span><h2>进入项目初步尽调</h2><p>汇集项目事实、政策规则与待补材料，形成可追溯的尽调快照。</p><button type="button" @click="$emit('open-project-analysis')">打开项目尽调 →</button></section>
       </aside>
     </main>
