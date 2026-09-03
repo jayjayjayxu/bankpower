@@ -14,8 +14,7 @@ const conversationViewport = ref(null)
 const examples = [
   '深圳百旺信智算中心2025年的上架率和平均机柜价格是多少？',
   '哪些算力中心PUE低于1.3？',
-  'B200-C4-1对应哪个数据中心？',
-  '深圳地铁集团2024年营收、负债、客运量是多少？',
+  '深圳地铁还有哪些数据需要客户经理进行尽调？',
 ]
 
 const canSubmit = computed(() => Boolean(question.value.trim()) && !loading.value)
