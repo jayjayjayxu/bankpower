@@ -28,6 +28,10 @@ class Settings:
     sql_debug_token: str
     policy_rag_index_dir: Path
     max_question_chars: int = 2_000
+    mysql_host: str = ""
+    mysql_port: int = 3306
+    mysql_user: str = ""
+    mysql_password: str = ""
 
     @classmethod
     def from_environment(cls) -> "Settings":
@@ -60,4 +64,11 @@ class Settings:
             policy_rag_index_dir=Path(
                 os.getenv("POLICY_RAG_INDEX_DIR", "runtime/policy_vector_index/public_effective")
             ).expanduser(),
+            # A production container cannot use macOS's encrypted login-path.
+            # These are intentionally opt-in: local development continues to
+            # use the audited MySQL login-path unless AI_DB_HOST is configured.
+            mysql_host=os.getenv("AI_DB_HOST", "").strip(),
+            mysql_port=int(os.getenv("AI_DB_PORT", "3306")),
+            mysql_user=os.getenv("AI_DB_USER", "").strip(),
+            mysql_password=os.getenv("AI_DB_PASSWORD", ""),
         )

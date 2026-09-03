@@ -48,6 +48,36 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    environment:
+      BANKAI_CORE_DIR: /opt/bank-ai
+      POLICY_RAG_INDEX_DIR: /opt/policy-index/public_effective
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:?请在服务器.env中设置DEEPSEEK_API_KEY}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-flash}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      SPDB_DATABASE: spdb_power_finance
+      MYSQL_BINARY: /usr/bin/mysql
+      AI_DB_HOST: mysql
+      AI_DB_PORT: 3306
+      AI_DB_USER: bankpower_ai_reader
+      AI_DB_PASSWORD: ${AI_DB_PASSWORD:?请在服务器.env中设置AI_DB_PASSWORD}
+      AI_API_AUDIT_DIR: /app/runtime/audit
+      AI_API_CORS_ALLOWED_ORIGINS: ${AI_API_CORS_ALLOWED_ORIGINS:-http://121.40.255.180}
+      AI_API_MAX_CONCURRENCY: 1
+      AI_API_DATABASE_HEALTHCHECK: "true"
+      AI_API_ENABLE_SQL_DEBUG: "false"
+    volumes:
+      - /opt/bankpower-ai/core:/opt/bank-ai:ro
+      - /opt/bankpower-ai/policy-index:/opt/policy-index:ro
+      - ai_audit:/app/runtime/audit
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
@@ -57,6 +87,7 @@ services:
     depends_on:
       - backend
       - compute-backend
+      - ai-service
     ports:
       - "80:80"
     volumes:
@@ -84,5 +115,6 @@ services:
 
 volumes:
   mysql_data:
+  ai_audit:
   certbot_webroot:
   letsencrypt:

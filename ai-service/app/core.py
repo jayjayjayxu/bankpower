@@ -12,6 +12,7 @@ from typing import Any, Callable, Protocol
 
 from .config import Settings
 from .energy_compute import EnergyComputeAgent
+from .energy_sql import mysql_command, mysql_environment
 from .policy_rag import PolicyRAGAgent
 from .policy_workflow import EnergyPolicyBothAgent
 from .public_statistics import PublicStatisticsAgent
@@ -216,19 +217,13 @@ def health_details(settings: Settings) -> dict[str, str]:
             return "missing_mysql_client"
         try:
             completed = subprocess.run(
-                [
-                    str(settings.mysql_binary),
-                    f"--login-path={login_path}",
-                    "--batch",
-                    "--skip-column-names",
-                    database_name,
-                    "-e",
-                    "SELECT 1",
-                ],
+                mysql_command(settings, login_path, database_name)
+                + ["--skip-column-names", "-e", "SELECT 1"],
                 capture_output=True,
                 text=True,
                 timeout=3,
                 check=False,
+                env=mysql_environment(settings),
             )
             return "ok" if completed.returncode == 0 else "unavailable"
         except (OSError, subprocess.TimeoutExpired):

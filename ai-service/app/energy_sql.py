@@ -321,19 +321,13 @@ class SpdbReadOnlyExecutor:
             + ";\nROLLBACK;\n"
         )
         completed = subprocess.run(
-            [
-                str(self.settings.mysql_binary),
-                f"--login-path={self.settings.spdb_sql_login_path}",
-                "--default-character-set=utf8mb4",
-                "--batch",
-                "--raw",
-                self.settings.spdb_database,
-            ],
+            mysql_command(self.settings, self.settings.spdb_sql_login_path, self.settings.spdb_database),
             input=payload,
             text=True,
             capture_output=True,
             timeout=15,
             check=False,
+            env=mysql_environment(self.settings),
         )
         if completed.returncode:
             raise RuntimeError(completed.stderr.strip() or "spdb_power_finance 查询失败。")
@@ -341,6 +335,41 @@ class SpdbReadOnlyExecutor:
             return QueryResult([], [])
         parsed = list(csv.reader(StringIO(completed.stdout), delimiter="\t"))
         return QueryResult(parsed[0], parsed[1:])
+
+
+def mysql_command(settings: Settings, login_path: str, database: str) -> list[str]:
+    """Build a read-only client command without exposing a password in argv.
+
+    Local usage stays on ``mysql_config_editor`` login paths.  The production
+    container instead receives a dedicated read-only account through its
+    environment, because a host login-path file is neither portable nor safe
+    to bake into an image.
+    """
+
+    command = [str(settings.mysql_binary)]
+    if settings.mysql_host:
+        if not settings.mysql_user or not settings.mysql_password:
+            raise RuntimeError("AI_DB_HOST 已配置，但缺少 AI_DB_USER 或 AI_DB_PASSWORD。")
+        command.extend(
+            [
+                f"--host={settings.mysql_host}",
+                f"--port={settings.mysql_port}",
+                f"--user={settings.mysql_user}",
+            ]
+        )
+    else:
+        command.append(f"--login-path={login_path}")
+    return command + ["--default-character-set=utf8mb4", "--batch", "--raw", database]
+
+
+def mysql_environment(settings: Settings) -> dict[str, str] | None:
+    if not settings.mysql_host:
+        return None
+    environment = os.environ.copy()
+    # MYSQL_PWD is confined to the child process. It never appears in the
+    # command line, response payload, audit record, or image layers.
+    environment["MYSQL_PWD"] = settings.mysql_password
+    return environment
 
 
 def is_not_answerable_sql(raw_sql: str) -> bool:

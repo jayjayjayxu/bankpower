@@ -1,0 +1,7 @@
+.git
+.env
+.env.*
+node_modules
+target
+ai-service/runtime
+**/__pycache__
