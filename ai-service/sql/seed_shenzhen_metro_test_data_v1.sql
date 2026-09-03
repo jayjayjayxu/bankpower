@@ -27,24 +27,24 @@ INSERT INTO enterprise_financial (
 ) VALUES (
     'C000020', 2025, 2200000.0000, 0.0450, 80000.0000,
     18000000.0000, 11400000.0000, 6600000.0000, 0.63333333,
-    360000.0000, 'CNY', 'TEST-SEED-SZMETRO-2025-V1', 'SIMULATED_TEST_ONLY',
+    360000.0000, 'CNY', 902025001, 'SIMULATED_TEST_ONLY',
     'Synthetic consolidated annual scenario for demonstration only',
     'TEST ONLY. Fictional values generated for EnergyComputeAI credit-analysis demonstration; not Shenzhen Metro disclosures.'
 )
 ON DUPLICATE KEY UPDATE
-    revenue_wanyuan=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(revenue_wanyuan), revenue_wanyuan),
-    revenue_growth=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(revenue_growth), revenue_growth),
-    net_profit_wanyuan=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(net_profit_wanyuan), net_profit_wanyuan),
-    total_assets_wanyuan=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(total_assets_wanyuan), total_assets_wanyuan),
-    total_liabilities_wanyuan=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(total_liabilities_wanyuan), total_liabilities_wanyuan),
-    total_equity_wanyuan=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(total_equity_wanyuan), total_equity_wanyuan),
-    debt_ratio=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(debt_ratio), debt_ratio),
-    operating_cashflow_wanyuan=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(operating_cashflow_wanyuan), operating_cashflow_wanyuan),
-    currency=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(currency), currency),
-    source_id=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(source_id), source_id),
-    data_quality=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(data_quality), data_quality),
-    statistical_scope=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(statistical_scope), statistical_scope),
-    notes=IF(source_id LIKE 'TEST-SEED-SZMETRO-%', VALUES(notes), notes);
+    revenue_wanyuan=IF(source_id=902025001, VALUES(revenue_wanyuan), revenue_wanyuan),
+    revenue_growth=IF(source_id=902025001, VALUES(revenue_growth), revenue_growth),
+    net_profit_wanyuan=IF(source_id=902025001, VALUES(net_profit_wanyuan), net_profit_wanyuan),
+    total_assets_wanyuan=IF(source_id=902025001, VALUES(total_assets_wanyuan), total_assets_wanyuan),
+    total_liabilities_wanyuan=IF(source_id=902025001, VALUES(total_liabilities_wanyuan), total_liabilities_wanyuan),
+    total_equity_wanyuan=IF(source_id=902025001, VALUES(total_equity_wanyuan), total_equity_wanyuan),
+    debt_ratio=IF(source_id=902025001, VALUES(debt_ratio), debt_ratio),
+    operating_cashflow_wanyuan=IF(source_id=902025001, VALUES(operating_cashflow_wanyuan), operating_cashflow_wanyuan),
+    currency=IF(source_id=902025001, VALUES(currency), currency),
+    source_id=IF(source_id=902025001, VALUES(source_id), source_id),
+    data_quality=IF(source_id=902025001, VALUES(data_quality), data_quality),
+    statistical_scope=IF(source_id=902025001, VALUES(statistical_scope), statistical_scope),
+    notes=IF(source_id=902025001, VALUES(notes), notes);
 
 INSERT INTO enterprise_operational_statistic_v1 (
     company_id, statistic_year, metric_code, metric_value, metric_unit, data_type,
