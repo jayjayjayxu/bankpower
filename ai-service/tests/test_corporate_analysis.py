@@ -78,6 +78,8 @@ class CorporateAnalysisTests(unittest.TestCase):
         self.assertEqual(result["corporate_result"]["status"], "FURTHER_RESEARCH_REQUIRED")
         self.assertTrue(result["corporate_result"]["scenario_data_available"])
         self.assertIn("不能作为集团真实财务或授信结论", result["final_answer"])
+        self.assertEqual(result["interpretation"]["facts"][0]["label"], "企业名称")
+        self.assertEqual(result["interpretation"]["facts"][1]["label"], "储能项目 NPV")
         self.assertEqual(len(executor.queries), 3)
 
 

@@ -10,7 +10,7 @@ from typing import Any
 from .config import Settings
 from .energy_compute import EntityResolver
 from .energy_sql import QueryResult, SQLExecutor, SafetyResult, SpdbReadOnlyExecutor, validate_energy_sql
-from .value_formatter import format_field
+from .value_formatter import format_field, label_for
 
 
 _COMPANY_ID = re.compile(r"^C\d{6}$")
@@ -198,7 +198,7 @@ class CorporateAnalysisAgent:
 
     @staticmethod
     def _fact(key: str, value: str, label: str | None = None) -> dict[str, str]:
-        return {"key": key, "label": label or _METRIC_LABELS.get(key, key), "value": format_field(key, value) or str(value)}
+        return {"key": key, "label": label or _METRIC_LABELS.get(key, label_for(key)), "value": format_field(key, value) or str(value)}
 
     @staticmethod
     def _wanyuan(value: str | None) -> str:

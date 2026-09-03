@@ -242,7 +242,7 @@ async function scrollConversationToLatest() {
               <ul class="ai-claim-list"><li v-for="(claim, claimIndex) in message.result.claims" :key="claimIndex"><span>{{ claim.claim_type }}</span>{{ claim.text }}</li></ul>
             </section>
 
-            <aside v-if="message.result.warnings?.length" class="ai-warnings"><b>风险提示</b><p v-for="warning in message.result.warnings" :key="warning">{{ warning }}</p></aside>
+            <aside v-if="message.result.warnings?.length && !message.result.data?.corporate?.risk_factors?.length" class="ai-warnings"><b>风险提示</b><p v-for="warning in message.result.warnings" :key="warning">{{ warning }}</p></aside>
           </article>
         </template>
 
