@@ -1422,5 +1422,14 @@ onBeforeUnmount(() => {
         <div><b>研究边界</b><span>缺少项目实际数据时，只能形成情景结果，并明确标注 `SIMULATED/SCENARIO`。</span></div>
       </section>
     </div>
+
+    <a
+      class="ai-analysis-fab"
+      :href="`${powerSiteUrl}/ai-assistant`"
+      aria-label="进入 AI 分析"
+    >
+      <span class="ai-analysis-fab-mark" aria-hidden="true">✦</span>
+      <span class="ai-analysis-fab-tooltip" role="tooltip">进入 AI 分析</span>
+    </a>
   </div>
 </template>

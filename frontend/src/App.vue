@@ -647,5 +647,15 @@ function returnHome() {
         <span>Vue 3 · Java API · MySQL</span>
       </footer>
     </template>
+
+    <a
+      v-if="!aiAssistant"
+      class="ai-analysis-fab"
+      href="/ai-assistant"
+      aria-label="进入 AI 分析"
+    >
+      <span class="ai-analysis-fab-mark" aria-hidden="true">✦</span>
+      <span class="ai-analysis-fab-tooltip" role="tooltip">进入 AI 分析</span>
+    </a>
   </div>
 </template>
