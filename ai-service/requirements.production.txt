@@ -1,6 +1,6 @@
-# Runtime-only dependencies. Document parsing and vector-index construction
-# remain offline maintenance tasks and are intentionally not installed in the
-# small production API container.
+# Runtime dependencies. Document parsing and vector-index construction remain
+# offline maintenance tasks. The legacy BankAI retrieval path is still served
+# by this API, so its *query-time* embedding dependencies must be present.
 fastapi==0.115.12
 uvicorn[standard]==0.34.0
 httpx==0.28.1
@@ -9,3 +9,11 @@ PyYAML==6.0.3
 sqlglot==30.17.0
 PyMySQL==1.1.2
 cryptography==46.0.5
+
+# BankAI V0.4 semantic retrieval. The BGE model and FAISS index are mounted
+# read-only at runtime; these packages only provide CPU inference/search.
+numpy==2.5.2
+faiss-cpu==1.15.0
+torch==2.11.0
+transformers==5.12.0
+huggingface_hub==1.19.0
