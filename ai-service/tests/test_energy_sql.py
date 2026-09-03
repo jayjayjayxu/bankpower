@@ -15,6 +15,10 @@ class EnergySQLSafetyTests(unittest.TestCase):
 
     def test_repairs_only_known_utf8_as_cp1252_import_artefacts(self) -> None:
         self.assertEqual(repair_display_text("ç™¾æ—ºä¿¡"), "百旺信")
+        self.assertEqual(
+            repair_display_text("ç™¾æ—ºä¿¡1æ\xa0‹+4æ\xa0‹è‡ªå»ºæœ\x8dåŠ¡å™¨æ‰˜ç®¡è¿\x90è\x90¥å\x8f£å¾„"),
+            "百旺信1栋+4栋自建服务器托管运营口径",
+        )
         self.assertEqual(repair_display_text("深圳百旺信智算中心"), "深圳百旺信智算中心")
         self.assertEqual(repair_display_text("5346.0000"), "5346.0000")
         repaired = repair_query_result(QueryResult(["operation_scope_name"], [["ç™¾æ—ºä¿¡"]]))

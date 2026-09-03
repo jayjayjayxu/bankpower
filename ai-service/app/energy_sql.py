@@ -153,11 +153,45 @@ def repair_display_text(value: str) -> str:
             continue
         if _cjk_count(repaired) > original_cjk:
             return repaired
+    # Some imported cells combine cp1252 punctuation (for example ™/—) and
+    # latin1 C1 control characters (for example \x90).  Python's built-in
+    # encoders reject the mixed sequence as a whole, so reconstruct its bytes
+    # character-by-character before attempting the UTF-8 decode once more.
+    try:
+        repaired = _mixed_legacy_bytes(value).decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return value
+    if _cjk_count(repaired) > original_cjk:
+        return repaired
     return value
 
 
 def _cjk_count(value: str) -> int:
     return sum("\u4e00" <= character <= "\u9fff" for character in value)
+
+
+_CP1252_PUNCTUATION_BYTES = {
+    "€": 0x80, "‚": 0x82, "ƒ": 0x83, "„": 0x84, "…": 0x85, "†": 0x86,
+    "‡": 0x87, "ˆ": 0x88, "‰": 0x89, "Š": 0x8A, "‹": 0x8B, "Œ": 0x8C,
+    "Ž": 0x8E, "‘": 0x91, "’": 0x92, "“": 0x93, "”": 0x94, "•": 0x95,
+    "–": 0x96, "—": 0x97, "˜": 0x98, "™": 0x99, "š": 0x9A, "›": 0x9B,
+    "œ": 0x9C, "ž": 0x9E, "Ÿ": 0x9F,
+}
+
+
+def _mixed_legacy_bytes(value: str) -> bytes:
+    """Encode mixed latin1/cp1252 mojibake without a lossy replacement."""
+
+    raw = bytearray()
+    for character in value:
+        codepoint = ord(character)
+        if codepoint <= 0xFF:
+            raw.append(codepoint)
+        elif character in _CP1252_PUNCTUATION_BYTES:
+            raw.append(_CP1252_PUNCTUATION_BYTES[character])
+        else:
+            raise UnicodeEncodeError("mixed-legacy", value, 0, len(value), "unsupported character")
+    return bytes(raw)
 
 
 def repair_query_result(result: QueryResult) -> QueryResult:
