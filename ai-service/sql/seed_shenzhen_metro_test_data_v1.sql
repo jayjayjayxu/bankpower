@@ -20,6 +20,17 @@ CREATE TABLE IF NOT EXISTS enterprise_operational_statistic_v1 (
     UNIQUE KEY uq_enterprise_operation_test (company_id, statistic_year, metric_code, data_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+INSERT INTO data_source (
+    source_id, source_org, source_title, source_url, source_date, source_tier,
+    data_quality, statistical_scope, source_hash, notes
+) VALUES (
+    902025001, 'EnergyComputeAI Test Data', 'TEST-SEED-SZMETRO-2025-V1', NULL, '2025-12-31', 'TEST',
+    'SIMULATED_TEST_ONLY', 'Synthetic corporate credit-analysis scenario for demonstration only',
+    '9020250010f1c7b9434d6e8a0b2c4d6e8f1029384756aabbccddeeff00112233',
+    'TEST ONLY. Fictional source registry entry; not an enterprise disclosure or third-party source.'
+)
+ON DUPLICATE KEY UPDATE source_id=source_id;
+
 INSERT INTO enterprise_financial (
     company_id, financial_year, revenue_wanyuan, revenue_growth, net_profit_wanyuan,
     total_assets_wanyuan, total_liabilities_wanyuan, total_equity_wanyuan, debt_ratio,
