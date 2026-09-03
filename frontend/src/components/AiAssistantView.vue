@@ -35,6 +35,8 @@ function metricLabel(metric) {
     corporate_revenue: '营业收入', corporate_net_profit: '净利润', corporate_total_assets: '总资产',
     corporate_total_liabilities: '总负债', corporate_debt_ratio: '资产负债率',
     corporate_operating_cashflow: '经营现金流', corporate_passenger_volume: '客运量',
+    corporate_annual_power: '年度用电量', corporate_annual_electricity_cost: '年度电费',
+    corporate_avg_electricity_price: '平均电价', corporate_annual_max_demand: '年度最大需量',
   }[metric] || metric
 }
 
@@ -90,6 +92,7 @@ function routeLabel(route) {
     SQL_CALC: '公开统计程序计算',
     CORPORATE_DATA_COVERAGE: '企业数据覆盖盘点',
     CORPORATE_FACT: '企业结构化查询',
+    CORPORATE_ENERGY_FACT: '企业用电结构化查询',
     CORPORATE_ANALYSIS: '企业受控分析',
     CALC_PROVENANCE: '计算过程追溯',
     CLARIFICATION: '需澄清指标',

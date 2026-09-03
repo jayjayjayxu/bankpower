@@ -46,6 +46,7 @@ entities:
     entity_id: C000020
     canonical_name: 深圳市地铁集团有限公司
     aliases:
+      - 深圳市地铁集团有限公司
       - 深圳地铁
       - 深圳地铁集团
       - 深圳市地铁公司

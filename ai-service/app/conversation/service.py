@@ -41,6 +41,10 @@ _METRICS = (
     ("corporate_debt_ratio", ("资产负债率", "负债率"), "资产负债率"),
     ("corporate_operating_cashflow", ("经营现金流", "经营活动现金流"), "经营现金流"),
     ("corporate_passenger_volume", ("客运量", "客流", "客运"), "客运量"),
+    ("corporate_annual_power", ("年度用电", "年用电", "年度用电量", "年用电量", "用电量"), "年度用电量"),
+    ("corporate_annual_electricity_cost", ("年度电费", "年电费", "电费"), "年度电费"),
+    ("corporate_avg_electricity_price", ("平均电价", "度电价格"), "平均电价"),
+    ("corporate_annual_max_demand", ("最大需量", "最大负荷"), "年度最大需量"),
 )
 
 
@@ -456,6 +460,10 @@ class ConversationService:
             "corporate_debt_ratio": ("debt_ratio",),
             "corporate_operating_cashflow": ("operating_cashflow_wanyuan",),
             "corporate_passenger_volume": ("passenger_volume",),
+            "corporate_annual_power": ("annual_power_kwh",),
+            "corporate_annual_electricity_cost": ("annual_electricity_cost_yuan",),
+            "corporate_avg_electricity_price": ("avg_cost_yuan_kwh",),
+            "corporate_annual_max_demand": ("annual_max_demand_kw",),
         }.get(metric, ())
         for row in query.get("rows") or []:
             mapped = dict(zip(columns, row))

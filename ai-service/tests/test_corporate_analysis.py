@@ -75,6 +75,17 @@ class CorporateAnalysisTests(unittest.TestCase):
         self.assertNotIn("当前数据库缺少该企业的营业收入", result["final_answer"])
         self.assertEqual(len(executor.queries), 8)
 
+    def test_annual_power_uses_annual_energy_table_not_financial_template(self) -> None:
+        executor = StubExecutor()
+        result = CorporateAnalysisAgent(test_settings(), executor=executor).run("深圳地铁的年度用电是多少？")
+        self.assertEqual(result["route"], "CORPORATE_ENERGY_FACT")
+        self.assertEqual(result["router"]["subdomain"], "CORPORATE_OPERATION")
+        self.assertIn("2,269,000,000 kWh", result["final_answer"])
+        self.assertIn("2025年", result["final_answer"])
+        self.assertNotIn("营业收入", result["final_answer"])
+        self.assertEqual(result["sql_result"]["safety"]["tables"], ("v_enterprise_annual_energy_summary",))
+        self.assertEqual(len(executor.queries), 1)
+
     def test_missing_financial_and_passenger_data_is_in_scope_gap(self) -> None:
         executor = StubExecutor()
         result = CorporateAnalysisAgent(test_settings(), executor=executor).run("深圳地铁集团2024年营收、负债、客运量是多少？")

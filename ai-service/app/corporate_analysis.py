@@ -32,11 +32,19 @@ _METRIC_TERMS = {
     "operating_cashflow_wanyuan": ("经营现金流", "经营活动现金流"),
     "passenger_volume": ("客运量", "客流", "客运"),
 }
+_ENERGY_METRIC_TERMS = {
+    "annual_power_kwh": ("年度用电", "年用电", "年度耗电", "年耗电", "年度用电量", "年用电量", "用电量"),
+    "annual_electricity_cost_yuan": ("年度电费", "年电费", "用电成本", "电费"),
+    "avg_cost_yuan_kwh": ("平均电价", "平均用电价格", "度电价格"),
+    "annual_max_demand_kw": ("最大需量", "最大负荷", "最大需求"),
+}
 _METRIC_LABELS = {
     "revenue_wanyuan": "营业收入", "total_liabilities_wanyuan": "总负债",
     "total_assets_wanyuan": "总资产", "net_profit_wanyuan": "净利润",
     "debt_ratio": "资产负债率", "operating_cashflow_wanyuan": "经营现金流",
     "passenger_volume": "客运量",
+    "annual_power_kwh": "年度用电量", "annual_electricity_cost_yuan": "年度电费",
+    "avg_cost_yuan_kwh": "平均电价", "annual_max_demand_kw": "年度最大需量",
 }
 
 
@@ -123,6 +131,8 @@ class CorporateAnalysisAgent:
             return self._data_coverage(question, company, entities)
         if any(term in question.casefold() for term in _ANALYSIS_TERMS):
             return self._analysis(question, company, entities)
+        if self._requested_energy_metrics(question):
+            return self._energy_facts(question, company, entities)
         return self._facts(question, company, entities)
 
     def _data_coverage(self, question: str, company: dict[str, str], entities: list[dict[str, str]]) -> dict[str, Any]:
@@ -164,6 +174,40 @@ class CorporateAnalysisAgent:
              "unavailable_categories": unavailable},
             extra_sources=[financial_safety, annual_safety, feature_safety, observation_safety, opportunity_safety,
                            assessment_safety, snapshot_safety], narration=narration,
+        )
+
+    def _energy_facts(self, question: str, company: dict[str, str], entities: list[dict[str, str]]) -> dict[str, Any]:
+        requested = self._requested_energy_metrics(question)
+        year = self._requested_year(question)
+        safety, annual = self._query(self._annual_energy_sql(company["entity_id"], year))
+        row = self._row(annual)
+        if not row:
+            suffix = f"{year}年" if year else ""
+            answer = f"当前数据库未查询到{company['canonical_name']}{suffix}的年度用电汇总记录。"
+            return self._result(
+                question, "IN_SCOPE_DATA_MISSING", "CORPORATE_OPERATION", entities, safety, annual, answer, [],
+                ["缺少与问题匹配的年度用电汇总记录。"], ["该结果只表示本地受控数据不存在或尚未导入，不代表企业没有用电。"],
+                {"status": "IN_SCOPE_DATA_MISSING", "missing_metrics": requested},
+            )
+        missing = [metric for metric in requested if not row.get(metric)]
+        facts = [self._fact(metric, row[metric]) for metric in requested if metric not in missing]
+        period = f"{row.get('year')}年"
+        available_text = "，".join(f"{item['label']}为{item['value']}" for item in facts)
+        answer = f"{company['canonical_name']}{period}{available_text}。"
+        if row.get("data_type"):
+            answer += f" 数据类型：{row['data_type']}。"
+        warnings: list[str] = []
+        boundaries: list[str] = []
+        if missing:
+            labels = "、".join(_METRIC_LABELS[item] for item in missing)
+            answer += f" 当前年度汇总记录未提供{labels}。"
+            warnings.append(f"当前年度汇总记录未提供 {labels}。")
+        if row.get("data_type") != "PUBLIC":
+            boundaries.append("该年度数据不是 PUBLIC 口径，使用前应核验其数据类型与统计范围。")
+        return self._result(
+            question, "CORPORATE_ENERGY_FACT", "CORPORATE_OPERATION", entities, safety, annual, answer, facts,
+            warnings, boundaries, {"status": "ANSWERED" if not missing else "PARTIAL", "facts": facts,
+                                    "year": row.get("year"), "data_type": row.get("data_type"), "missing_metrics": missing},
         )
 
     def _facts(self, question: str, company: dict[str, str], entities: list[dict[str, str]]) -> dict[str, Any]:
@@ -335,6 +379,15 @@ class CorporateAnalysisAgent:
         return requested or ["revenue_wanyuan", "net_profit_wanyuan", "total_assets_wanyuan", "total_liabilities_wanyuan", "debt_ratio"]
 
     @staticmethod
+    def _requested_energy_metrics(question: str) -> list[str]:
+        return [metric for metric, terms in _ENERGY_METRIC_TERMS.items() if any(term in question.casefold() for term in terms)]
+
+    @staticmethod
+    def _requested_year(question: str) -> int | None:
+        matched = re.search(r"(?<!\d)(20\d{2})(?:年)?", question)
+        return int(matched.group(1)) if matched else None
+
+    @staticmethod
     def _fact(key: str, value: str, label: str | None = None) -> dict[str, str]:
         return {"key": key, "label": label or _METRIC_LABELS.get(key, label_for(key)), "value": format_field(key, value) or str(value)}
 
@@ -354,9 +407,10 @@ class CorporateAnalysisAgent:
                 "statistical_scope FROM enterprise_financial WHERE company_id='" + company_id + "' ORDER BY financial_year DESC LIMIT 2;")
 
     @staticmethod
-    def _annual_energy_sql(company_id: str) -> str:
+    def _annual_energy_sql(company_id: str, year: int | None = None) -> str:
+        year_filter = f" AND year={year}" if year is not None else ""
         return ("SELECT company_id, year, annual_power_kwh, annual_electricity_cost_yuan, avg_cost_yuan_kwh, annual_max_demand_kw, data_type "
-                "FROM v_enterprise_annual_energy_summary WHERE company_id='" + company_id + "' ORDER BY year DESC LIMIT 2;")
+                "FROM v_enterprise_annual_energy_summary WHERE company_id='" + company_id + "'" + year_filter + " ORDER BY year DESC LIMIT 2;")
 
     @staticmethod
     def _energy_features_sql(company_id: str) -> str:
