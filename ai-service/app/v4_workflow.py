@@ -21,7 +21,6 @@ from .policy_rag import PolicyRAGAgent
 
 _RESOURCE_DIR = Path(__file__).resolve().parents[1] / "resources"
 _RULE_CATALOG_PATH = _RESOURCE_DIR / "eligibility_rules_v04.json"
-_CORPUS_PATH = Path(__file__).resolve().parents[1] / "runtime" / "policy_corpus" / "public_effective" / "chunks.jsonl"
 _FINANCE_TERMS = ("贷款", "融资", "债务", "dscr", "偿债", "利率", "年期", "期限", "cfads")
 _ELIGIBILITY_TERMS = ("绿色贷款", "绿色金融", "资格", "符合", "条件", "缺哪些", "还缺")
 
@@ -39,10 +38,14 @@ class V4ProjectWorkflow:
         self.sql_agent = sql_agent or EnergyComputeAgent(settings)
         self.policy_agent = policy_agent or PolicyRAGAgent(settings)
         self.rule_catalog_version, self.rules = load_rule_catalog(_RULE_CATALOG_PATH)
-        validate_evidence_references(self.rules, _CORPUS_PATH)
+        # The deployment mounts the public/effective index records.  They are
+        # derived from the same immutable chunks and contain the identifiers,
+        # document metadata and source text needed for rule evidence checks.
+        self._policy_records_path = settings.policy_rag_index_dir / "records.jsonl"
+        validate_evidence_references(self.rules, self._policy_records_path)
         self.eligibility_engine = EligibilityEngine()
         self.finance_calculator = FinanceCalculator()
-        self._policy_records = self._load_policy_records()
+        self._policy_records = self._load_policy_records(self._policy_records_path)
 
     def supports(self, question: str) -> bool:
         lowered = question.casefold()
@@ -252,11 +255,11 @@ class V4ProjectWorkflow:
         return sources
 
     @staticmethod
-    def _load_policy_records() -> dict[str, dict[str, Any]]:
+    def _load_policy_records(path: Path) -> dict[str, dict[str, Any]]:
         try:
             return {
                 str(item["chunk_id"]): item
-                for item in (json.loads(line) for line in _CORPUS_PATH.read_text(encoding="utf-8").splitlines() if line.strip())
+                for item in (json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
             }
         except (OSError, json.JSONDecodeError) as exc:
             raise RuntimeError("无法加载 V4 资格规则的政策证据索引。") from exc
