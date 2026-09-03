@@ -10,6 +10,9 @@ WORKDIR /app
 
 COPY ai-service/requirements.production.txt /tmp/requirements.production.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.production.txt
+# PyPI's Linux torch build pulls CUDA libraries. This server is CPU-only, so
+# install the official CPU wheel after its ordinary dependencies are present.
+RUN pip install --no-cache-dir --no-deps --index-url https://download.pytorch.org/whl/cpu torch==2.11.0+cpu
 
 COPY ai-service /app
 

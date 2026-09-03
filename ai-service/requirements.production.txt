@@ -15,9 +15,13 @@ cryptography==46.0.5
 # The production image is Python 3.11; 2.5+ requires Python 3.12.
 numpy==2.4.6
 faiss-cpu==1.15.0
-# The standard PyPI build pulls CUDA libraries on Linux. This deployment is
-# CPU-only, so resolve the explicit CPU wheel from PyTorch's official index.
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.11.0+cpu
+# Transitive runtime requirements of the separately installed CPU-only torch
+# wheel. Keeping these on the normal mirror avoids routing every package
+# through the PyTorch wheel index.
+filelock==3.32.5
+sympy==1.14.0
+networkx==3.6.1
+Jinja2==3.1.6
+fsspec==2026.7.0
 transformers==5.12.0
 huggingface_hub==1.19.0
