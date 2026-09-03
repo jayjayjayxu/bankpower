@@ -31,8 +31,9 @@ def test_settings() -> Settings:
 
 
 class StubExecutor:
-    def __init__(self, financial_rows: list[list[str]] | None = None) -> None:
+    def __init__(self, financial_rows: list[list[str]] | None = None, passenger_rows: list[list[str]] | None = None) -> None:
         self.financial_rows = financial_rows or []
+        self.passenger_rows = passenger_rows or []
         self.queries: list[str] = []
 
     def execute(self, sql: str) -> QueryResult:
@@ -42,6 +43,8 @@ class StubExecutor:
                 ["company_id", "financial_year", "revenue_wanyuan", "revenue_growth", "net_profit_wanyuan", "total_assets_wanyuan", "total_liabilities_wanyuan", "total_equity_wanyuan", "debt_ratio", "operating_cashflow_wanyuan", "currency", "data_quality", "statistical_scope"],
                 self.financial_rows,
             )
+        if "enterprise_operational_statistic_v1" in sql:
+            return QueryResult(["company_id", "statistic_year", "metric_code", "metric_value", "metric_unit", "data_type", "data_quality", "statistical_scope"], self.passenger_rows)
         if "v_enterprise_annual_energy_summary" in sql:
             return QueryResult(["company_id", "year", "annual_power_kwh", "annual_electricity_cost_yuan", "avg_cost_yuan_kwh", "annual_max_demand_kw", "data_type"], [["C000020", "2025", "2269000000", "", "", "", "PUBLIC"]])
         if "enterprise_energy_features" in sql:
@@ -73,7 +76,7 @@ class CorporateAnalysisTests(unittest.TestCase):
         self.assertIn("项目融资机会", [item["category"] for item in inventory if item["status"] == "AVAILABLE"])
         self.assertIn("客运运营数据", [item["category"] for item in inventory if item["status"] == "NOT_STORED"])
         self.assertNotIn("当前数据库缺少该企业的营业收入", result["final_answer"])
-        self.assertEqual(len(executor.queries), 8)
+        self.assertEqual(len(executor.queries), 9)
 
     def test_annual_power_uses_annual_energy_table_not_financial_template(self) -> None:
         executor = StubExecutor()
@@ -86,6 +89,18 @@ class CorporateAnalysisTests(unittest.TestCase):
         self.assertEqual(result["sql_result"]["safety"]["tables"], ("v_enterprise_annual_energy_summary",))
         self.assertEqual(len(executor.queries), 1)
 
+    def test_simulated_financial_and_passenger_facts_are_labelled_test_only(self) -> None:
+        executor = StubExecutor(
+            [["C000020", "2025", "2200000", "0.045", "80000", "18000000", "11400000", "6600000", "0.63333333", "360000", "CNY", "SIMULATED_TEST_ONLY", "测试口径"]],
+            [["C000020", "2025", "PASSENGER_VOLUME", "1900000000", "PERSON_TRIPS", "SIMULATED", "SIMULATED_TEST_ONLY", "测试口径"]],
+        )
+        result = CorporateAnalysisAgent(test_settings(), executor=executor).run("深圳地铁2025年营收、负债、客运量是多少？")
+        self.assertEqual(result["route"], "CORPORATE_FACT")
+        self.assertEqual(result["corporate_result"]["status"], "SIMULATED_TEST_ONLY")
+        self.assertIn("2,200,000 万元", result["final_answer"])
+        self.assertIn("1,900,000,000 人次", result["final_answer"])
+        self.assertIn("SIMULATED / TEST_ONLY", result["warnings"][0])
+
     def test_missing_financial_and_passenger_data_is_in_scope_gap(self) -> None:
         executor = StubExecutor()
         result = CorporateAnalysisAgent(test_settings(), executor=executor).run("深圳地铁集团2024年营收、负债、客运量是多少？")
@@ -93,7 +108,7 @@ class CorporateAnalysisTests(unittest.TestCase):
         self.assertEqual(result["router"]["domain"], "CORPORATE")
         self.assertIn("营业收入、总负债、客运量", result["final_answer"])
         self.assertNotIn("不在当前能力范围内", result["final_answer"])
-        self.assertEqual(len(executor.queries), 1)
+        self.assertEqual(len(executor.queries), 2)
 
     def test_registered_financial_facts_are_program_formatted(self) -> None:
         executor = StubExecutor([["C000020", "2024", "123456.78", "0.01", "2345.6", "999999", "555555", "444444", "0.5556", "3456.7", "CNY", "A", "合并口径"]])

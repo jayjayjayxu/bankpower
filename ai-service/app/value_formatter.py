@@ -42,6 +42,7 @@ FIELD_DISPLAY: dict[str, dict[str, str]] = {
     "annual_electricity_cost_yuan": {"label": "年度电费", "display": "yuan"},
     "avg_cost_yuan_kwh": {"label": "平均电价", "display": "yuan_kwh"},
     "annual_max_demand_kw": {"label": "年度最大需量", "display": "kw"},
+    "passenger_volume": {"label": "年度客运量", "display": "person_trips"},
 }
 
 MAPPING_STATUS_LABELS = {
@@ -129,11 +130,11 @@ def format_field(field: str, value: Any) -> str | None:
     if display_type == "wanyuan":
         number = _decimal(value)
         return None if number is None else f"{_plain_decimal(number, 4)} 万元"
-    if display_type in {"kwh", "yuan", "yuan_kwh", "kw"}:
+    if display_type in {"kwh", "yuan", "yuan_kwh", "kw", "person_trips"}:
         number = _decimal(value)
         if number is None:
             return None
-        unit = {"kwh": "kWh", "yuan": "元", "yuan_kwh": "元/kWh", "kw": "kW"}[display_type]
+        unit = {"kwh": "kWh", "yuan": "元", "yuan_kwh": "元/kWh", "kw": "kW", "person_trips": "人次"}[display_type]
         return f"{_plain_decimal(number, 4)} {unit}"
     if display_type == "mapping_status":
         return MAPPING_STATUS_LABELS.get(str(value).upper(), str(value))

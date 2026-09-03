@@ -6,18 +6,19 @@ import re
 import json
 import os
 from dataclasses import asdict
+from decimal import Decimal, InvalidOperation
 from typing import Any, Protocol
 
 from .config import Settings
 from .energy_compute import EntityResolver
 from .energy_sql import QueryResult, SQLExecutor, SafetyResult, SpdbReadOnlyExecutor, validate_energy_sql
-from .value_formatter import format_field, label_for
+from .value_formatter import format_field, format_percent, label_for
 
 
 _COMPANY_ID = re.compile(r"^C\d{6}$")
 _ANALYSIS_TERMS = (
     "投资优势", "投资风险", "投资建议", "投资价值", "未来几年", "未来", "财务状况",
-    "偿债压力", "融资客户", "项目融资", "值得研究", "经营风险", "优势和风险",
+    "偿债压力", "偿债能力", "融资客户", "项目融资", "授信", "信贷", "债务分析", "负债分析", "值得研究", "经营风险", "优势和风险",
 )
 _COVERAGE_TERMS = (
     "有哪些数据", "什么数据", "数据存储", "数据有哪些", "已有数据", "目前数据",
@@ -145,16 +146,17 @@ class CorporateAnalysisAgent:
         opportunity_safety, opportunities = self._query(self._finance_opportunity_sql(company_id))
         assessment_safety, assessments = self._query(self._policy_assessment_sql(company_id))
         snapshot_safety, snapshots = self._query(self._snapshot_sql(company_id))
+        passenger_safety, passengers = self._query(self._passenger_sql(company_id))
         inventory = [
             self._inventory_item("企业主数据", "enterprise_profile", profile, "企业名称、属地、所有制、行业、用能/业务标签与核验状态"),
             self._inventory_item("年度财务", "enterprise_financial", financial, "营业收入、利润、资产负债和经营现金流"),
+            self._inventory_item("客运运营数据", "enterprise_operational_statistic_v1", passengers, "年度客运量、客流和运营指标"),
             self._inventory_item("年度用电", "v_enterprise_annual_energy_summary", annual, "年度用电量、电费、平均电价、最大需量与数据类型"),
             self._inventory_item("用电特征", "enterprise_energy_features", features, "负荷、峰谷结构、用电量及数据情景/可信度"),
             self._inventory_item("银行观察", "enterprise_bank_observation", observations, "业务机会标签、潜在产品和营销初筛说明"),
             self._inventory_item("项目融资机会", "enterprise_finance_opportunity_v1", opportunities, "储能项目规模、NPV、IRR、DSCR、风险和机会标签"),
             self._inventory_item("政策评估", "enterprise_policy_assessment_v1", assessments, "项目政策适用性、证据状态、待补证据和后续动作"),
             self._inventory_item("分析快照", "analysis_result_snapshot", snapshots, "已保存的储能及融资研究情景输出"),
-            {"category": "客运运营数据", "table": None, "status": "NOT_STORED", "record_count": 0, "description": "客运量、客流和线路运营指标"},
         ]
         available = [item["category"] for item in inventory if item["status"] == "AVAILABLE"]
         unavailable = [item["category"] for item in inventory if item["status"] != "AVAILABLE"]
@@ -173,7 +175,7 @@ class CorporateAnalysisAgent:
             {"status": "ANSWERED", "data_inventory": inventory, "available_categories": available,
              "unavailable_categories": unavailable},
             extra_sources=[financial_safety, annual_safety, feature_safety, observation_safety, opportunity_safety,
-                           assessment_safety, snapshot_safety], narration=narration,
+                           assessment_safety, snapshot_safety, passenger_safety], narration=narration,
         )
 
     def _energy_facts(self, question: str, company: dict[str, str], entities: list[dict[str, str]]) -> dict[str, Any]:
@@ -212,11 +214,23 @@ class CorporateAnalysisAgent:
 
     def _facts(self, question: str, company: dict[str, str], entities: list[dict[str, str]]) -> dict[str, Any]:
         requested = self._requested_metrics(question)
-        financial_safety, financial = self._query(self._financial_sql(company["entity_id"]))
+        year = self._requested_year(question)
+        financial_safety, financial = self._query(self._financial_sql(company["entity_id"], year))
         row = self._row(financial)
-        missing = [metric for metric in requested if metric == "passenger_volume" or not row or not row.get(metric)]
-        available = [metric for metric in requested if metric not in missing]
+        financial_metrics = [metric for metric in requested if metric != "passenger_volume"]
+        missing = [metric for metric in financial_metrics if not row or not row.get(metric)]
+        available = [metric for metric in financial_metrics if metric not in missing]
         facts = [self._fact(metric, row[metric]) for metric in available] if row else []
+        extra_sources: list[SafetyResult] = []
+        passenger_row: dict[str, str] = {}
+        if "passenger_volume" in requested:
+            passenger_safety, passenger = self._query(self._passenger_sql(company["entity_id"], year))
+            extra_sources.append(passenger_safety)
+            passenger_row = self._row(passenger)
+            if passenger_row and passenger_row.get("metric_value"):
+                facts.append(self._fact("passenger_volume", passenger_row["metric_value"]))
+            else:
+                missing.append("passenger_volume")
         if missing:
             labels = "、".join(_METRIC_LABELS[item] for item in missing)
             available_text = "；".join(f"{item['label']}为{item['value']}" for item in facts)
@@ -224,20 +238,23 @@ class CorporateAnalysisAgent:
                 f"已识别企业为{company['canonical_name']}。该问题属于企业经营分析范围，"
                 f"但当前数据库缺少该企业的{labels}可核验记录。"
                 + (f"当前可核验数据：{available_text}。" if available_text else "")
-                + "客运量也尚未建立受控数据表，不能以推测值替代。"
+                + "当前不会以推测值替代缺失记录。"
             )
             return self._result(
                 question, "IN_SCOPE_DATA_MISSING", "CORPORATE_FINANCIAL", entities, financial_safety, financial,
                 answer, facts, [f"缺少 {labels} 的企业年度披露或已授权数据。"],
                 ["该企业已在主数据中确认；数据缺失不等同于数值为零。"],
-                {"status": "IN_SCOPE_DATA_MISSING", "missing_metrics": missing, "facts": facts},
+                {"status": "IN_SCOPE_DATA_MISSING", "missing_metrics": missing, "facts": facts}, extra_sources=extra_sources,
             )
-        answer = f"{company['canonical_name']}{row['financial_year']}年的" + "，".join(
+        fact_year = row.get("financial_year") or passenger_row.get("statistic_year") or "当前"
+        answer = f"{company['canonical_name']}{fact_year}年的" + "，".join(
             f"{item['label']}为{item['value']}" for item in facts
         ) + "。"
+        is_test = any(str(item.get("data_quality") or "").upper().startswith("SIMULATED_TEST_ONLY") for item in (row, passenger_row))
+        warnings = ["以下为 SIMULATED / TEST_ONLY 测试数据，不是企业真实披露。"] if is_test else []
         return self._result(
             question, "CORPORATE_FACT", "CORPORATE_FINANCIAL", entities, financial_safety, financial,
-            answer, facts, [], [], {"status": "ANSWERED", "facts": facts},
+            answer, facts, warnings, [], {"status": "SIMULATED_TEST_ONLY" if is_test else "ANSWERED", "facts": facts}, extra_sources=extra_sources,
         )
 
     def _analysis(self, question: str, company: dict[str, str], entities: list[dict[str, str]]) -> dict[str, Any]:
@@ -251,7 +268,7 @@ class CorporateAnalysisAgent:
         observation_row, opportunity_row = self._row(observations), self._row(opportunities)
         positives: list[str] = []
         risks: list[str] = []
-        gaps = ["缺少集团2024年营业收入、总负债、资产负债率、净利润和经营现金流的可核验记录。", "缺少客运量及未来资本开支计划的受控数据。"]
+        gaps = ["缺少未来资本开支计划、债务期限结构、利息支出和担保信息。"]
         if profile_row:
             ownership = profile_row.get("ownership_type") or ""
             industry = profile_row.get("industry_name") or ""
@@ -293,22 +310,38 @@ class CorporateAnalysisAgent:
             positives.append(f"已保存 {len(assessment_rows)} 条储能项目政策评估，其中 {partial} 条证据状态为 PARTIAL。")
             if not_collected:
                 risks.append(f"仍有 {not_collected} 条政策评估处于 NOT_COLLECTED，需补充项目材料后再判断。")
+        credit_indicators = self._credit_indicators(financial_row)
+        financial_is_test = str(financial_row.get("data_quality") or "").upper().startswith("SIMULATED_TEST_ONLY")
         if financial_row:
-            positives.append(f"数据库存在 {financial_row.get('financial_year')} 年企业财务记录，可继续开展年度比较。")
+            positives.append(
+                f"已载入 {financial_row.get('financial_year')} 年{'模拟测试' if financial_is_test else '企业'}财务记录："
+                f"营业收入 {format_field('revenue_wanyuan', financial_row.get('revenue_wanyuan'))}，"
+                f"总负债 {format_field('total_liabilities_wanyuan', financial_row.get('total_liabilities_wanyuan'))}，"
+                f"资产负债率 {format_field('debt_ratio', financial_row.get('debt_ratio'))}。"
+            )
+            if financial_is_test:
+                risks.append("该年度财务为 SIMULATED / TEST_ONLY 测试情景，只能用于演示指标计算与流程验证。")
+            if credit_indicators:
+                positives.append(
+                    f"程序化测试指标：净利率 {credit_indicators['net_profit_margin']}；"
+                    f"经营现金流/总负债 {credit_indicators['operating_cashflow_to_liabilities']}。"
+                )
         else:
+            gaps.append("缺少集团年度营业收入、总负债、资产负债率、净利润和经营现金流记录。")
             risks.append("当前不能评估集团层面的收入趋势、真实杠杆和偿债现金流。")
-        overall = "FURTHER_RESEARCH_REQUIRED"
+        overall = "SIMULATED_TEST_ONLY_CREDIT_REVIEW" if financial_is_test else "FURTHER_RESEARCH_REQUIRED"
         fallback = (
             f"综合判断\n{company['canonical_name']}可作为现有储能项目机会的进一步研究对象，"
             "但当前证据不足以形成集团层面的投资结论、证券建议或银行授信决定。\n\n"
             "有利因素\n- " + "\n- ".join(positives or ["当前仅确认企业主数据，尚无足够经营与财务事实。"])
             + "\n\n主要风险与边界\n- " + "\n- ".join(risks)
             + "\n\n证据缺口\n- " + "\n- ".join(gaps)
-            + "\n\n下一步\n优先补充经审计年度财务、客运量、债务期限结构、未来资本开支、实际电费账单与项目接入资料，再进行项目融资可行性复核。"
+            + "\n\n下一步\n优先补充经审计年度财务、客运量、债务期限结构、利息支出、未来资本开支、实际电费账单与项目接入资料，再进行项目融资可行性复核。"
         )
         facts = [
             self._fact("company_name", company["canonical_name"]),
             *([self._fact("npv_wanyuan", snapshot_row["npv_wanyuan"]), self._fact("base_min_dscr", snapshot_row["base_min_dscr"], "最低 DSCR")] if snapshot_row else []),
+            *([self._fact(metric, financial_row[metric]) for metric in ("revenue_wanyuan", "total_liabilities_wanyuan", "debt_ratio", "operating_cashflow_wanyuan") if financial_row.get(metric)] if financial_row else []),
         ]
         primary_safety, primary_result = snapshot_safety, snapshot
         if not snapshot.rows:
@@ -316,6 +349,7 @@ class CorporateAnalysisAgent:
         evidence = {
             "company": company["canonical_name"], "positive_factors": positives, "risk_factors": risks,
             "evidence_gaps": gaps, "bank_observation": observation_row, "project_opportunity": opportunity_row,
+            "financial_record": financial_row, "credit_indicators": credit_indicators,
             "policy_assessment_summary": {"record_count": len(assessment_rows), "partial_evidence": sum(item.get("evidence_status") == "PARTIAL" for item in assessment_rows), "not_collected": sum(item.get("evidence_status") == "NOT_COLLECTED" for item in assessment_rows)},
         }
         answer, narration = self.narrator.narrate(question, "CORPORATE_ANALYSIS", evidence, fallback)
@@ -323,7 +357,8 @@ class CorporateAnalysisAgent:
             question, "CORPORATE_ANALYSIS", "CORPORATE_INVESTMENT", entities, primary_safety, primary_result,
             answer, facts, risks, gaps,
             {"status": overall, "positive_factors": positives, "risk_factors": risks, "evidence_gaps": gaps,
-             "financial_data_available": bool(financial_row), "scenario_data_available": bool(snapshot_row)},
+             "financial_data_available": bool(financial_row), "financial_data_test_only": financial_is_test,
+             "credit_indicators": credit_indicators, "scenario_data_available": bool(snapshot_row)},
             extra_sources=[financial_safety, profile_safety, observation_safety, opportunity_safety, assessment_safety], narration=narration,
         )
 
@@ -370,6 +405,24 @@ class CorporateAnalysisAgent:
                 "record_count": len(result.rows), "description": description}
 
     @staticmethod
+    def _credit_indicators(financial: dict[str, str]) -> dict[str, str]:
+        """Deterministic test indicators; never a credit approval result."""
+        try:
+            revenue = Decimal(str(financial["revenue_wanyuan"]))
+            net_profit = Decimal(str(financial["net_profit_wanyuan"]))
+            liabilities = Decimal(str(financial["total_liabilities_wanyuan"]))
+            operating_cashflow = Decimal(str(financial["operating_cashflow_wanyuan"]))
+            if revenue <= 0 or liabilities <= 0:
+                return {}
+            return {
+                "net_profit_margin": format_percent(net_profit / revenue),
+                "operating_cashflow_to_liabilities": format_percent(operating_cashflow / liabilities),
+                "calculation_note": "净利率=净利润/营业收入；经营现金流/总负债仅为测试性偿债观察指标，不是授信审批指标。",
+            }
+        except (InvalidOperation, KeyError, ValueError):
+            return {}
+
+    @staticmethod
     def _row(result: QueryResult) -> dict[str, str]:
         return dict(zip(result.columns, result.rows[0], strict=True)) if result.rows else {}
 
@@ -401,10 +454,18 @@ class CorporateAnalysisAgent:
                 "business_verification_status, notes FROM enterprise_profile WHERE company_id='" + company_id + "' LIMIT 1;")
 
     @staticmethod
-    def _financial_sql(company_id: str) -> str:
+    def _financial_sql(company_id: str, year: int | None = None) -> str:
+        year_filter = f" AND financial_year={year}" if year is not None else ""
         return ("SELECT company_id, financial_year, revenue_wanyuan, revenue_growth, net_profit_wanyuan, total_assets_wanyuan, "
                 "total_liabilities_wanyuan, total_equity_wanyuan, debt_ratio, operating_cashflow_wanyuan, currency, data_quality, "
-                "statistical_scope FROM enterprise_financial WHERE company_id='" + company_id + "' ORDER BY financial_year DESC LIMIT 2;")
+                "statistical_scope FROM enterprise_financial WHERE company_id='" + company_id + "'" + year_filter + " ORDER BY financial_year DESC LIMIT 2;")
+
+    @staticmethod
+    def _passenger_sql(company_id: str, year: int | None = None) -> str:
+        year_filter = f" AND statistic_year={year}" if year is not None else ""
+        return ("SELECT company_id, statistic_year, metric_code, metric_value, metric_unit, data_type, data_quality, statistical_scope "
+                "FROM enterprise_operational_statistic_v1 WHERE company_id='" + company_id + "' AND metric_code='PASSENGER_VOLUME'"
+                + year_filter + " ORDER BY statistic_year DESC LIMIT 1;")
 
     @staticmethod
     def _annual_energy_sql(company_id: str, year: int | None = None) -> str:

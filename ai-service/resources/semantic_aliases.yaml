@@ -77,6 +77,13 @@ debt_ratio:
   table: enterprise_financial
   unit: ratio
   boundary: 仅代表入库年度财务口径。
+passenger_volume:
+  aliases:
+    - 客运量
+    - 客流
+  table: enterprise_operational_statistic_v1
+  unit: 人次
+  boundary: 仅使用明确 data_type 的年度运营统计；SIMULATED_TEST_ONLY 不得当作真实客运披露。
 mapping_status:
   aliases:
     - 商品设施映射

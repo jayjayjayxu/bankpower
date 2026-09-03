@@ -78,6 +78,10 @@ ALLOWED_COLUMNS: dict[str, set[str]] = {
         "total_assets_wanyuan", "total_liabilities_wanyuan", "total_equity_wanyuan", "debt_ratio",
         "operating_cashflow_wanyuan", "currency", "source_id", "data_quality", "statistical_scope", "notes",
     },
+    "enterprise_operational_statistic_v1": {
+        "statistic_id", "company_id", "statistic_year", "metric_code", "metric_value", "metric_unit", "data_type",
+        "source_id", "data_quality", "statistical_scope", "notes", "created_at", "updated_at",
+    },
     "enterprise_energy_features": {
         "feature_id", "company_id", "analysis_year", "feature_version", "annual_power_kwh", "annual_electricity_cost_yuan",
         "avg_price_yuan_kwh", "peak_power_kwh", "flat_power_kwh", "valley_power_kwh", "critical_peak_kwh",

@@ -158,6 +158,14 @@ Fields:
 
 Annual rule: SUM(power_consumption_kwh) is permitted only after filtering/grouping an explicit year and scenario/data_type. Prefer v_enterprise_annual_energy_summary when a calendar-year total is requested.
 
+## 8A. enterprise_operational_statistic_v1 — enterprise operating statistics
+
+One row is one enterprise operational metric for a stated year and data type. Join company_id to enterprise_profile.company_id. For passenger statistics use metric_code='PASSENGER_VOLUME' and retain metric_unit and data_type.
+
+Fields:
+- company_id, statistic_year, metric_code, metric_value, metric_unit — entity, period, metric and unit.
+- data_type, source_id, data_quality, statistical_scope, notes — provenance boundary. `SIMULATED` or `SIMULATED_TEST_ONLY` records are testing scenarios, not operating disclosures.
+
 ## 9. v_enterprise_annual_energy_summary — annual enterprise energy view
 
 This view has one annual aggregate per company, year, and data_type. Join company_id to enterprise_profile.company_id.
@@ -216,6 +224,7 @@ Fields:
 - compute_listing_candidate_mapping_v1.listing_id = compute_platform_resource_listing_v1.listing_id
 - compute_listing_candidate_mapping_v1.candidate_facility_v2_id = enterprise_data_center_v2.facility_v2_id
 - enterprise_monthly_power.company_id = enterprise_profile.company_id
+- enterprise_operational_statistic_v1.company_id = enterprise_profile.company_id
 - v_enterprise_annual_energy_summary.company_id = enterprise_profile.company_id
 - analysis_result_snapshot.company_id = enterprise_profile.company_id
 - enterprise_financial.company_id = enterprise_profile.company_id

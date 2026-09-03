@@ -219,6 +219,11 @@ async function scrollConversationToLatest() {
               <ul v-if="message.result.data.corporate.evidence_gaps?.length" class="ai-claim-list">
                 <li v-for="(item, itemIndex) in message.result.data.corporate.evidence_gaps" :key="`gap-${itemIndex}`"><span>待补证据</span>{{ item }}</li>
               </ul>
+              <ul v-if="message.result.data.corporate.credit_indicators" class="ai-claim-list">
+                <li><span>测试净利率</span>{{ message.result.data.corporate.credit_indicators.net_profit_margin }}</li>
+                <li><span>测试现金流/负债</span>{{ message.result.data.corporate.credit_indicators.operating_cashflow_to_liabilities }}</li>
+                <li><span>使用边界</span>{{ message.result.data.corporate.credit_indicators.calculation_note }}</li>
+              </ul>
             </section>
 
             <section v-if="message.result.structured_data?.candidates?.length" class="ai-evidence-block">
