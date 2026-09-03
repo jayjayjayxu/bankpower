@@ -252,6 +252,8 @@ class CorporateAnalysisAgent:
         ) + "。"
         is_test = any(str(item.get("data_quality") or "").upper().startswith("SIMULATED_TEST_ONLY") for item in (row, passenger_row))
         warnings = ["以下为 SIMULATED / TEST_ONLY 测试数据，不是企业真实披露。"] if is_test else []
+        if is_test:
+            answer = "【模拟测试数据】" + answer
         return self._result(
             question, "CORPORATE_FACT", "CORPORATE_FINANCIAL", entities, financial_safety, financial,
             answer, facts, warnings, [], {"status": "SIMULATED_TEST_ONLY" if is_test else "ANSWERED", "facts": facts}, extra_sources=extra_sources,

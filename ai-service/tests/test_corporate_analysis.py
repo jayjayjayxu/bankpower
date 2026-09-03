@@ -97,6 +97,7 @@ class CorporateAnalysisTests(unittest.TestCase):
         result = CorporateAnalysisAgent(test_settings(), executor=executor).run("深圳地铁2025年营收、负债、客运量是多少？")
         self.assertEqual(result["route"], "CORPORATE_FACT")
         self.assertEqual(result["corporate_result"]["status"], "SIMULATED_TEST_ONLY")
+        self.assertTrue(result["final_answer"].startswith("【模拟测试数据】"))
         self.assertIn("2,200,000 万元", result["final_answer"])
         self.assertIn("1,900,000,000 人次", result["final_answer"])
         self.assertIn("SIMULATED / TEST_ONLY", result["warnings"][0])
