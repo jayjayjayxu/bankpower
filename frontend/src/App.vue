@@ -371,7 +371,6 @@ function returnHome() {
 
         <div class="site-switcher" aria-label="研究站点切换">
           <a :href="bankWorkbenchUrl" title="进入银行客户经理工作台">工作台</a>
-          <button type="button" title="进入可审计 AI 智能问答" @click="openAiAssistant">AI 问答</button>
           <b>电力研究</b>
           <a :href="computeSiteUrl" title="进入算力能源研究网站">算力研究</a>
         </div>
