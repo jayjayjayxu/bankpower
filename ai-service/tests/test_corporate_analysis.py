@@ -42,6 +42,16 @@ class StubExecutor:
                 ["company_id", "financial_year", "revenue_wanyuan", "revenue_growth", "net_profit_wanyuan", "total_assets_wanyuan", "total_liabilities_wanyuan", "total_equity_wanyuan", "debt_ratio", "operating_cashflow_wanyuan", "currency", "data_quality", "statistical_scope"],
                 self.financial_rows,
             )
+        if "v_enterprise_annual_energy_summary" in sql:
+            return QueryResult(["company_id", "year", "annual_power_kwh", "annual_electricity_cost_yuan", "avg_cost_yuan_kwh", "annual_max_demand_kw", "data_type"], [["C000020", "2025", "2269000000", "", "", "", "PUBLIC"]])
+        if "enterprise_energy_features" in sql:
+            return QueryResult(["company_id", "analysis_year", "annual_power_kwh", "avg_price_yuan_kwh", "max_load_kw", "peak_plus_critical_ratio", "data_type", "feature_confidence"], [["C000020", "2026", "420000000", "0.94", "99072", "0.2", "SIMULATED", "SIM_HOURLY"]])
+        if "enterprise_bank_observation" in sql:
+            return QueryResult(["company_id", "as_of_date", "project_finance_potential", "green_finance_potential", "bankability_score", "potential_bank_product", "scenario_basis"], [["C000020", "", "MEDIUM", "HIGH", "", "储能融资", "营销初筛"]])
+        if "enterprise_finance_opportunity_v1" in sql:
+            return QueryResult(["company_id", "analysis_year", "project_capex_wanyuan", "project_npv_wanyuan", "project_irr", "base_min_dscr", "max_feasible_debt_ratio", "opportunity_level", "readiness_level", "risk_level", "opportunity_reason", "key_risk_notes", "next_action", "data_type"], [["C000020", "2026", "10209", "6177", "0.2", "1.43", "0.83", "HIGH", "PARTIAL", "MEDIUM", "", "", "", "SIMULATED"]])
+        if "enterprise_policy_assessment_v1" in sql:
+            return QueryResult(["company_id", "assessment_scope", "applicability_status", "evidence_status", "missing_evidence", "model_gate_status", "resulting_action", "assessment_confidence"], [["C000020", "STORAGE_PROJECT", "POTENTIALLY_ELIGIBLE", "PARTIAL", "", "REVIEW_REQUIRED", "补充资料", "HIGH"]])
         if "enterprise_profile" in sql:
             return QueryResult(
                 ["company_id", "company_name", "ownership_type", "industry_name", "power_chain_role", "energy_customer_type", "business_verification_status", "notes"],
@@ -54,6 +64,17 @@ class StubExecutor:
 
 
 class CorporateAnalysisTests(unittest.TestCase):
+    def test_data_coverage_answers_what_is_stored(self) -> None:
+        executor = StubExecutor()
+        result = CorporateAnalysisAgent(test_settings(), executor=executor).run("深圳地铁目前有哪些数据？")
+        self.assertEqual(result["route"], "CORPORATE_DATA_COVERAGE")
+        inventory = result["corporate_result"]["data_inventory"]
+        self.assertIn("年度用电", [item["category"] for item in inventory if item["status"] == "AVAILABLE"])
+        self.assertIn("项目融资机会", [item["category"] for item in inventory if item["status"] == "AVAILABLE"])
+        self.assertIn("客运运营数据", [item["category"] for item in inventory if item["status"] == "NOT_STORED"])
+        self.assertNotIn("当前数据库缺少该企业的营业收入", result["final_answer"])
+        self.assertEqual(len(executor.queries), 8)
+
     def test_missing_financial_and_passenger_data_is_in_scope_gap(self) -> None:
         executor = StubExecutor()
         result = CorporateAnalysisAgent(test_settings(), executor=executor).run("深圳地铁集团2024年营收、负债、客运量是多少？")
@@ -80,7 +101,7 @@ class CorporateAnalysisTests(unittest.TestCase):
         self.assertIn("不能作为集团真实财务或授信结论", result["final_answer"])
         self.assertEqual(result["interpretation"]["facts"][0]["label"], "企业名称")
         self.assertEqual(result["interpretation"]["facts"][1]["label"], "储能项目 NPV")
-        self.assertEqual(len(executor.queries), 3)
+        self.assertEqual(len(executor.queries), 6)
 
 
 if __name__ == "__main__":

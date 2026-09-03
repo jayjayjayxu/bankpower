@@ -88,6 +88,7 @@ function routeLabel(route) {
     FINANCE_FOLLOW_UP: '融资假设重算',
     PROVENANCE: '上一轮证据追溯',
     SQL_CALC: '公开统计程序计算',
+    CORPORATE_DATA_COVERAGE: '企业数据覆盖盘点',
     CORPORATE_FACT: '企业结构化查询',
     CORPORATE_ANALYSIS: '企业受控分析',
     CALC_PROVENANCE: '计算过程追溯',
@@ -204,6 +205,9 @@ async function scrollConversationToLatest() {
 
             <section v-if="message.result.data?.corporate" class="ai-evidence-block">
               <h2>企业分析摘要</h2>
+              <ul v-if="message.result.data.corporate.data_inventory?.length" class="ai-claim-list">
+                <li v-for="item in message.result.data.corporate.data_inventory" :key="item.category"><span>{{ item.status === 'AVAILABLE' ? '已存储' : '未存储' }}</span><b>{{ item.category }}</b><br>{{ item.description }}<small v-if="item.status === 'AVAILABLE'"> · {{ item.record_count }} 条受控记录</small></li>
+              </ul>
               <ul v-if="message.result.data.corporate.positive_factors?.length" class="ai-claim-list">
                 <li v-for="(item, itemIndex) in message.result.data.corporate.positive_factors" :key="`positive-${itemIndex}`"><span>有利因素</span>{{ item }}</li>
               </ul>

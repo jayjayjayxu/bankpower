@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import re
+import json
+import os
 from dataclasses import asdict
-from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import Any, Protocol
 
 from .config import Settings
 from .energy_compute import EntityResolver
@@ -17,6 +18,10 @@ _COMPANY_ID = re.compile(r"^C\d{6}$")
 _ANALYSIS_TERMS = (
     "投资优势", "投资风险", "投资建议", "投资价值", "未来几年", "未来", "财务状况",
     "偿债压力", "融资客户", "项目融资", "值得研究", "经营风险", "优势和风险",
+)
+_COVERAGE_TERMS = (
+    "有哪些数据", "什么数据", "数据存储", "数据有哪些", "已有数据", "目前数据",
+    "存了什么", "数据库里有什么", "有哪些资料", "系统里有什么", "数据覆盖",
 )
 _METRIC_TERMS = {
     "revenue_wanyuan": ("营收", "营业收入", "收入"),
@@ -35,6 +40,54 @@ _METRIC_LABELS = {
 }
 
 
+class CorporateNarrator(Protocol):
+    """Turns only supplied, already-verified enterprise evidence into prose."""
+
+    def narrate(self, question: str, mode: str, evidence: dict[str, Any], fallback: str) -> tuple[str, dict[str, Any]]: ...
+
+
+class DeepSeekCorporateNarrator:
+    """Evidence-bounded DeepSeek narration with a deterministic safe fallback."""
+
+    _SYSTEM_PROMPT = """你是银行内部 EnergyComputeAI 的企业分析表达层。
+只能使用用户消息中给出的“已核验数据”。不得补充外部知识、未给出的数字、客运量、财务数据、债务情况或政策结论。
+直接回答用户问题；如果模式是 DATA_COVERAGE，清晰区分“当前已存储的数据”和“当前未存储的数据”。
+如果模式是 CORPORATE_ANALYSIS，可以给出系统基于情景数据的研究看法，但必须把模拟/研究情景与真实经营财务分开，并说明不构成最终授信、证券或投资决定。
+不要编造来源、页码、数据库字段或具体项目进度。只输出 JSON：{"answer":"简洁中文回答"}。"""
+
+    def __init__(self) -> None:
+        self.api_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+        self.base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
+        self.model = os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash")
+
+    def narrate(self, question: str, mode: str, evidence: dict[str, Any], fallback: str) -> tuple[str, dict[str, Any]]:
+        if not self.api_key:
+            return fallback, {"used": False, "reason": "DEEPSEEK_API_KEY_UNAVAILABLE"}
+        try:
+            from openai import OpenAI
+
+            response = OpenAI(api_key=self.api_key, base_url=self.base_url).chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": self._SYSTEM_PROMPT},
+                    {"role": "user", "content": json.dumps({"question": question, "mode": mode, "verified_data": evidence}, ensure_ascii=False)},
+                ],
+                response_format={"type": "json_object"}, temperature=0, max_tokens=1_200, stream=False,
+                extra_body={"thinking": {"type": "disabled"}},
+            )
+            raw = (response.choices[0].message.content or "").strip()
+            payload = json.loads(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.I))
+            answer = str(payload.get("answer") or "").strip() if isinstance(payload, dict) else ""
+            if not answer or len(answer) > 3_000:
+                raise ValueError("企业分析表达层返回了空答案或超长答案。")
+            return answer, {
+                "used": True, "model": response.model or self.model,
+                "usage": response.usage.model_dump() if response.usage else {},
+            }
+        except Exception as exc:
+            return fallback, {"used": False, "reason": type(exc).__name__}
+
+
 class CorporateAnalysisAgent:
     """Program-owned CORPORATE router, planner and renderer.
 
@@ -48,9 +101,11 @@ class CorporateAnalysisAgent:
         settings: Settings,
         executor: SQLExecutor | None = None,
         resolver: EntityResolver | None = None,
+        narrator: CorporateNarrator | None = None,
     ) -> None:
         self.executor = executor or SpdbReadOnlyExecutor(settings)
         self.resolver = resolver or EntityResolver()
+        self.narrator = narrator or DeepSeekCorporateNarrator()
 
     def supports(self, question: str) -> bool:
         _, entities = self.resolver.resolve(question)
@@ -64,9 +119,52 @@ class CorporateAnalysisAgent:
         company = companies[0]
         if not _COMPANY_ID.fullmatch(str(company["entity_id"])):
             raise ValueError("企业实体标识不符合受控查询格式。")
+        if any(term in question.casefold() for term in _COVERAGE_TERMS):
+            return self._data_coverage(question, company, entities)
         if any(term in question.casefold() for term in _ANALYSIS_TERMS):
             return self._analysis(question, company, entities)
         return self._facts(question, company, entities)
+
+    def _data_coverage(self, question: str, company: dict[str, str], entities: list[dict[str, str]]) -> dict[str, Any]:
+        company_id = company["entity_id"]
+        profile_safety, profile = self._query(self._profile_sql(company_id))
+        financial_safety, financial = self._query(self._financial_sql(company_id))
+        annual_safety, annual = self._query(self._annual_energy_sql(company_id))
+        feature_safety, features = self._query(self._energy_features_sql(company_id))
+        observation_safety, observations = self._query(self._bank_observation_sql(company_id))
+        opportunity_safety, opportunities = self._query(self._finance_opportunity_sql(company_id))
+        assessment_safety, assessments = self._query(self._policy_assessment_sql(company_id))
+        snapshot_safety, snapshots = self._query(self._snapshot_sql(company_id))
+        inventory = [
+            self._inventory_item("企业主数据", "enterprise_profile", profile, "企业名称、属地、所有制、行业、用能/业务标签与核验状态"),
+            self._inventory_item("年度财务", "enterprise_financial", financial, "营业收入、利润、资产负债和经营现金流"),
+            self._inventory_item("年度用电", "v_enterprise_annual_energy_summary", annual, "年度用电量、电费、平均电价、最大需量与数据类型"),
+            self._inventory_item("用电特征", "enterprise_energy_features", features, "负荷、峰谷结构、用电量及数据情景/可信度"),
+            self._inventory_item("银行观察", "enterprise_bank_observation", observations, "业务机会标签、潜在产品和营销初筛说明"),
+            self._inventory_item("项目融资机会", "enterprise_finance_opportunity_v1", opportunities, "储能项目规模、NPV、IRR、DSCR、风险和机会标签"),
+            self._inventory_item("政策评估", "enterprise_policy_assessment_v1", assessments, "项目政策适用性、证据状态、待补证据和后续动作"),
+            self._inventory_item("分析快照", "analysis_result_snapshot", snapshots, "已保存的储能及融资研究情景输出"),
+            {"category": "客运运营数据", "table": None, "status": "NOT_STORED", "record_count": 0, "description": "客运量、客流和线路运营指标"},
+        ]
+        available = [item["category"] for item in inventory if item["status"] == "AVAILABLE"]
+        unavailable = [item["category"] for item in inventory if item["status"] != "AVAILABLE"]
+        fallback = (
+            f"系统当前已为{company['canonical_name']}保存：" + "、".join(available) + "。"
+            + (f"当前尚未保存：{'、'.join(unavailable)}。" if unavailable else "")
+            + "其中项目融资机会、政策评估和分析快照均属于研究/情景资料，应与经审计财务和实际运营数据区分使用。"
+        )
+        evidence = {"company": company["canonical_name"], "inventory": inventory}
+        answer, narration = self.narrator.narrate(question, "DATA_COVERAGE", evidence, fallback)
+        primary_safety, primary_result = profile_safety, profile
+        facts = [self._fact("company_name", company["canonical_name"])]
+        return self._result(
+            question, "CORPORATE_DATA_COVERAGE", "CORPORATE_PROFILE", entities, primary_safety, primary_result,
+            answer, facts, [], ["研究/情景数据不能替代经审计财务或实际运营数据。"],
+            {"status": "ANSWERED", "data_inventory": inventory, "available_categories": available,
+             "unavailable_categories": unavailable},
+            extra_sources=[financial_safety, annual_safety, feature_safety, observation_safety, opportunity_safety,
+                           assessment_safety, snapshot_safety], narration=narration,
+        )
 
     def _facts(self, question: str, company: dict[str, str], entities: list[dict[str, str]]) -> dict[str, Any]:
         requested = self._requested_metrics(question)
@@ -102,7 +200,11 @@ class CorporateAnalysisAgent:
         profile_safety, profile = self._query(self._profile_sql(company["entity_id"]))
         snapshot_safety, snapshot = self._query(self._snapshot_sql(company["entity_id"]))
         financial_safety, financial = self._query(self._financial_sql(company["entity_id"]))
+        observation_safety, observations = self._query(self._bank_observation_sql(company["entity_id"]))
+        opportunity_safety, opportunities = self._query(self._finance_opportunity_sql(company["entity_id"]))
+        assessment_safety, assessments = self._query(self._policy_assessment_sql(company["entity_id"]))
         profile_row, snapshot_row, financial_row = self._row(profile), self._row(snapshot), self._row(financial)
+        observation_row, opportunity_row = self._row(observations), self._row(opportunities)
         positives: list[str] = []
         risks: list[str] = []
         gaps = ["缺少集团2024年营业收入、总负债、资产负债率、净利润和经营现金流的可核验记录。", "缺少客运量及未来资本开支计划的受控数据。"]
@@ -126,12 +228,33 @@ class CorporateAnalysisAgent:
             risk_summary = str(snapshot_row.get("risk_summary") or "")
             if risk_summary:
                 risks.append(risk_summary)
+        if observation_row:
+            green_potential = observation_row.get("green_finance_potential") or "—"
+            products = observation_row.get("potential_bank_product") or "—"
+            positives.append(f"银行观察将绿色金融潜力标记为 {green_potential}，可关注产品为{products}。")
+            risks.append("银行观察属于营销初筛标签，不构成授信意见。")
+        if opportunity_row:
+            positives.append(
+                "现有项目机会研究标记为机会等级 " + str(opportunity_row.get("opportunity_level") or "—")
+                + "、准备度 " + str(opportunity_row.get("readiness_level") or "—") + "。"
+            )
+            risks.append(
+                "项目机会研究的风险等级为 " + str(opportunity_row.get("risk_level") or "—")
+                + "，且数据类型为 " + str(opportunity_row.get("data_type") or "研究情景") + "。"
+            )
+        assessment_rows = [dict(zip(assessments.columns, row, strict=True)) for row in assessments.rows]
+        if assessment_rows:
+            partial = sum(item.get("evidence_status") == "PARTIAL" for item in assessment_rows)
+            not_collected = sum(item.get("evidence_status") == "NOT_COLLECTED" for item in assessment_rows)
+            positives.append(f"已保存 {len(assessment_rows)} 条储能项目政策评估，其中 {partial} 条证据状态为 PARTIAL。")
+            if not_collected:
+                risks.append(f"仍有 {not_collected} 条政策评估处于 NOT_COLLECTED，需补充项目材料后再判断。")
         if financial_row:
             positives.append(f"数据库存在 {financial_row.get('financial_year')} 年企业财务记录，可继续开展年度比较。")
         else:
             risks.append("当前不能评估集团层面的收入趋势、真实杠杆和偿债现金流。")
         overall = "FURTHER_RESEARCH_REQUIRED"
-        answer = (
+        fallback = (
             f"综合判断\n{company['canonical_name']}可作为现有储能项目机会的进一步研究对象，"
             "但当前证据不足以形成集团层面的投资结论、证券建议或银行授信决定。\n\n"
             "有利因素\n- " + "\n- ".join(positives or ["当前仅确认企业主数据，尚无足够经营与财务事实。"])
@@ -146,18 +269,25 @@ class CorporateAnalysisAgent:
         primary_safety, primary_result = snapshot_safety, snapshot
         if not snapshot.rows:
             primary_safety, primary_result = profile_safety, profile
+        evidence = {
+            "company": company["canonical_name"], "positive_factors": positives, "risk_factors": risks,
+            "evidence_gaps": gaps, "bank_observation": observation_row, "project_opportunity": opportunity_row,
+            "policy_assessment_summary": {"record_count": len(assessment_rows), "partial_evidence": sum(item.get("evidence_status") == "PARTIAL" for item in assessment_rows), "not_collected": sum(item.get("evidence_status") == "NOT_COLLECTED" for item in assessment_rows)},
+        }
+        answer, narration = self.narrator.narrate(question, "CORPORATE_ANALYSIS", evidence, fallback)
         return self._result(
             question, "CORPORATE_ANALYSIS", "CORPORATE_INVESTMENT", entities, primary_safety, primary_result,
             answer, facts, risks, gaps,
             {"status": overall, "positive_factors": positives, "risk_factors": risks, "evidence_gaps": gaps,
              "financial_data_available": bool(financial_row), "scenario_data_available": bool(snapshot_row)},
-            extra_sources=[financial_safety, profile_safety],
+            extra_sources=[financial_safety, profile_safety, observation_safety, opportunity_safety, assessment_safety], narration=narration,
         )
 
     def _result(
         self, question: str, route: str, subdomain: str, entities: list[dict[str, str]], safety: SafetyResult,
         result: QueryResult, answer: str, facts: list[dict[str, str]], warnings: list[str], boundaries: list[str],
         corporate_result: dict[str, Any], extra_sources: list[SafetyResult] | None = None,
+        narration: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         all_safety = [safety, *(extra_sources or [])]
         tables = sorted({table for item in all_safety for table in item.tables})
@@ -166,11 +296,14 @@ class CorporateAnalysisAgent:
              "authority_code": "DATABASE_FACT", "supporting_quote": "本回答仅使用已执行的只读企业数据查询及程序化分析模板。", "source_locator": table}
             for table in tables
         ]
+        tool_calls = [{"order": 1, "tool": "CORPORATE_SQL", "tables": tables, "executed": True}]
+        if narration is not None:
+            tool_calls.append({"order": 2, "tool": "DEEPSEEK_CORPORATE_NARRATION", "executed": bool(narration.get("used")), "model": narration.get("model"), "reason": narration.get("reason")})
         return {
             "agent_version": "EnergyComputeAI-V6.3-CORPORATE", "question": question.strip(), "route": route,
             "router": {"domain": "CORPORATE", "subdomain": subdomain, "route": route,
                        "reason": "命中已注册企业实体，使用企业受控数据与程序化分析模板。", "entity_resolution": entities},
-            "tool_calls": [{"order": 1, "tool": "CORPORATE_SQL", "tables": tables, "executed": True}],
+            "tool_calls": tool_calls,
             "sql_result": {"generated_sql": safety.sql, "model": "PROGRAM_OWNED", "usage": {},
                            "safety": asdict(safety), "query_result": {"columns": result.columns, "rows": result.rows}},
             "corporate_result": corporate_result,
@@ -186,6 +319,11 @@ class CorporateAnalysisAgent:
         if not safety.safe:
             raise RuntimeError("企业受控 SQL 未通过安全校验：" + "；".join(safety.errors))
         return safety, self.executor.execute(safety.sql)
+
+    @staticmethod
+    def _inventory_item(category: str, table: str, result: QueryResult, description: str) -> dict[str, Any]:
+        return {"category": category, "table": table, "status": "AVAILABLE" if result.rows else "NOT_STORED",
+                "record_count": len(result.rows), "description": description}
 
     @staticmethod
     def _row(result: QueryResult) -> dict[str, str]:
@@ -214,6 +352,32 @@ class CorporateAnalysisAgent:
         return ("SELECT company_id, financial_year, revenue_wanyuan, revenue_growth, net_profit_wanyuan, total_assets_wanyuan, "
                 "total_liabilities_wanyuan, total_equity_wanyuan, debt_ratio, operating_cashflow_wanyuan, currency, data_quality, "
                 "statistical_scope FROM enterprise_financial WHERE company_id='" + company_id + "' ORDER BY financial_year DESC LIMIT 2;")
+
+    @staticmethod
+    def _annual_energy_sql(company_id: str) -> str:
+        return ("SELECT company_id, year, annual_power_kwh, annual_electricity_cost_yuan, avg_cost_yuan_kwh, annual_max_demand_kw, data_type "
+                "FROM v_enterprise_annual_energy_summary WHERE company_id='" + company_id + "' ORDER BY year DESC LIMIT 2;")
+
+    @staticmethod
+    def _energy_features_sql(company_id: str) -> str:
+        return ("SELECT company_id, analysis_year, annual_power_kwh, avg_price_yuan_kwh, max_load_kw, peak_plus_critical_ratio, data_type, feature_confidence "
+                "FROM enterprise_energy_features WHERE company_id='" + company_id + "' ORDER BY analysis_year DESC LIMIT 2;")
+
+    @staticmethod
+    def _bank_observation_sql(company_id: str) -> str:
+        return ("SELECT company_id, as_of_date, project_finance_potential, green_finance_potential, bankability_score, potential_bank_product, scenario_basis "
+                "FROM enterprise_bank_observation WHERE company_id='" + company_id + "' ORDER BY as_of_date DESC LIMIT 1;")
+
+    @staticmethod
+    def _finance_opportunity_sql(company_id: str) -> str:
+        return ("SELECT company_id, analysis_year, project_capex_wanyuan, project_npv_wanyuan, project_irr, base_min_dscr, max_feasible_debt_ratio, "
+                "opportunity_level, readiness_level, risk_level, opportunity_reason, key_risk_notes, next_action, data_type "
+                "FROM enterprise_finance_opportunity_v1 WHERE company_id='" + company_id + "' ORDER BY analysis_year DESC LIMIT 1;")
+
+    @staticmethod
+    def _policy_assessment_sql(company_id: str) -> str:
+        return ("SELECT company_id, assessment_scope, applicability_status, evidence_status, missing_evidence, model_gate_status, resulting_action, assessment_confidence "
+                "FROM enterprise_policy_assessment_v1 WHERE company_id='" + company_id + "' ORDER BY assessed_at DESC LIMIT 20;")
 
     @staticmethod
     def _snapshot_sql(company_id: str) -> str:
