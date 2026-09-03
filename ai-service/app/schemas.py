@@ -67,6 +67,10 @@ class ChatResponse(BaseModel):
     timing: dict[str, int]
     session_id: str | None = None
     conversation: dict[str, Any] | None = None
+    # A completed business boundary (for example RAG_NO_EVIDENCE) is still a
+    # normal 200 response.  This field lets the UI render it consistently with
+    # transport failures without exposing implementation exceptions.
+    error_code: str | None = None
 
 
 class HealthResponse(BaseModel):

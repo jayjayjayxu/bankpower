@@ -18,7 +18,7 @@ def settings() -> Settings:
         spdb_sql_login_path="bank_ai_local", spdb_database="spdb_power_finance",
         mysql_binary=Path("/usr/local/mysql/bin/mysql"), cors_allowed_origins=("http://localhost:5173",),
         max_concurrency=1, database_healthcheck=False, sql_debug_enabled=False, sql_debug_token="",
-        policy_rag_index_dir=Path("runtime/policy-index"),
+        policy_rag_index_dir=SERVICE_ROOT / "runtime" / "policy_vector_index" / "public_effective",
     )
 
 

@@ -17,6 +17,7 @@ from .core import AgentFactory, AgentProvider, CoreUnavailableError, health_deta
 from .conversation import ConversationService, SQLiteConversationStore
 from .due_diligence.orchestrator import DueDiligenceOrchestrator
 from .energy_compute import EntityResolver
+from .errors import ErrorCode, audit_error_details, classify_exception, result_error_code
 from .schemas import ChatRequest, ChatResponse, ConversationMessageRequest, DebugSQLResponse, HealthResponse, SQLData, Source
 
 
@@ -101,6 +102,7 @@ def _public_response(
 ) -> ChatResponse:
     synthesis = result.get("synthesis") or {}
     interpretation = result.get("interpretation") or None
+    business_error = result_error_code(result)
     return ChatResponse(
         request_id=request_id,
         question=display_question or str(result["question"]),
@@ -128,6 +130,7 @@ def _public_response(
         claims=list(synthesis.get("claims") or []),
         warnings=_public_warnings(result),
         timing={"total_ms": elapsed_ms},
+        error_code=business_error.value if business_error else None,
     )
 
 
@@ -243,6 +246,7 @@ def create_app(
                     "status": "succeeded",
                     "timing": response.timing,
                     "route": response.route,
+                    "outcome_code": response.error_code or "ANSWERED",
                     "session_id": state.session_id,
                     "effective_question": effective_question,
                     "conversation": state.public_dict(),
@@ -252,14 +256,18 @@ def create_app(
             )
             return response
         except CoreUnavailableError as exc:
-            status_code, code, message = 503, "core_unavailable", str(exc)
+            classified = classify_exception(exc)
+            status_code, code, message = classified.http_status, classified.code.value, classified.user_message
+            audit_base["technical_error"] = audit_error_details(exc)
         except KeyError as exc:
-            status_code, code, message = 404, "conversation_not_found", str(exc)
+            status_code, code, message = 404, ErrorCode.CONTEXT_RESOLUTION_ERROR.value, "会话不存在或已失效，请重新开始提问。"
+            audit_base["technical_error"] = audit_error_details(exc)
         except AuditWriteError as exc:
-            status_code, code, message = 500, "audit_write_failed", str(exc)
+            status_code, code, message = 500, "AUDIT_WRITE_FAILED", "审计服务暂时不可用，本次请求未执行。"
         except Exception as exc:  # The full exception class stays in the audit record.
-            status_code, code, message = 502, "agent_execution_failed", "AI 服务执行失败，请稍后重试。"
-            audit_base["exception_type"] = type(exc).__name__
+            classified = classify_exception(exc)
+            status_code, code, message = classified.http_status, classified.code.value, classified.user_message
+            audit_base["technical_error"] = audit_error_details(exc)
         try:
             audit_logger.write(
                 request_id,
@@ -268,6 +276,12 @@ def create_app(
                     "status": "failed",
                     "error_code": code,
                     "error_message": message,
+                    "retryable": code in {
+                        ErrorCode.MODEL_TIMEOUT.value, ErrorCode.MODEL_CONNECTION_ERROR.value,
+                        ErrorCode.DB_CONNECTION_ERROR.value, ErrorCode.SQL_EXECUTION_ERROR.value,
+                        ErrorCode.RAG_VALIDATION_ERROR.value, ErrorCode.RAG_INDEX_ERROR.value,
+                        ErrorCode.UNKNOWN_SERVICE_ERROR.value,
+                    },
                     "timing": {"total_ms": round((time.perf_counter() - started) * 1_000)},
                 },
             )

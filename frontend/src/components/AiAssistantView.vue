@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, ref } from 'vue'
-import { askAi, clearFinanceAssumptions, resetConversationContext } from '../services/aiApi'
+import { AiApiError, askAi, clearFinanceAssumptions, resetConversationContext } from '../services/aiApi'
 
 defineEmits(['back', 'open-project-analysis'])
 
@@ -46,7 +46,7 @@ async function clearAssumptions() {
     const result = await clearFinanceAssumptions(sessionId.value)
     conversation.value = result.conversation
   } catch (error) {
-    requestError.value = error instanceof Error ? error.message : '无法清除融资假设。'
+    requestError.value = publicRequestError(error, '无法清除融资假设。')
   }
 }
 
@@ -57,7 +57,7 @@ async function resetContext() {
     const result = await resetConversationContext(sessionId.value)
     conversation.value = result.conversation
   } catch (error) {
-    requestError.value = error instanceof Error ? error.message : '无法重置当前上下文。'
+    requestError.value = publicRequestError(error, '无法重置当前上下文。')
   }
 }
 
@@ -102,6 +102,13 @@ function highRiskCount(due) {
   return (due?.risks || []).filter((item) => item.level === 'HIGH').length
 }
 
+function publicRequestError(error, fallback) {
+  if (error instanceof AiApiError) {
+    return `${error.message}${error.code ? `（${error.code}）` : ''}${error.retryable ? ' 可稍后重试。' : ''}`
+  }
+  return error instanceof Error ? error.message : fallback
+}
+
 async function submit() {
   const value = question.value.trim()
   if (!value || loading.value) return
@@ -116,7 +123,7 @@ async function submit() {
     conversation.value = result.conversation || conversation.value
     messages.value.push({ type: 'answer', result })
   } catch (error) {
-    requestError.value = error instanceof Error ? error.message : 'AI 服务暂时不可用。'
+    requestError.value = publicRequestError(error, 'AI 服务暂时不可用。')
   } finally {
     loading.value = false
     await scrollConversationToLatest()
@@ -161,7 +168,7 @@ async function scrollConversationToLatest() {
 
           <article v-else class="ai-answer">
             <header>
-              <div><span>AI 回答</span><b>{{ routeLabel(message.result.route) }}</b></div>
+              <div><span>AI 回答</span><b>{{ routeLabel(message.result.route) }}</b><small v-if="message.result.error_code" class="ai-outcome-code">{{ message.result.error_code }}</small></div>
               <small>{{ message.result.timing?.total_ms ?? '—' }} ms · {{ message.result.request_id }}</small>
             </header>
             <section class="ai-answer-conclusion"><h2>结论</h2><p>{{ message.result.interpretation?.primary_conclusion || message.result.answer }}</p></section>

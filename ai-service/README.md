@@ -16,6 +16,19 @@
 
 每个成功或失败请求均会在 `AI_API_AUDIT_DIR/YYYY-MM-DD/<request_id>.json` 留存完整审计记录。前端响应不包含 SQL 原文、模型原始回复、拆解细节或内部 Chain。
 
+## V6 Final：统一错误处理
+
+`POST /api/chat` 的业务边界仍返回 HTTP 200，但会在响应中提供 `error_code`；例如 `RAG_NO_EVIDENCE`、`IN_SCOPE_DATA_MISSING` 和 `OUT_OF_SCOPE`。这让前端能够清晰区分“已受控地拒答/缺数据”与服务故障。
+
+工具或模型异常则返回稳定的 HTTP 错误对象：`detail.request_id`、`detail.code`、`detail.message`、`detail.retryable`。当前代码包括：
+
+- `MODEL_TIMEOUT`、`MODEL_CONNECTION_ERROR`：模型超时或连接异常；
+- `DB_CONNECTION_ERROR`、`SQL_EXECUTION_ERROR`、`SQL_VALIDATION_ERROR`：数据库不可用、执行失败或安全校验阻断；
+- `RAG_INDEX_ERROR`、`RAG_VALIDATION_ERROR`、`RAG_NO_EVIDENCE`：政策索引、引文校验或证据不足；
+- `CALCULATION_ERROR`、`CONTEXT_RESOLUTION_ERROR`、`IN_SCOPE_DATA_MISSING`、`OUT_OF_SCOPE`：计算、对话上下文和业务边界结果。
+
+用户侧绝不返回 SDK、MySQL 或 Python Traceback。审计日志会保存脱敏后的异常类型、异常链和技术栈，并对 API Key、Bearer Token、密码和 `sk-...` 形态密钥进行替换。
+
 ## 本地运行
 
 先使用已有 BankAI V0.4 的虚拟环境，安装 API 依赖：

@@ -15,6 +15,7 @@ if str(SERVICE_ROOT) not in sys.path:
 from app.audit import AuditLogger
 from app.config import Settings
 from app.core import CoreUnavailableError
+from app.errors import ErrorCode
 from app.main import create_app
 
 
@@ -271,12 +272,55 @@ class ApiTests(unittest.TestCase):
             json={"question": "测试问题"},
         )
         self.assertEqual(response.status_code, 503)
-        self.assertEqual(response.json()["detail"]["code"], "core_unavailable")
+        self.assertEqual(response.json()["detail"]["code"], ErrorCode.SERVICE_CONFIGURATION_ERROR.value)
         audit_files = list(self.settings.audit_dir.rglob("request-test-configuration.json"))
         self.assertEqual(len(audit_files), 1)
         audit = json.loads(audit_files[0].read_text(encoding="utf-8"))
         self.assertEqual(audit["status"], "failed")
-        self.assertEqual(audit["error_code"], "core_unavailable")
+        self.assertEqual(audit["error_code"], ErrorCode.SERVICE_CONFIGURATION_ERROR.value)
+        self.assertEqual(audit["technical_error"]["exception_type"], "CoreUnavailableError")
+
+    def test_model_connection_error_is_sanitized_for_user_and_redacted_in_audit(self) -> None:
+        class APIConnectionError(ConnectionError):
+            pass
+
+        class FailingAgent(FakeAgent):
+            def run(self, question: str) -> dict:
+                raise APIConnectionError("password=super-secret sk-abcdefghijklmnop")
+
+        response = self.make_client(FailingAgent()).post(
+            "/api/chat", headers={"X-Request-ID": "request-test-model-failure"}, json={"question": "测试问题"}
+        )
+        self.assertEqual(response.status_code, 503)
+        detail = response.json()["detail"]
+        self.assertEqual(detail["code"], ErrorCode.MODEL_CONNECTION_ERROR.value)
+        self.assertNotIn("super-secret", str(detail))
+        self.assertNotIn("Traceback", str(detail))
+        audit_path = next(self.settings.audit_dir.rglob("request-test-model-failure.json"))
+        audit = json.loads(audit_path.read_text(encoding="utf-8"))
+        self.assertEqual(audit["error_code"], ErrorCode.MODEL_CONNECTION_ERROR.value)
+        self.assertIn("[REDACTED]", audit["technical_error"]["exception_message"])
+        self.assertNotIn("super-secret", json.dumps(audit, ensure_ascii=False))
+
+    def test_business_boundary_results_expose_stable_error_codes_without_5xx(self) -> None:
+        agent = FakeAgent("OUT_OF_SCOPE")
+        response = self.make_client(agent).post("/api/chat", json={"question": "测试问题"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["error_code"], ErrorCode.OUT_OF_SCOPE.value)
+
+        class MissingDataAgent(FakeAgent):
+            def __init__(self) -> None:
+                super().__init__("SQL")
+
+            def run(self, question: str) -> dict:
+                result = super().run(question)
+                result["route"] = "IN_SCOPE_DATA_MISSING"
+                result["router"] = {"route": "IN_SCOPE_DATA_MISSING"}
+                return result
+
+        missing = self.make_client(MissingDataAgent()).post("/api/chat", json={"question": "测试问题"})
+        self.assertEqual(missing.status_code, 200)
+        self.assertEqual(missing.json()["error_code"], ErrorCode.IN_SCOPE_DATA_MISSING.value)
 
 
 if __name__ == "__main__":
