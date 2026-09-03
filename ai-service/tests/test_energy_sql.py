@@ -8,10 +8,17 @@ SERVICE_ROOT = Path(__file__).resolve().parents[1]
 if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
 
-from app.energy_sql import DeterministicResultPresenter, QueryResult, validate_energy_sql
+from app.energy_sql import DeterministicResultPresenter, QueryResult, repair_display_text, repair_query_result, validate_energy_sql
 
 
 class EnergySQLSafetyTests(unittest.TestCase):
+
+    def test_repairs_only_known_utf8_as_cp1252_import_artefacts(self) -> None:
+        self.assertEqual(repair_display_text("ç™¾æ—ºä¿¡"), "百旺信")
+        self.assertEqual(repair_display_text("深圳百旺信智算中心"), "深圳百旺信智算中心")
+        self.assertEqual(repair_display_text("5346.0000"), "5346.0000")
+        repaired = repair_query_result(QueryResult(["operation_scope_name"], [["ç™¾æ—ºä¿¡"]]))
+        self.assertEqual(repaired.rows, [["百旺信"]])
 
     def test_program_owned_presenter_keeps_raw_value_and_applies_documented_units(self) -> None:
         answer = DeterministicResultPresenter().summarize(

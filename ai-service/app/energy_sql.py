@@ -132,6 +132,43 @@ class QueryResult:
     rows: list[list[str]]
 
 
+def repair_display_text(value: str) -> str:
+    """Repair one known import artefact without mutating the source database.
+
+    A subset of historical demo rows was imported after UTF-8 bytes had been
+    interpreted as Windows-1252/latin1 and stored again as utf8mb4 (for
+    example, ``ç™¾æ—ºä¿¡`` instead of ``百旺信``).  Repair is deliberately
+    conservative: it is accepted only if round-tripping produces *more* CJK
+    characters.  Normal Chinese text cannot be encoded as cp1252/latin1, and
+    numbers/ordinary ASCII therefore remain untouched.
+    """
+
+    if not value:
+        return value
+    original_cjk = _cjk_count(value)
+    for legacy_encoding in ("cp1252", "latin1"):
+        try:
+            repaired = value.encode(legacy_encoding).decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            continue
+        if _cjk_count(repaired) > original_cjk:
+            return repaired
+    return value
+
+
+def _cjk_count(value: str) -> int:
+    return sum("\u4e00" <= character <= "\u9fff" for character in value)
+
+
+def repair_query_result(result: QueryResult) -> QueryResult:
+    """Apply display-only decoding consistently to both supported executors."""
+
+    return QueryResult(
+        columns=[repair_display_text(column) for column in result.columns],
+        rows=[[repair_display_text(cell) for cell in row] for row in result.rows],
+    )
+
+
 @dataclass(frozen=True)
 class SafetyResult:
     safe: bool
@@ -336,7 +373,7 @@ class SpdbReadOnlyExecutor:
         if not completed.stdout.strip():
             return QueryResult([], [])
         parsed = list(csv.reader(StringIO(completed.stdout), delimiter="\t"))
-        return QueryResult(parsed[0], parsed[1:])
+        return repair_query_result(QueryResult(parsed[0], parsed[1:]))
 
     def _execute_network(self, sql: str) -> QueryResult:
         """Execute through the container-only dedicated read account.
@@ -374,7 +411,7 @@ class SpdbReadOnlyExecutor:
                     ["" if value is None else str(value) for value in row]
                     for row in cursor.fetchall()
                 ]
-            return QueryResult(columns, rows)
+            return repair_query_result(QueryResult(columns, rows))
         except Exception as exc:
             raise RuntimeError("spdb_power_finance 查询失败。") from exc
         finally:
