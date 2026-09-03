@@ -62,7 +62,6 @@ services:
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-flash}
       DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
       SPDB_DATABASE: spdb_power_finance
-      MYSQL_BINARY: /usr/bin/mysql
       AI_DB_HOST: mysql
       AI_DB_PORT: 3306
       AI_DB_USER: bankpower_ai_reader

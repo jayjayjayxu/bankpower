@@ -213,6 +213,25 @@ def health_details(settings: Settings) -> dict[str, str]:
     def check_database(login_path: str, database_name: str) -> str:
         if not settings.database_healthcheck:
             return "not_checked"
+        if settings.mysql_host:
+            if not settings.mysql_user or not settings.mysql_password:
+                return "unavailable"
+            try:
+                import pymysql
+
+                connection = pymysql.connect(
+                    host=settings.mysql_host, port=settings.mysql_port,
+                    user=settings.mysql_user, password=settings.mysql_password,
+                    database=database_name, connect_timeout=3,
+                )
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT 1")
+                finally:
+                    connection.close()
+                return "ok"
+            except Exception:
+                return "unavailable"
         if not settings.mysql_binary.is_file():
             return "missing_mysql_client"
         try:
@@ -231,6 +250,8 @@ def health_details(settings: Settings) -> dict[str, str]:
 
     return {
         "rag_index": rag_index,
-        "database": check_database(settings.sql_login_path, "bank_ai"),
+        # The production account is deliberately scoped to spdb_power_finance;
+        # legacy BankAI tables are neither mounted nor granted to this service.
+        "database": "not_checked" if settings.mysql_host else check_database(settings.sql_login_path, "bank_ai"),
         "spdb_database": check_database(settings.spdb_sql_login_path, settings.spdb_database),
     }

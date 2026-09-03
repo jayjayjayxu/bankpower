@@ -314,6 +314,8 @@ class SpdbReadOnlyExecutor:
         self.settings = settings
 
     def execute(self, sql: str) -> QueryResult:
+        if self.settings.mysql_host:
+            return self._execute_network(sql)
         payload = (
             "SET SESSION MAX_EXECUTION_TIME=5000;\n"
             "START TRANSACTION READ ONLY;\n"
@@ -335,6 +337,49 @@ class SpdbReadOnlyExecutor:
             return QueryResult([], [])
         parsed = list(csv.reader(StringIO(completed.stdout), delimiter="\t"))
         return QueryResult(parsed[0], parsed[1:])
+
+    def _execute_network(self, sql: str) -> QueryResult:
+        """Execute through the container-only dedicated read account.
+
+        This avoids requiring a host-specific ``mysql_config_editor`` file or
+        a system client inside the production image.  The transaction has the
+        same read-only and execution-time limits as the local CLI path.
+        """
+
+        if not self.settings.mysql_user or not self.settings.mysql_password:
+            raise RuntimeError("AI_DB_HOST 已配置，但缺少 AI_DB_USER 或 AI_DB_PASSWORD。")
+        try:
+            import pymysql
+        except ImportError as exc:  # pragma: no cover - validated by production image build
+            raise RuntimeError("生产数据库驱动未安装。") from exc
+        connection = pymysql.connect(
+            host=self.settings.mysql_host,
+            port=self.settings.mysql_port,
+            user=self.settings.mysql_user,
+            password=self.settings.mysql_password,
+            database=self.settings.spdb_database,
+            charset="utf8mb4",
+            autocommit=False,
+            connect_timeout=5,
+            read_timeout=15,
+            write_timeout=5,
+        )
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SET SESSION MAX_EXECUTION_TIME=5000")
+                cursor.execute("START TRANSACTION READ ONLY")
+                cursor.execute(sql.rstrip(";\n"))
+                columns = [str(item[0]) for item in (cursor.description or [])]
+                rows = [
+                    ["" if value is None else str(value) for value in row]
+                    for row in cursor.fetchall()
+                ]
+            return QueryResult(columns, rows)
+        except Exception as exc:
+            raise RuntimeError("spdb_power_finance 查询失败。") from exc
+        finally:
+            connection.rollback()
+            connection.close()
 
 
 def mysql_command(settings: Settings, login_path: str, database: str) -> list[str]:
