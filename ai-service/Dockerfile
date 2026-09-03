@@ -12,8 +12,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends default-mysql-client \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ai-service/requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+COPY ai-service/requirements.production.txt /tmp/requirements.production.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.production.txt
 
 COPY ai-service /app
 

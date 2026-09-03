@@ -1,0 +1,9 @@
+# Runtime-only dependencies. Document parsing and vector-index construction
+# remain offline maintenance tasks and are intentionally not installed in the
+# small production API container.
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+httpx==0.28.1
+openai==2.21.0
+PyYAML==6.0.3
+sqlglot==30.17.0
