@@ -156,3 +156,8 @@ footer { width: min(1180px, calc(100% - 64px)); min-height: 67px; margin: 0 auto
 .ai-analysis-fab-tooltip { position: absolute; right: calc(100% + 12px); top: 50%; width: max-content; max-width: min(220px, calc(100vw - 110px)); padding: 8px 11px; border: 1px solid rgba(198, 229, 230, .9); border-radius: 6px; background: rgba(18, 47, 67, .97); box-shadow: 0 8px 20px rgba(13, 37, 59, .2); color: #f4fbfb; font-size: 11px; font-weight: 650; letter-spacing: .02em; opacity: 0; pointer-events: none; transform: translate(5px, -50%); transition: opacity .16s ease, transform .16s ease; }
 .ai-analysis-fab:hover .ai-analysis-fab-tooltip, .ai-analysis-fab:focus-visible .ai-analysis-fab-tooltip { opacity: 1; transform: translate(0, -50%); }
 @media (max-width: 560px) { .ai-analysis-fab { right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); width: 48px; height: 48px; } .ai-analysis-fab-mark { width: 28px; height: 28px; font-size: 17px; } }
+
+/* Full directories stay browsable without turning the page into a long sample list. */
+.product-list,.facility-list { max-height: 560px; overflow-y: auto; align-content: start; }
+.product-list input,.facility-list input { grid-column: 1 / -1; position: sticky; top: 0; z-index: 1; width: 100%; padding: 12px; border: 1px solid #a6c5cc; border-radius: 6px; background: #fff; color: #203e50; font-size: 14px; }
+@media(max-width:750px) { .product-list,.facility-list { max-height: 360px; } }

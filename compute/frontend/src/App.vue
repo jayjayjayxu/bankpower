@@ -56,6 +56,8 @@ const menuOpen = ref(false)
 const currentPath = ref(currentAppPath())
 const selectedFacilityCode = ref('SZCF016')
 const selectedProductId = ref('BMGNH100-8XLARGE2048')
+const productQuery = ref('')
+const facilityQuery = ref('')
 const formulaOpen = ref(false)
 const computeSummary = ref(null)
 const summaryError = ref('')
@@ -125,6 +127,8 @@ const marketSignals = [
 ]
 
 const { facilities, products, selectedFacility, selectedProduct, facilityMetrics, directoryError, initializeDirectory } = useDirectory(selectedFacilityCode, selectedProductId)
+const filteredProducts = computed(() => products.value.filter(p => [p.name,p.model,p.region,p.source].join(' ').toLowerCase().includes(productQuery.value.trim().toLowerCase())))
+const filteredFacilities = computed(() => facilities.value.filter(f => [f.name,f.code,f.location,...f.facts].join(' ').toLowerCase().includes(facilityQuery.value.trim().toLowerCase())))
 
 const pipeline = [
   { index: '01', title: '算力设施', text: '识别物理设施、状态与容量口径', tag: '资产底座' },
@@ -790,7 +794,9 @@ onBeforeUnmount(() => {
           <p v-if="directoryError" role="alert">{{ directoryError }} <button @click="initializeDirectory">重试目录</button></p>
           <div class="market-layout">
             <div class="product-list">
-              <button v-for="product in products" :key="product.id" type="button" :class="{ active: selectedProductId === product.id }" @click="selectedProductId = product.id">
+              <input v-model="productQuery" aria-label="搜索算力商品" placeholder="搜索商品、型号或平台" />
+              <p v-if="!filteredProducts.length">暂无匹配商品</p>
+              <button v-for="product in filteredProducts" :key="product.id" type="button" :class="{ active: selectedProductId === product.id }" @click="selectedProductId = product.id">
                 <span>{{ product.type }}</span><strong>{{ product.name }}</strong><small>{{ product.region }} · {{ product.model }}</small>
               </button>
             </div>
@@ -831,7 +837,9 @@ onBeforeUnmount(() => {
         <p v-if="directoryError" role="alert">{{ directoryError }} <button @click="initializeDirectory">重试目录</button></p>
         <div class="facility-layout">
           <div class="facility-list">
-            <button v-for="facility in facilities" :key="facility.code" type="button" :class="{ active: selectedFacilityCode === facility.code }" @click="chooseFacility(facility.code)">
+            <input v-model="facilityQuery" aria-label="搜索算力设施" placeholder="搜索设施、运营方或地区" />
+            <p v-if="!filteredFacilities.length">暂无匹配设施</p>
+            <button v-for="facility in filteredFacilities" :key="facility.code" type="button" :class="{ active: selectedFacilityCode === facility.code }" @click="chooseFacility(facility.code)">
               <span>{{ facility.code }}</span><strong>{{ facility.name }}</strong><small>{{ facility.location }} · {{ facility.type }}</small><i>{{ facility.status }}</i>
             </button>
           </div>
