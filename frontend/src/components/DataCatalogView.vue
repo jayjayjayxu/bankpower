@@ -73,7 +73,7 @@ async function load(page = 0) {
   loading.value = true; error.value = ''; selected.value = null
   try {
     result.value = await fetchReferenceData(props.dataset, { query: query.value.trim(), page, size: 20 })
-    document.title = `${result.value.title}｜电力能源金融机会分析平台`
+    document.title = `${result.value.title}｜EnergyComputeAI`
   } catch (exception) { error.value = exception.message }
   finally { loading.value = false }
 }
@@ -88,7 +88,7 @@ onBeforeUnmount(() => { document.title = originalTitle })
 <template>
   <div class="catalog-page">
     <header class="detail-site-header"><div class="detail-topbar">
-      <button class="brand" type="button" aria-label="返回平台首页" @click="emit('back')"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>电力能源金融</strong><small>基础数据目录</small></span></button>
+      <button class="brand" type="button" aria-label="返回平台首页" @click="emit('back')"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>EnergyComputeAI</strong><small>基础数据目录</small></span></button>
       <div class="detail-breadcrumb"><span>市场与政策数据</span><b>/</b><strong>{{ result.title || dataset }}</strong></div>
       <button class="detail-back-button" type="button" @click="emit('back')">← 返回首页</button>
     </div></header>

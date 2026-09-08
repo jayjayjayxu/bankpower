@@ -36,22 +36,19 @@ public class BankWorkbenchService {
                 """, Map.of())));
         result.put("summary", normalizeRow(jdbc.queryForMap("""
                 SELECT
-                  (SELECT COUNT(*) FROM research_focus_enterprise
-                    WHERE focus_version='V3' AND active_flag=1) AS power_candidate_count,
-                  (SELECT COUNT(*) FROM research_focus_enterprise f
+                  (SELECT COUNT(*) FROM enterprise_profile) AS power_candidate_count,
+                  (SELECT COUNT(*) FROM enterprise_profile f
                     JOIN analysis_result_snapshot s ON s.snapshot_id=(
                       SELECT s2.snapshot_id FROM analysis_result_snapshot s2
-                      WHERE s2.company_id=f.company_id
+                      WHERE s2.run_id=(SELECT run_id FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) AND s2.company_id=f.company_id
                       ORDER BY s2.analysis_date DESC,s2.snapshot_id DESC LIMIT 1)
-                    WHERE f.focus_version='V3' AND f.active_flag=1
-                      AND s.npv_wanyuan IS NOT NULL) AS power_modelled_count,
-                  (SELECT COUNT(*) FROM research_focus_enterprise f
+                    WHERE s.npv_wanyuan IS NOT NULL) AS power_modelled_count,
+                  (SELECT COUNT(*) FROM enterprise_profile f
                     JOIN analysis_result_snapshot s ON s.snapshot_id=(
                       SELECT s2.snapshot_id FROM analysis_result_snapshot s2
-                      WHERE s2.company_id=f.company_id
+                      WHERE s2.run_id=(SELECT run_id FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) AND s2.company_id=f.company_id
                       ORDER BY s2.analysis_date DESC,s2.snapshot_id DESC LIMIT 1)
-                    WHERE f.focus_version='V3' AND f.active_flag=1
-                      AND s.business_priority='A') AS power_priority_a_count,
+                    WHERE s.business_priority='A') AS power_priority_a_count,
                   (SELECT COUNT(*) FROM enterprise_data_center_v2
                     WHERE facility_code='SZCF016') AS compute_focus_customer_count,
                   (SELECT COUNT(*) FROM v_compute_finance_opportunity_summary_v1
@@ -64,14 +61,13 @@ public class BankWorkbenchService {
                        s.opportunity_level,s.readiness_level,s.risk_level,s.business_priority,
                        s.recommended_product,s.recommendation_text,s.risk_summary,
                        s.npv_wanyuan,s.irr,s.base_min_dscr,s.max_debt_ratio,s.max_loan_amount_wanyuan
-                FROM research_focus_enterprise f
-                JOIN enterprise_profile e ON e.company_id=f.company_id
+                FROM enterprise_profile e
+                LEFT JOIN research_focus_enterprise f ON e.company_id=f.company_id AND f.focus_version='V3' AND f.active_flag=1
                 LEFT JOIN analysis_result_snapshot s ON s.snapshot_id=(
                     SELECT s2.snapshot_id FROM analysis_result_snapshot s2
-                    WHERE s2.company_id=e.company_id
+                    WHERE s2.run_id=(SELECT run_id FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) AND s2.company_id=e.company_id
                     ORDER BY s2.analysis_date DESC,s2.snapshot_id DESC LIMIT 1)
-                WHERE f.focus_version='V3' AND f.active_flag=1 AND f.display_order <= 3
-                ORDER BY f.display_order
+                ORDER BY s.business_priority IS NULL,s.business_priority,f.display_order IS NULL,f.display_order,e.company_id
                 """, Map.of()));
         result.put("powerItems", powerItems.stream().map(this::enrichPowerItem).toList());
 
@@ -122,9 +118,7 @@ public class BankWorkbenchService {
                        npv_yuan,recommended_debt_ratio,recommended_loan_yuan,recommended_min_dscr,
                        primary_next_action,key_risk_summary,recommendation_text,data_type
                 FROM v_compute_finance_opportunity_summary_v1
-                WHERE business_priority='A'
-                ORDER BY opportunity_rank,opportunity_code
-                LIMIT 2
+                ORDER BY business_priority,opportunity_rank,opportunity_code
                 """, Map.of()));
         result.put("computeCandidates", computeCandidates.stream().map(this::enrichComputeCandidate).toList());
 

@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { fetchEnterprise, fetchEnterprises, fetchHourlyGeneration, fetchHourlyLoad } from '../services/enterpriseApi'
 
-const props = defineProps({ companyId: { type: String, required: true } })
+const props = defineProps({ companyId: { type: String, required: true }, backLabel: { type: String, default: '返回首页' } })
 const emit = defineEmits(['back', 'select-company'])
 const originalTitle = document.title
 const query = ref('')
@@ -96,9 +96,9 @@ onBeforeUnmount(() => { document.title = originalTitle; window.removeEventListen
 <template>
   <div class="enterprise-data-page">
     <header class="detail-site-header"><div class="detail-topbar">
-      <button class="brand" type="button" aria-label="返回平台首页" @click="emit('back')"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>电力能源金融</strong><small>企业数据中心</small></span></button>
+      <button class="brand" type="button" :aria-label="backLabel" @click="emit('back')"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>EnergyComputeAI</strong><small>企业数据中心</small></span></button>
       <div class="detail-breadcrumb"><span>企业画像</span><b>/</b><strong>{{ profile.companyName || companyId }}</strong></div>
-      <button class="detail-back-button" type="button" @click="emit('back')">← 返回首页</button>
+      <button class="detail-back-button" type="button" @click="emit('back')">← {{ backLabel }}</button>
     </div></header>
 
     <div v-if="loading" class="enterprise-loading"><span></span><h1>正在读取企业数据</h1><p>Java 接口正在查询 MySQL，请稍候。</p></div>

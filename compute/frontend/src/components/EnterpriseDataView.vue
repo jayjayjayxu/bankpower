@@ -96,7 +96,7 @@ onBeforeUnmount(() => { document.title = originalTitle; window.removeEventListen
 <template>
   <div class="enterprise-data-page">
     <header class="detail-site-header"><div class="detail-topbar">
-      <button class="brand" type="button" aria-label="返回平台首页" @click="emit('back')"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>电力能源金融</strong><small>企业数据中心</small></span></button>
+      <button class="brand" type="button" aria-label="返回平台首页" @click="emit('back')"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>EnergyComputeAI</strong><small>企业数据中心</small></span></button>
       <div class="detail-breadcrumb"><span>企业画像</span><b>/</b><strong>{{ profile.companyName || companyId }}</strong></div>
       <button class="detail-back-button" type="button" @click="emit('back')">← 返回首页</button>
     </div></header>

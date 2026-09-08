@@ -39,7 +39,8 @@ public class EnterpriseQueryService {
                           WHERE YEAR(h.ts)=(SELECT analysis_year FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1)) AS load_hour,
                        (SELECT COUNT(*) FROM enterprise_hourly_generation g
                           JOIN research_focus_enterprise f ON f.company_id=g.company_id AND f.focus_version='V3' AND f.active_flag=1
-                          WHERE YEAR(g.ts)=(SELECT analysis_year FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1)) AS generation_hour
+                          WHERE YEAR(g.ts)=(SELECT analysis_year FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1)) AS generation_hour,
+                       (SELECT COUNT(DISTINCT company_id) FROM enterprise_hourly_generation WHERE YEAR(ts)=(SELECT analysis_year FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1)) AS generation_company
                 """, Map.of())));
         result.put("activeRun", normalizeRow(jdbc.queryForMap("""
                 SELECT run_id, run_name, model_version, storage_version, finance_version, policy_version,
@@ -77,11 +78,11 @@ public class EnterpriseQueryService {
                 FROM research_focus_enterprise f
                 JOIN enterprise_profile e ON e.company_id=f.company_id
                 LEFT JOIN analysis_result_snapshot s ON s.snapshot_id=(
-                    SELECT s2.snapshot_id FROM analysis_result_snapshot s2 WHERE s2.company_id=e.company_id
+                    SELECT s2.snapshot_id FROM analysis_result_snapshot s2 WHERE s2.run_id=(SELECT run_id FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) AND s2.company_id=e.company_id
                     ORDER BY s2.analysis_date DESC,s2.snapshot_id DESC LIMIT 1)
                 LEFT JOIN enterprise_energy_features ef ON ef.feature_id=(
-                    SELECT ef2.feature_id FROM enterprise_energy_features ef2 WHERE ef2.company_id=e.company_id
-                    ORDER BY CASE WHEN ef2.feature_version='V3_2025' THEN 0 ELSE 1 END,
+                    SELECT ef2.feature_id FROM enterprise_energy_features ef2 WHERE ef2.company_id=e.company_id AND ef2.analysis_year=(SELECT analysis_year FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1)
+                    ORDER BY CASE WHEN ef2.feature_version=(SELECT REPLACE(model_version,'ENERGY_','') FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) THEN 0 ELSE 1 END,
                              ef2.analysis_year DESC,ef2.feature_id DESC LIMIT 1)
                 WHERE f.focus_version='V3' AND f.active_flag=1 ORDER BY f.display_order
                 """, Map.of())));
@@ -101,7 +102,7 @@ public class EnterpriseQueryService {
                 FROM enterprise_profile e
                 LEFT JOIN analysis_result_snapshot s ON s.snapshot_id = (
                     SELECT s2.snapshot_id FROM analysis_result_snapshot s2
-                    WHERE s2.company_id = e.company_id
+                    WHERE s2.run_id=(SELECT run_id FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) AND s2.company_id = e.company_id
                     ORDER BY s2.analysis_date DESC, s2.snapshot_id DESC LIMIT 1)
                 WHERE (:keyword = '' OR e.company_id LIKE :likeKeyword OR e.company_name LIKE :likeKeyword
                     OR COALESCE(e.company_alias, '') LIKE :likeKeyword OR COALESCE(e.industry_name, '') LIKE :likeKeyword)
@@ -115,8 +116,8 @@ public class EnterpriseQueryService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("profile", queryOne("SELECT * FROM enterprise_profile WHERE company_id = :companyId", companyId, true));
         result.put("energyFeature", queryOne("""
-                SELECT * FROM enterprise_energy_features WHERE company_id = :companyId
-                ORDER BY CASE WHEN feature_version='V3_2025' THEN 0 ELSE 1 END,
+                SELECT * FROM enterprise_energy_features WHERE company_id = :companyId AND analysis_year=(SELECT analysis_year FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1)
+                ORDER BY CASE WHEN feature_version=(SELECT REPLACE(model_version,'ENERGY_','') FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) THEN 0 ELSE 1 END,
                          CASE data_type WHEN 'ACTUAL' THEN 0 WHEN 'MIXED' THEN 1 WHEN 'PUBLIC' THEN 2 ELSE 3 END,
                          analysis_year DESC, created_at DESC, feature_id DESC LIMIT 1
                 """, companyId, false));
@@ -126,8 +127,9 @@ public class EnterpriseQueryService {
                 FROM enterprise_energy_feature_provenance
                 WHERE company_id = :companyId AND feature_version=(
                     SELECT feature_version FROM enterprise_energy_features
-                    WHERE company_id=:companyId
-                    ORDER BY CASE WHEN feature_version='V3_2025' THEN 0 ELSE 1 END,
+                    WHERE company_id=:companyId AND analysis_year=(SELECT analysis_year FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1)
+                    ORDER BY CASE WHEN feature_version=(SELECT REPLACE(model_version,'ENERGY_','') FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) THEN 0 ELSE 1 END,
+                             CASE data_type WHEN 'ACTUAL' THEN 0 WHEN 'MIXED' THEN 1 WHEN 'PUBLIC' THEN 2 ELSE 3 END,
                              analysis_year DESC,feature_id DESC LIMIT 1)
                 ORDER BY field_name
                 """, Map.of("companyId", companyId))));
@@ -135,7 +137,7 @@ public class EnterpriseQueryService {
                 SELECT s.*, r.run_name, r.run_type, r.description AS run_description,
                        r.created_time AS run_created_time, r.status AS run_status
                 FROM analysis_result_snapshot s JOIN analysis_run r ON r.run_id = s.run_id
-                WHERE s.company_id = :companyId ORDER BY s.analysis_date DESC, s.snapshot_id DESC LIMIT 1
+                WHERE s.run_id=(SELECT run_id FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) AND s.company_id = :companyId ORDER BY s.analysis_date DESC, s.snapshot_id DESC LIMIT 1
                 """, companyId, false));
         result.put("snapshotFieldProvenance", normalizeRows(jdbc.queryForList("""
                 SELECT p.field_name, p.field_label, p.provenance_type, p.source_table,
@@ -143,7 +145,7 @@ public class EnterpriseQueryService {
                 FROM analysis_snapshot_field_provenance p
                 JOIN analysis_result_snapshot s ON s.snapshot_id=p.snapshot_id
                 WHERE s.snapshot_id=(SELECT s2.snapshot_id FROM analysis_result_snapshot s2
-                    WHERE s2.company_id=:companyId ORDER BY s2.analysis_date DESC,s2.snapshot_id DESC LIMIT 1)
+                    WHERE s2.run_id=(SELECT run_id FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) AND s2.company_id=:companyId ORDER BY s2.analysis_date DESC,s2.snapshot_id DESC LIMIT 1)
                 ORDER BY p.provenance_id
                 """, Map.of("companyId", companyId))));
         result.put("monthlyPower", normalizeRows(jdbc.queryForList("""
@@ -180,14 +182,14 @@ public class EnterpriseQueryService {
                        MAX(ts) AS end_time, COUNT(DISTINCT DATE(ts)) AS day_count,
                        MIN(data_type) AS data_type, MIN(data_quality) AS data_quality
                 FROM enterprise_hourly_load WHERE company_id = :companyId
-                GROUP BY CAST(YEAR(ts) AS UNSIGNED) ORDER BY analysis_year DESC
+                GROUP BY CAST(YEAR(ts) AS UNSIGNED) ORDER BY CASE WHEN analysis_year=(SELECT analysis_year FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) THEN 0 ELSE 1 END,analysis_year DESC
                 """, Map.of("companyId", companyId))));
         result.put("generationCoverage", normalizeRows(jdbc.queryForList("""
                 SELECT CAST(YEAR(ts) AS UNSIGNED) AS analysis_year, COUNT(*) AS row_count, MIN(ts) AS start_time,
                        MAX(ts) AS end_time, COUNT(DISTINCT DATE(ts)) AS day_count,
                        MIN(data_type) AS data_type, MIN(data_quality) AS data_quality
                 FROM enterprise_hourly_generation WHERE company_id = :companyId
-                GROUP BY CAST(YEAR(ts) AS UNSIGNED) ORDER BY analysis_year DESC
+                GROUP BY CAST(YEAR(ts) AS UNSIGNED) ORDER BY CASE WHEN analysis_year=(SELECT analysis_year FROM analysis_run WHERE status='COMPLETED' ORDER BY run_id DESC LIMIT 1) THEN 0 ELSE 1 END,analysis_year DESC
                 """, Map.of("companyId", companyId))));
         return result;
     }

@@ -19,6 +19,7 @@ function redirectLegacyLogin() {
 }
 
 export default defineConfig({
+  base: process.env.VITE_APP_BASE || '/',
   plugins: [vue(), redirectLegacyLogin()],
   server: {
     host: '0.0.0.0',

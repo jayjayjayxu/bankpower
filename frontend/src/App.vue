@@ -6,6 +6,7 @@ import BankWorkbenchView from './components/BankWorkbenchView.vue'
 import AiAssistantView from './components/AiAssistantView.vue'
 import ProjectAnalysisView from './components/ProjectAnalysisView.vue'
 import PowerSourceStructure from './components/PowerSourceStructure.vue'
+import { numeric, decimal, amount } from './utils/numbers'
 import { fetchHomeSummary, fetchLoadPriceWindow } from './services/enterpriseApi'
 
 function researchSiteUrl(configuredUrl, defaultPort) {
@@ -23,6 +24,24 @@ function researchSiteUrl(configuredUrl, defaultPort) {
   }
 }
 
+function normalizeAppBase(value) {
+  const normalized = (value || '/').trim().replace(/^\/+|\/+$/g, '')
+  return normalized ? `/${normalized}` : ''
+}
+
+const appBase = normalizeAppBase(import.meta.env.BASE_URL)
+function currentAppPath() {
+  const path = window.location.pathname
+  if (appBase && (path === appBase || path.startsWith(`${appBase}/`))) {
+    return path.slice(appBase.length) || '/'
+  }
+  return path || '/'
+}
+function appUrl(path) {
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  return `${appBase}${normalized}` || '/'
+}
+
 const powerSiteUrl = researchSiteUrl(import.meta.env.VITE_POWER_SITE_URL, 5173)
 const computeSiteUrl = researchSiteUrl(import.meta.env.VITE_COMPUTE_SITE_URL, 5174)
 const bankWorkbenchUrl = `${powerSiteUrl}/bank-workbench`
@@ -30,7 +49,12 @@ const activeSignalId = ref('tariff')
 const selectedCompanyId = ref('C000020')
 const menuOpen = ref(false)
 const pendingDataView = ref(null)
-const currentPath = ref(window.location.pathname)
+const currentPath = ref(currentAppPath())
+const enterpriseReturnPath = ref(window.history.state?.returnPath || '/')
+function returnFromEnterprise() {
+  if (enterpriseReturnPath.value === '/bank-workbench') openBankWorkbench()
+  else returnHome()
+}
 const companies = ref([])
 const activeRun = ref({})
 const analysisCoverage = ref({})
@@ -99,10 +123,10 @@ const signals = [
 ]
 
 const coverageData = ref([
-  { value: '24', label: '区域电力统计记录', route: 'regional-power-statistics', page: '区域电力统计' },
-  { value: '1,595', label: '电价记录', route: 'electricity-tariff', page: '分时电价数据' },
-  { value: '70', label: '市场交易记录', route: 'power-market-trade', page: '电力市场交易数据' },
-  { value: '34', label: '政策规则条目', route: 'policy-rules', page: '政策规则库' },
+  { value: '—', label: '区域电力统计记录', route: 'regional-power-statistics', page: '区域电力统计' },
+  { value: '—', label: '电价记录', route: 'electricity-tariff', page: '分时电价数据' },
+  { value: '—', label: '市场交易记录', route: 'power-market-trade', page: '电力市场交易数据' },
+  { value: '—', label: '政策规则条目', route: 'policy-rules', page: '政策规则库' },
 ])
 
 const pipeline = [
@@ -116,8 +140,8 @@ const pipeline = [
 
 const activeSignal = computed(() => signals.find((signal) => signal.id === activeSignalId.value))
 const selectedCompany = computed(() => companies.value.find((company) => company.id === selectedCompanyId.value) || companies.value[0] || {
-  id: '', name: '正在读取数据库', industry: '', opportunity: 'UNKNOWN', profileType: 'POWER_USER', storage: '—', npv: 0,
-  dscr: 0, maxDebt: '—', readiness: '—', risk: '—', product: '—', action: '—', note: '—',
+  id: '', name: '正在读取数据库', industry: '', opportunity: 'UNKNOWN', profileType: 'POWER_USER', storage: '—', npv: null,
+  dscr: null, maxDebt: '—', readiness: '—', risk: '—', product: '—', action: '—', note: '—',
 })
 const detailCompanyId = computed(() => currentPath.value.match(/^\/enterprise\/([^/]+)$/)?.[1] || '')
 const dataRoute = computed(() => currentPath.value.match(/^\/data\/([^/]+)$/)?.[1] || '')
@@ -164,19 +188,14 @@ const highPriceWindows = computed(() => formatHourRanges(loadPriceSeries.value
   .filter((row) => ['PEAK', 'CRITICAL', 'CRITICAL_PEAK'].includes(row.timePeriod)).map((row) => row.hour)))
 
 function normalizeLegacyPath() {
-  if (window.location.pathname === '/login') {
-    window.history.replaceState({}, '', '/')
+  if (currentAppPath() === '/login') {
+    window.history.replaceState({}, '', appUrl('/'))
   }
 }
 
 function syncPath() {
   normalizeLegacyPath()
-  currentPath.value = window.location.pathname
-}
-
-function decimal(value, digits = 2) {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed.toFixed(digits) : '—'
+  currentPath.value = currentAppPath()
 }
 
 function mapHomeCompany(row) {
@@ -190,8 +209,8 @@ function mapHomeCompany(row) {
     storageCapacity: Number(row.storageCapacityMwh || 0),
     storage: `${decimal(row.storagePowerMw)} MW / ${decimal(row.storageCapacityMwh)} MWh`,
     duration: Number(row.storageDurationHour || 0),
-    npv: Number(row.npvWanyuan || 0),
-    dscr: Number(row.baseMinDscr || 0),
+    npv: numeric(row.npvWanyuan),
+    dscr: numeric(row.baseMinDscr),
     maxDebt: row.maxDebtRatio == null ? '—' : `${Math.round(Number(row.maxDebtRatio) * 100)}%`,
     opportunity: row.opportunityLevel || 'UNKNOWN',
     readiness: row.readinessLevel || '—',
@@ -218,7 +237,7 @@ async function loadHomeSummary() {
     const counts = data.coverage || {}
     analysisCoverage.value = counts
     const values = [counts.regionalPowerStatistics, counts.electricityTariff, counts.powerMarketTrade, counts.policyRule]
-    coverageData.value = coverageData.value.map((item, index) => ({ ...item, value: new Intl.NumberFormat('zh-CN').format(values[index] ?? 0) }))
+    coverageData.value = coverageData.value.map((item, index) => ({ ...item, value: amount(values[index]) }))
     if (!companies.value.some((company) => company.id === selectedCompanyId.value) && companies.value[0]) selectedCompanyId.value = companies.value[0].id
   } catch (exception) { homeError.value = exception.message }
 }
@@ -245,7 +264,7 @@ function formatHourRanges(hours) {
 
 onMounted(() => {
   normalizeLegacyPath()
-  currentPath.value = window.location.pathname
+  currentPath.value = currentAppPath()
   window.addEventListener('popstate', syncPath)
   loadHomeSummary()
   loadHeroWindow()
@@ -264,17 +283,13 @@ function selectCompany(id) {
   }, 0)
 }
 
-function formatWanyuan(value) {
-  return new Intl.NumberFormat('zh-CN', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
-}
+function formatWanyuan(value) { return amount(value) }
 
 function openDataView(entry) {
   pendingDataView.value = null
-  window.history.pushState({ dataRoute: entry.route }, '', `/data/${entry.route}`)
-  currentPath.value = window.location.pathname
+  const path = `/data/${entry.route}`
+  window.history.pushState({ dataRoute: entry.route }, '', appUrl(path))
+  currentPath.value = path
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -286,36 +301,38 @@ function closeDataViewHint() {
 }
 
 function navigateToEnterprise(companyId) {
-  window.history.pushState({ companyId }, '', `/enterprise/${companyId}`)
-  currentPath.value = window.location.pathname
+  if (!detailCompanyId.value) enterpriseReturnPath.value = currentPath.value
+  const path = `/enterprise/${companyId}`
+  window.history.pushState({ companyId, returnPath: enterpriseReturnPath.value }, '', appUrl(path))
+  currentPath.value = path
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function openBankWorkbench() {
-  window.history.pushState({}, '', '/bank-workbench')
-  currentPath.value = window.location.pathname
-  document.title = '银行客户经理工作台 · 电力能源金融'
+  window.history.pushState({}, '', appUrl('/bank-workbench'))
+  currentPath.value = '/bank-workbench'
+  document.title = '银行客户经理工作台 · EnergyComputeAI'
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function openAiAssistant() {
-  window.history.pushState({}, '', '/ai-assistant')
-  currentPath.value = window.location.pathname
-  document.title = 'AI 智能问答 · 电力能源金融'
+  window.history.pushState({}, '', appUrl('/ai-assistant'))
+  currentPath.value = '/ai-assistant'
+  document.title = 'AI 智能问答 · EnergyComputeAI'
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function openProjectAnalysis() {
-  window.history.pushState({}, '', '/project-analysis')
-  currentPath.value = window.location.pathname
-  document.title = '项目初步尽调 · 电力能源金融'
+  window.history.pushState({}, '', appUrl('/project-analysis'))
+  currentPath.value = '/project-analysis'
+  document.title = '项目初步尽调 · EnergyComputeAI'
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function returnHome() {
-  window.history.pushState({}, '', '/')
-  currentPath.value = window.location.pathname
-  document.title = '电力能源金融机会分析平台'
+  window.history.pushState({}, '', appUrl('/'))
+  currentPath.value = '/'
+  document.title = 'EnergyComputeAI · 电力算力金融智能分析'
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 </script>
@@ -343,7 +360,8 @@ function returnHome() {
     <EnterpriseDataView
       v-else-if="detailCompanyId"
       :company-id="detailCompanyId"
-      @back="returnHome"
+      :back-label="enterpriseReturnPath === '/bank-workbench' ? '返回工作台' : '返回首页'"
+      @back="returnFromEnterprise"
       @select-company="navigateToEnterprise"
     />
 
@@ -353,8 +371,8 @@ function returnHome() {
         <button class="brand" type="button" aria-label="返回首页" @click="scrollToSection('home')">
           <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
           <span>
-            <strong>电力能源金融</strong>
-            <small>机会分析平台</small>
+            <strong>EnergyComputeAI</strong>
+            <small>电力 · 算力 · 金融尽调</small>
           </span>
         </button>
 
@@ -378,6 +396,7 @@ function returnHome() {
     </header>
 
     <main>
+      <p v-if="homeError" class="enterprise-api-warning">概览读取失败，统计暂不可用：{{ homeError }} <button @click="loadHomeSummary">重试</button></p>
       <section id="home" class="hero section-shell">
         <div class="hero-copy">
           <p class="eyebrow light"><span></span> 面向银行业务的电力能源研究情景</p>
@@ -402,18 +421,18 @@ function returnHome() {
           <div class="dashboard-grid">
             <article class="hero-stat stat-main">
               <span>重点企业</span>
-              <strong>{{ analysisCoverage.focusCompany ?? companies.length }}</strong>
+              <strong>{{ amount(analysisCoverage.focusCompany) }}</strong>
               <p>{{ activeRun.analysisYear || '—' }}年结果快照 · 数据库实时统计</p>
             </article>
             <article class="hero-stat">
               <span>时序样本</span>
-              <strong>{{ formatWanyuan(Number(analysisCoverage.loadHour || 0) + Number(analysisCoverage.generationHour || 0)) }}<small>h</small></strong>
-              <p>{{ analysisCoverage.completeLoadCompany || 0 }} 家完整负荷 · {{ analysisCoverage.generationHour ? 1 : 0 }} 家发电情景</p>
+              <strong>{{ formatWanyuan(analysisCoverage.loadHour == null ? null : Number(analysisCoverage.loadHour) + Number(analysisCoverage.generationHour || 0)) }}<small>h</small></strong>
+              <p>{{ amount(analysisCoverage.completeLoadCompany) }} 家完整负荷 · {{ amount(analysisCoverage.generationCompany) }} 家发电情景</p>
             </article>
             <article class="hero-stat">
               <span>政策依据</span>
-              <strong>{{ analysisCoverage.policyDocument || 0 }}<small>份</small></strong>
-              <p>{{ analysisCoverage.policyRule || 0 }} 条规则 · {{ analysisCoverage.publicEnergyMetric || 0 }} 项公开能源指标</p>
+              <strong>{{ amount(analysisCoverage.policyDocument) }}<small>份</small></strong>
+              <p>{{ amount(analysisCoverage.policyRule) }} 条规则 · {{ amount(analysisCoverage.publicEnergyMetric) }} 项公开能源指标</p>
             </article>
           </div>
           <div class="load-visual">
@@ -424,6 +443,7 @@ function returnHome() {
 
             <div v-if="loadPriceLoading" class="load-window-state">正在读取 8760 小时数据…</div>
             <div v-else-if="loadPriceError" class="load-window-state error">数据暂时无法读取：{{ loadPriceError }}</div>
+            <p v-else-if="!loadPriceWindow.series?.length" class="load-window-state">该年度暂无负荷与电价记录。</p>
             <template v-else>
               <div class="load-window-kpis">
                 <div><span>平均负荷</span><strong>{{ averageLoadMw.toFixed(1) }} <small>MW</small></strong></div>
@@ -577,7 +597,7 @@ function returnHome() {
               <div v-else class="company-metrics">
                 <span><small>推荐储能</small><b>{{ company.storage }}</b></span>
                 <span><small>NPV</small><b>{{ formatWanyuan(company.npv) }} 万元</b></span>
-                <span><small>最低 DSCR</small><b>{{ company.dscr.toFixed(3) }}</b></span>
+                <span><small>最低 DSCR</small><b>{{ decimal(company.dscr, 3) }}</b></span>
               </div>
             </button>
           </div>
@@ -597,7 +617,7 @@ function returnHome() {
             <dl v-else>
               <div><dt>储能研究配置</dt><dd>{{ selectedCompany.storage }} / 4h</dd></div>
               <div><dt>基准 NPV</dt><dd>{{ formatWanyuan(selectedCompany.npv) }} 万元</dd></div>
-              <div><dt>最低 DSCR</dt><dd>{{ selectedCompany.dscr.toFixed(3) }}</dd></div>
+              <div><dt>最低 DSCR</dt><dd>{{ decimal(selectedCompany.dscr, 3) }}</dd></div>
               <div><dt>最大债务比例</dt><dd>{{ selectedCompany.maxDebt }}</dd></div>
               <div><dt>准备度 / 风险</dt><dd>{{ selectedCompany.readiness }} / {{ selectedCompany.risk }}</dd></div>
             </dl>
@@ -650,7 +670,7 @@ function returnHome() {
     <a
       v-if="!aiAssistant"
       class="ai-analysis-fab"
-      href="/ai-assistant"
+      :href="appUrl('/ai-assistant')"
       aria-label="进入 AI 分析"
     >
       <span class="ai-analysis-fab-mark" aria-hidden="true">✦</span>

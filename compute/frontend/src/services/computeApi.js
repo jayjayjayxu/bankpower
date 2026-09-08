@@ -60,3 +60,9 @@ export function fetchCreditPolicyCurve(projectEconomicsResultId, policyCode = 'C
   const params = new URLSearchParams({ policyCode })
   return request(`/compute/bank-recommendations/${projectEconomicsResultId}/curve?${params}`)
 }
+
+export function fetchFacilities(page = 0) { return request(`/compute/facilities?page=${page}&size=100`) }
+export function fetchFacility(code) { return request(`/compute/facilities/${encodeURIComponent(code)}`) }
+export function fetchProducts(page = 0) { return request(`/compute/products?page=${page}&size=100`) }
+export function fetchProduct(id) { return request(`/compute/products/${encodeURIComponent(id)}`) }
+export function fetchSimulation(code = 'SZCF016') { return request(`/compute/simulation/${encodeURIComponent(code)}`) }

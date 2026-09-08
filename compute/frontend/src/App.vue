@@ -12,6 +12,8 @@ import {
   fetchFinanceOpportunities,
   fetchFinanceOpportunity,
 } from './services/computeApi'
+import { useDirectory } from './composables/useDirectory'
+import SimulationCase from './components/SimulationCase.vue'
 import './due-diligence.css'
 import './power-synergy.css'
 
@@ -96,10 +98,10 @@ const navigation = [
 const coverage = computed(() => {
   const values = computeSummary.value?.coverage || {}
   return [
-    { value: values.facilityCount ?? 15, label: '算力设施', note: '物理设施与异地集群分开' },
-    { value: values.platformCount ?? 5, label: '服务与调度平台', note: '平台容量不等于自有装机' },
-    { value: values.productCount ?? 51, label: '公开算力商品', note: '卡数代表配置而非库存' },
-    { value: values.priceCount ?? 189, label: '公开价格记录', note: '参考价、配置价与附加项分行' },
+    { value: values.facilityCount ?? '—', label: '算力设施', note: '物理设施与异地集群分开' },
+    { value: values.platformCount ?? '—', label: '服务与调度平台', note: '平台容量不等于自有装机' },
+    { value: values.productCount ?? '—', label: '公开算力商品', note: '卡数代表配置而非库存' },
+    { value: values.priceCount ?? '—', label: '公开价格记录', note: '参考价、配置价与附加项分行' },
   ]
 })
 
@@ -121,79 +123,7 @@ const marketSignals = [
   },
 ]
 
-const products = [
-  {
-    id: 'BMGNH100-8XLARGE2048', name: 'H100 80GB SXM（八卡）', model: '8 × H100 80GB',
-    region: '深圳二区-I1', listPrice: 77000, detailPrice: 85000, unit: '元/台·月',
-    conflict: true, source: '大湾区一体化算力服务平台', type: 'GPU裸金属',
-  },
-  {
-    id: 'GNH800-32XLARGE2048', name: 'H800 80GB SXM（八卡）', model: '8 × H800 80GB',
-    region: '深圳一区-S1', listPrice: 85000, detailPrice: 75000, unit: '元/台·月',
-    conflict: true, source: '大湾区一体化算力服务平台', type: 'GPU裸金属',
-  },
-  {
-    id: 'rs-cpn-cscvv6pbivm9t74o17kg', name: '鹏城云脑Ⅱ Ascend910-1', model: '1 × Ascend 910',
-    region: '鹏城实验室', listPrice: 2016, detailPrice: null, unit: '元/月',
-    conflict: false, source: '深圳市智慧城市算力统筹调度平台', type: 'NPU算力',
-  },
-  {
-    id: 'rs-cpn-csd01thbivm9t74o17m0', name: '昇腾910 × 2（小时）', model: '2 × Ascend 910',
-    region: '鹏城实验室', listPrice: 5.6, detailPrice: null, unit: '元/小时',
-    conflict: false, source: '深圳市智慧城市算力统筹调度平台', type: 'NPU算力',
-  },
-]
-
-const facilities = [
-  {
-    code: 'SZCF007', name: '鹏城云脑Ⅱ', type: '国家级AI平台', location: '深圳', status: '运营中', grade: 'A',
-    capacity: '1 EOPS', precision: 'FP16', secondaryCapacity: '2 EOPS / INT8',
-    energy: '项目级PUE暂无可靠公开值', price: '已有3个公开商品',
-    facts: ['4096颗昇腾910处理器', 'FP16与INT8容量分口径保存', '已发现公开月租与小时价'],
-    gaps: ['设备实测功率', '年度利用率', '项目级PUE', '绿电比例'],
-    fit: '适合作为“算力商品价格—设备利用—电力成本”样板，但能源端仍需情景参数。',
-  },
-  {
-    code: 'SZCF004', name: '前海深港人工智能算力中心', type: '市场化智算中心', location: '前海', status: '运营中', grade: 'A',
-    capacity: '500 PFLOPS', precision: 'FP16', secondaryCapacity: '一期口径',
-    energy: 'PUE与绿电比例暂缺', price: '一期投资 4.66 亿元',
-    facts: ['500P FP16已点亮', '一期投资边界明确', '市场化运营定位'],
-    gaps: ['实际算力租赁收入', 'IT负载', 'PUE', '电费合同'],
-    fit: '容量与投资额较清楚，可优先建立资本开支、出租率与回收期情景。',
-  },
-  {
-    code: 'SZCF006', name: '龙华新型工业智算中心', type: '工业智算中心', location: '龙华', status: '运营中', grade: 'A',
-    capacity: '1,000 PFLOPS', precision: '未披露', secondaryCapacity: '终期规划 10,000P',
-    energy: 'GPU全液冷；整体液冷占比 > 50%', price: '投资额暂缺',
-    facts: ['一期千P算力已点亮', '规划与当前容量分开', '99.999%持续供电设计'],
-    gaps: ['实际PUE', '当前IT负载', '年用电量', '项目投资'],
-    fit: '适合研究液冷、供电可靠性与工业客户算力需求之间的融资逻辑。',
-  },
-  {
-    code: 'SZCF009', name: '深圳力合报业大数据中心', type: 'IDC数据中心', location: '龙华', status: '运营中', grade: 'B',
-    capacity: '2,301 机柜', precision: '约5kW/柜', secondaryCapacity: 'IDC口径',
-    energy: '全年PUE约 1.244', price: '合同额不等于总投资',
-    facts: ['机柜与柜功率已披露', 'PUE具备项目级公开口径', '运营状态可确认'],
-    gaps: ['实际平均上架率', '年用电量', '绿电比例', '总投资'],
-    fit: '现阶段最适合建立“机柜—IT功率—PUE—电费”的能源成本样板。',
-  },
-  {
-    code: 'SZCF013', name: '中国联通深汕云数据中心', type: '云数据中心', location: '深汕', status: '运营中', grade: 'A',
-    capacity: '约1,000机柜', precision: '中心整体口径', secondaryCapacity: '约1.2万㎡',
-    energy: '2019年中心年均PUE 1.31', price: '融资数据暂缺',
-    facts: ['入选国家绿色数据中心', '机柜、面积与PUE可追溯', '深汕与深圳核心城区分区保存'],
-    gaps: ['2号楼独立PUE', 'IT负载率', '绿电采购', '收入与投资'],
-    fit: '适合构建绿色数据中心对标，但不能把中心汇总PUE解释为单楼数据。',
-  },
-  {
-    code: 'SZCF016', name: '深圳百旺信智算中心', type: '绿色AIDC智算中心', location: '南山', status: '运营中', grade: 'A',
-    capacity: '3,780柜（1栋+4栋）', precision: '2025年均上架 2,473柜', secondaryCapacity: '三期：1,760机柜 · 4kW/柜',
-    energy: '2025年电量 8,019.62万kWh；三期PUE 1.228', price: '2025均价 5,346元/柜·月',
-    facts: ['2025全年上架率65.42%、自建托管收入1.58亿元', '交易所披露三期年电量4,847.33万kWh与历史投资3.2亿元', '有公开固定资产贷款与深圳移动批发合同结构'],
-    gaps: ['当前H800 SKU归属', '绿电合同与结算单', '三期单独收入与上架率', '实时客户合同与回款'],
-    fit: '目前最完整的真实经营样本：可校准“上架率—分功率价格—电量—电费—毛利”，但全园区经营口径不能代替三期单独现金流；与CNIX H800商品仍仅为中等置信度候选关联。',
-  },
-]
+const { facilities, products, selectedFacility, selectedProduct, facilityMetrics, directoryError, initializeDirectory } = useDirectory(selectedFacilityCode, selectedProductId)
 
 const pipeline = [
   { index: '01', title: '算力设施', text: '识别物理设施、状态与容量口径', tag: '资产底座' },
@@ -218,7 +148,6 @@ const variableLabels = {
   CAPEX: 'CAPEX',
 }
 
-const selectedFacility = computed(() => facilities.find((item) => item.code === selectedFacilityCode.value) || facilities[0])
 const activeDetailPage = computed(() => {
   if (currentPath.value === '/due-diligence/baiwangxin-phase3') return 'due-diligence'
   if (currentPath.value === '/power-synergy/baiwangxin-phase3') return 'synergy'
@@ -235,10 +164,9 @@ const detailPageMeta = computed(() => ({
   synergy: { eyebrow: 'POWER × COMPUTE', title: '百旺信三期 · 算电协同成本情景', text: '将深圳分时电价、区域电源结构、绿电采购与储能移峰显式映射到项目现金流代理。' },
 }[activeDetailPage.value] || {}))
 const facilityHighlights = computed(() => ['SZCF016', 'SZCF007', 'SZCF004', 'SZCF009']
-  .map((code) => facilities.find((item) => item.code === code)).filter(Boolean))
-const selectedProduct = computed(() => products.find((item) => item.id === selectedProductId.value) || products[0])
+  .map((code) => facilities.value.find((item) => item.code === code)).filter(Boolean))
 const priceDifference = computed(() => {
-  if (!selectedProduct.value.detailPrice) return null
+  if (selectedProduct.value.detailPrice == null || !selectedProduct.value.listPrice) return null
   return (selectedProduct.value.detailPrice - selectedProduct.value.listPrice) / selectedProduct.value.listPrice
 })
 const selectedRecommendation = computed(() => bankRecommendations.value.find(
@@ -658,17 +586,18 @@ async function initializeFinanceDashboard() {
   financeLoading.value = true
   financeError.value = ''
   try {
-    const [summary, policies, policy, opportunities] = await Promise.all([
-      fetchComputeSummary(), fetchCreditPolicies(), fetchComputePolicyOverview(), fetchFinanceOpportunities(),
+    await Promise.allSettled([
+      (async () => { try { computeSummary.value = await fetchComputeSummary() } catch (e) { financeError.value = e.message } })(),
+      (async () => { try { creditPolicies.value = (await fetchCreditPolicies()).items; await refreshRecommendations() } catch (e) { financeError.value = e.message } })(),
+      (async () => { try { policyOverview.value = await fetchComputePolicyOverview(); policyError.value = '' } catch (e) { policyError.value = e.message } })(),
+      (async () => { try {
+        const result = await fetchFinanceOpportunities()
+        opportunityOverview.value = result; financeOpportunities.value = result.items
+        selectedOpportunityCode.value = result.items[0]?.opportunityCode ?? null
+        await loadSelectedOpportunity()
+      } catch (e) { opportunityError.value = e.message } finally { opportunityLoading.value = false } })(),
     ])
-    computeSummary.value = summary
-    creditPolicies.value = policies.items
-    policyOverview.value = policy
-    opportunityOverview.value = opportunities
-    financeOpportunities.value = opportunities.items
-    selectedOpportunityCode.value = opportunities.items[0]?.opportunityCode ?? null
-    await loadSelectedOpportunity()
-    await refreshRecommendations()
+    financeLoading.value = false
   } catch (error) {
     financeError.value = error.message || '算力模型数据加载失败'
     policyError.value = error.message || '政策模块数据加载失败'
@@ -766,6 +695,7 @@ onMounted(() => {
   window.addEventListener('keydown', closeOnEscape)
   window.addEventListener('popstate', syncPath)
   initializeFinanceDashboard()
+  initializeDirectory()
   loadFacilityOperations('SZCF016')
   if (activeDetailPage.value === 'due-diligence') chooseFacility('SZCF016')
   if (activeDetailPage.value === 'synergy') {
@@ -786,7 +716,7 @@ onBeforeUnmount(() => {
       <div class="topbar">
         <button class="brand" type="button" @click="returnHome()">
           <span class="brand-mark"><i></i><i></i><i></i></span>
-          <span><strong>电力能源金融</strong><small>算力研究分站</small></span>
+          <span><strong>EnergyComputeAI</strong><small>算力研究分站</small></span>
         </button>
         <nav class="main-nav" :class="{ 'is-open': menuOpen }" aria-label="主导航">
           <button v-for="item in navigation" :key="item.target" type="button" @click="goNavigation(item)">{{ item.label }}</button>
@@ -805,6 +735,8 @@ onBeforeUnmount(() => {
         <button type="button" @click="returnHome()">← 返回研究总览</button>
         <div><span>{{ detailPageMeta.eyebrow }}</span><h1>{{ detailPageMeta.title }}</h1><p>{{ detailPageMeta.text }}</p></div>
       </section>
+
+      <SimulationCase v-if="activeDetailPage === 'synergy'" />
 
       <section v-if="isHome" class="hero section-shell">
         <div class="hero-copy">
@@ -853,6 +785,7 @@ onBeforeUnmount(() => {
             <div><p class="eyebrow light"><span></span>公开市场</p><h2>算力商品已经出现价格信号，但仍需解释配置差异</h2></div>
             <p>公开API快照用于观察市场，不代表真实库存、成交合同或未来价格。</p>
           </div>
+          <p v-if="directoryError" role="alert">{{ directoryError }} <button @click="initializeDirectory">重试目录</button></p>
           <div class="market-layout">
             <div class="product-list">
               <button v-for="product in products" :key="product.id" type="button" :class="{ active: selectedProductId === product.id }" @click="selectedProductId = product.id">
@@ -866,10 +799,10 @@ onBeforeUnmount(() => {
                 <div><span>详情主实例价</span><strong>{{ formatPrice(selectedProduct.detailPrice) }}</strong><small>{{ selectedProduct.detailPrice ? selectedProduct.unit : '暂未发现独立详情价' }}</small></div>
               </div>
               <div v-if="priceDifference != null" class="price-gap"><span>相对差异</span><b>{{ priceDifference > 0 ? '+' : '' }}{{ (priceDifference * 100).toFixed(1) }}%</b><p>两种价格均保留，不自动判断哪一个正确。可能来自配置、优惠或更新时间差异。</p></div>
-              <dl><div><dt>商品配置</dt><dd>{{ selectedProduct.model }}</dd></div><div><dt>地域</dt><dd>{{ selectedProduct.region }}</dd></div><div><dt>来源</dt><dd>{{ selectedProduct.source }}</dd></div><div><dt>成交价格</dt><dd>暂无公开数据</dd></div></dl>
+              <p>快照日期：{{ selectedProduct.capturedAt || '待读取' }} <a v-if="selectedProduct.sourceUrl" :href="selectedProduct.sourceUrl" target="_blank" rel="noreferrer">来源 ↗</a></p><dl><div><dt>商品配置</dt><dd>{{ selectedProduct.model }}</dd></div><div><dt>地域</dt><dd>{{ selectedProduct.region }}</dd></div><div><dt>来源</dt><dd>{{ selectedProduct.source }}</dd></div><div><dt>成交价格</dt><dd>暂无公开数据</dd></div></dl>
             </article>
           </div>
-          <div class="market-stats"><div><strong>51</strong><span>公开商品</span></div><div><strong>14</strong><span>主实例价格冲突</span></div><div><strong>90</strong><span>存储/网络等附加计费项</span></div><p>价格冲突本身也是尽调信号：银行测算收入时，应使用合同价格和最低采购期限，而不是网页起价。</p></div>
+          <div class="market-stats"><div><strong>{{ coverage[2].value }}</strong><span>公开商品</span></div><div><strong>{{ computeSummary?.coverage?.priceConflictCount ?? '—' }}</strong><span>主实例价格冲突</span></div><div><strong>{{ computeSummary?.priceScopes?.find(p => p.priceScope === 'DETAIL_ADDON')?.recordCount ?? '—' }}</strong><span>存储/网络等附加计费项</span></div><p>价格冲突本身也是尽调信号：银行测算收入时，应使用合同价格和最低采购期限，而不是网页起价。</p></div>
         </div>
       </section>
 
@@ -890,9 +823,10 @@ onBeforeUnmount(() => {
 
       <section v-else-if="activeDetailPage === 'facilities'" id="facilities" class="facility-section section-shell detail-data-section">
         <div class="section-heading">
-          <div><p class="eyebrow"><span></span>设施画像</p><h2>先从公开证据较完整的6个样本开始</h2></div>
-          <p>六个样本覆盖智算、IDC、深汕节点和市场化中心。其公开字段各有侧重，现阶段不强行生成统一评分。</p>
+          <div><p class="eyebrow"><span></span>设施画像</p><h2>完整算力设施目录</h2></div>
+          <p>从数据库读取全部设施。每项指标保留披露日期、统计范围和出处，不同口径不合并。</p>
         </div>
+        <p v-if="directoryError" role="alert">{{ directoryError }} <button @click="initializeDirectory">重试目录</button></p>
         <div class="facility-layout">
           <div class="facility-list">
             <button v-for="facility in facilities" :key="facility.code" type="button" :class="{ active: selectedFacilityCode === facility.code }" @click="chooseFacility(facility.code)">
@@ -904,6 +838,10 @@ onBeforeUnmount(() => {
             <div class="facility-kpis"><div><span>公开规模</span><strong>{{ selectedFacility.capacity }}</strong><small>{{ selectedFacility.precision }}</small></div><div><span>补充口径</span><strong>{{ selectedFacility.secondaryCapacity }}</strong><small>不与主口径直接相加</small></div><div><span>能源信息</span><strong>{{ selectedFacility.energy }}</strong><small>公开披露</small></div><div><span>投资/价格</span><strong>{{ selectedFacility.price }}</strong><small>口径保留</small></div></div>
             <div class="facility-columns"><div><h4>目前可以确认</h4><ul><li v-for="fact in selectedFacility.facts" :key="fact">{{ fact }}</li></ul></div><div><h4>后续仍需补充</h4><ul class="gap-list"><li v-for="gap in selectedFacility.gaps" :key="gap">{{ gap }}<span>暂无</span></li></ul></div></div>
             <div class="facility-use"><span>研究价值</span><p>{{ selectedFacility.fit }}</p></div>
+            <div class="catalog-table-scroll"><table><thead><tr><th>指标</th><th>数值</th><th>范围</th><th>日期 / 来源</th></tr></thead><tbody>
+              <tr v-for="metric in facilityMetrics" :key="metric.facilityMetricId"><td>{{ metric.metricName || metric.metricCode }}</td><td>{{ metric.metricValue ?? metric.metricText ?? '待补' }} {{ metric.metricUnit }}</td><td>{{ metric.metricScope }}</td><td>{{ metric.asOfDate }} <a v-if="metric.sourceUrl" :href="metric.sourceUrl" target="_blank" rel="noreferrer">公开来源 ↗</a></td></tr>
+              <tr v-if="!facilityMetrics.length"><td colspan="4">尚无可用指标，或正在读取</td></tr>
+            </tbody></table></div>
             <button v-if="selectedFacilityCode === 'SZCF016'" class="facility-due-link" type="button" @click="openDetailPage('due-diligence')">查看百旺信三期尽调状态 <span>→</span></button>
             <button v-if="selectedFacilityCode === 'SZCF016'" class="facility-due-link power-link" type="button" @click="openDetailPage('synergy')">查看百旺信三期算电协同情景 <span>→</span></button>
 
@@ -1410,7 +1348,7 @@ onBeforeUnmount(() => {
       </section>
     </main>
 
-    <footer><span>算力能源金融机会分析平台 · V1 雏形</span><span>PUBLIC DATA + RESEARCH SCENARIO</span><a :href="powerSiteUrl">返回电力研究站 ↗</a></footer>
+    <footer><span>EnergyComputeAI · 算力研究</span><span>PUBLIC DATA + RESEARCH SCENARIO</span><a :href="powerSiteUrl">返回电力研究站 ↗</a></footer>
 
     <div v-if="formulaOpen" class="modal-backdrop" role="presentation" @click.self="formulaOpen = false">
       <section class="formula-modal" role="dialog" aria-modal="true" aria-labelledby="formula-title">
