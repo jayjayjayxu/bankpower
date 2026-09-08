@@ -58,6 +58,7 @@ const selectedFacilityCode = ref('SZCF016')
 const selectedProductId = ref('BMGNH100-8XLARGE2048')
 const formulaOpen = ref(false)
 const computeSummary = ref(null)
+const summaryError = ref('')
 const creditPolicies = ref([])
 const bankRecommendations = ref([])
 const sensitivityRows = ref([])
@@ -587,7 +588,7 @@ async function initializeFinanceDashboard() {
   financeError.value = ''
   try {
     await Promise.allSettled([
-      (async () => { try { computeSummary.value = await fetchComputeSummary() } catch (e) { financeError.value = e.message } })(),
+      (async () => { try { computeSummary.value = await fetchComputeSummary(); summaryError.value = '' } catch (e) { summaryError.value = e.message } })(),
       (async () => { try { creditPolicies.value = (await fetchCreditPolicies()).items; await refreshRecommendations() } catch (e) { financeError.value = e.message } })(),
       (async () => { try { policyOverview.value = await fetchComputePolicyOverview(); policyError.value = '' } catch (e) { policyError.value = e.message } })(),
       (async () => { try {
@@ -731,6 +732,7 @@ onBeforeUnmount(() => {
     </header>
 
     <main id="top">
+      <p v-if="summaryError" class="section-shell" role="alert">统计概览读取失败：{{ summaryError }} <button @click="initializeFinanceDashboard">重试</button></p>
       <section v-if="!isHome" class="detail-page-banner section-shell">
         <button type="button" @click="returnHome()">← 返回研究总览</button>
         <div><span>{{ detailPageMeta.eyebrow }}</span><h1>{{ detailPageMeta.title }}</h1><p>{{ detailPageMeta.text }}</p></div>

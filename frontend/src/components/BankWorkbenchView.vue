@@ -36,7 +36,7 @@ const filteredItems = computed(() => {
   return allItems.value.filter((item) => {
     if (selectedTrack.value !== 'ALL' && item.track !== selectedTrack.value) return false
     if (!keyword) return true
-    return [item.companyName, item.title, item.officialName, item.industryName, item.recommendedProduct]
+    return [item.companyName, item.operatorName, item.title, item.officialName, item.industryName, item.recommendedProduct]
       .filter(Boolean).join(' ').toLowerCase().includes(keyword)
   })
 })
@@ -176,7 +176,7 @@ onMounted(load)
           <article v-for="item in visibleItems" :key="item.key" class="queue-row" :class="item.track.toLowerCase()" role="row">
             <div class="subject-cell" role="cell">
               <span class="track-tag">{{ item.track === 'POWER' ? '电力' : '算力' }}</span>
-              <strong>{{ item.companyName || item.title }}</strong>
+              <strong>{{ item.companyName || (item.operatorName ? item.operatorName + ' · ' : '') + item.title }}</strong>
               <small>{{ item.industryName || '数据中心基础设施 · 三期项目' }} · {{ item.companyId || item.facilityCode }}</small>
               <div><em :class="item.businessPriority === 'A' ? 'priority-a' : ''">{{ labelForPriority(item.businessPriority) }}</em><em :class="item.opportunityLevel === 'DUE_DILIGENCE' ? 'due' : ''">{{ labelForOpportunity(item.opportunityLevel) }}</em></div>
             </div>

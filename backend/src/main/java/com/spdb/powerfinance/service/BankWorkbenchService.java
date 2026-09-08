@@ -73,6 +73,7 @@ public class BankWorkbenchService {
 
         Map<String, Object> baiwang = normalizeRow(jdbc.queryForMap("""
                 SELECT c.facility_code,c.official_name,c.scenario_code,c.scenario_name,
+                       (SELECT f.operator_name FROM enterprise_data_center_v2 f WHERE f.facility_code=c.facility_code LIMIT 1) AS operator_name,
                        c.reference_historical_capex_yuan,c.reference_rack_capacity_count,c.reference_pue,
                        c.reference_annual_energy_cap_kwh,c.year1_revenue_yuan,
                        c.year1_pre_tax_cashflow_proxy_yuan,c.hypothetical_greenfield_npv_proxy_yuan,
