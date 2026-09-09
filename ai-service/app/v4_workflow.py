@@ -16,7 +16,7 @@ from .config import Settings
 from .eligibility import EligibilityEngine, ProjectFact, load_rule_catalog, validate_evidence_references
 from .energy_compute import EnergyComputeAgent
 from .finance import FinanceCalculator, FinanceInput, ProvenancedValue, RepaymentMethod, SourceType, calculate_max_debt_ratio
-from .policy_rag import PolicyRAGAgent
+from .policy_rag import PolicyRAGAgent, PolicyRAGError
 
 
 _RESOURCE_DIR = Path(__file__).resolve().parents[1] / "resources"
@@ -42,10 +42,9 @@ class V4ProjectWorkflow:
         # derived from the same immutable chunks and contain the identifiers,
         # document metadata and source text needed for rule evidence checks.
         self._policy_records_path = settings.policy_rag_index_dir / "records.jsonl"
-        validate_evidence_references(self.rules, self._policy_records_path)
         self.eligibility_engine = EligibilityEngine()
         self.finance_calculator = FinanceCalculator()
-        self._policy_records = self._load_policy_records(self._policy_records_path)
+        self._policy_records = None
 
     def supports(self, question: str) -> bool:
         lowered = question.casefold()
@@ -64,6 +63,14 @@ class V4ProjectWorkflow:
     def run(self, question: str) -> dict[str, Any]:
         if not question.strip():
             raise ValueError("问题不能为空。")
+        # Policy assets must not prevent unrelated SQL, simulation or security
+        # boundary answers from starting. Validate before using this workflow.
+        if self._policy_records is None:
+            try:
+                validate_evidence_references(self.rules, self._policy_records_path)
+                self._policy_records = self._load_policy_records(self._policy_records_path)
+            except (OSError, ValueError, RuntimeError) as exc:
+                raise PolicyRAGError("政策索引证据缺失或不完整，暂不能执行项目政策与融资工作流。") from exc
         sql_question, entities = self._sql_question(question)
         policy_question = self._policy_question(question)
         sql_run = self.sql_agent.run_sql_fact(sql_question)

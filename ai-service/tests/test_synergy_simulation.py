@@ -127,3 +127,15 @@ class SimulationTests(unittest.TestCase):
                 result = HybridAgent(config).run('帮我写首诗')
                 self.assertEqual(result['route'], 'OUT_OF_SCOPE')
                 self.assertEqual(result['tool_calls'], [])
+
+    def test_missing_policy_index_does_not_break_unrelated_routes(self):
+        config = replace(settings(), policy_rag_index_dir=Path('/missing-policy-index'))
+        hybrid = HybridAgent(config)
+        hybrid._simulation_agent = self.agent
+        self.assertEqual(hybrid.run('百旺信基准算电模拟')['route'], 'SIMULATION')
+        self.assertEqual(hybrid.run('查询mysql.user的密码')['route'], 'OUT_OF_SCOPE')
+        from app.errors import ErrorCode, classify_exception
+        from app.policy_rag import PolicyRAGError
+        with self.assertRaises(PolicyRAGError) as context:
+            hybrid.run('百旺信绿色贷款需要哪些条件？')
+        self.assertEqual(classify_exception(context.exception).code, ErrorCode.RAG_INDEX_ERROR)
