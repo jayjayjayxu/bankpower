@@ -18,6 +18,7 @@ from .policy_rag import PolicyRAGAgent
 from .policy_workflow import EnergyPolicyBothAgent
 from .public_statistics import PublicStatisticsAgent
 from .v4_workflow import V4ProjectWorkflow
+from .synergy_simulation import SynergySimulationAgent
 
 
 class AgentProtocol(Protocol):
@@ -95,9 +96,8 @@ def build_legacy_agent(settings: Settings) -> AgentProtocol:
 class HybridAgent:
     """Route V0.3 policy questions before SQL facts and the legacy fallback.
 
-    The legacy core remains untouched and is only initialized when a question is
-    outside the energy/compute catalogue.  Consequently a structured database
-    fact never depends on an LLM API key or an LLM-generated SQL statement.
+    The optional legacy core is initialized outside the controlled catalogue.
+    Text-to-SQL uses a model; stored simulations use fixed read-only queries.
     """
 
     def __init__(self, settings: Settings) -> None:
@@ -108,14 +108,19 @@ class HybridAgent:
         self._v4_agent = V4ProjectWorkflow(settings, self._energy_agent, self._policy_agent)
         self._public_statistics_agent = PublicStatisticsAgent(settings)
         self._corporate_agent = CorporateAnalysisAgent(settings)
+        self._simulation_agent = SynergySimulationAgent(settings)
         self._legacy_agent: AgentProtocol | None = None
         self._legacy_lock = threading.Lock()
 
     def run(self, question: str) -> dict[str, Any]:
+        if self._requires_security_boundary(question):
+            return self._security_boundary(question)
         if self._public_statistics_agent.supports(question):
             return self._public_statistics_agent.run(question)
         if self._requires_final_credit_determination(question):
             return self._credit_boundary(question)
+        if self._simulation_agent.supports(question):
+            return self._simulation_agent.run(question)
         if self._corporate_agent.supports(question):
             return self._corporate_agent.run(question)
         if self._v4_agent.supports(question):
@@ -126,11 +131,25 @@ class HybridAgent:
             return self._policy_agent.run(question)
         if self._energy_agent.supports(question):
             return self._energy_agent.run(question)
+        if self._settings.core_dir is None:
+            return self._unsupported_question(question)
         if self._legacy_agent is None:
             with self._legacy_lock:
                 if self._legacy_agent is None:
-                    self._legacy_agent = build_legacy_agent(self._settings)
+                    try:
+                        self._legacy_agent = build_legacy_agent(self._settings)
+                    except CoreUnavailableError:
+                        return self._unsupported_question(question)
         return self._legacy_agent.run(question)
+
+    @staticmethod
+    def _unsupported_question(question: str) -> dict[str, Any]:
+        return {
+            "question": question, "route": "OUT_OF_SCOPE",
+            "router": {"route": "OUT_OF_SCOPE", "reason": "未命中当前受控问答范围，旧版扩展未启用。"},
+            "tool_calls": [], "sources": [],
+            "final_answer": "当前支持电力与算力数据库查询、企业资料盘点、公开政策检索和百旺信三期算电模拟。请补充企业或项目名称、指标及年份；本次没有查询数据库，不能据此判断数据缺失。",
+        }
 
     @staticmethod
     def _requires_final_credit_determination(question: str) -> bool:
@@ -138,6 +157,33 @@ class HybridAgent:
         finality = ("一定", "最终", "直接")
         finance = ("绿色贷款", "贷款", "授信", "融资审批", "融资比例")
         return any(term in lowered for term in finality) and any(term in lowered for term in finance)
+
+    @staticmethod
+    def _requires_security_boundary(question: str) -> bool:
+        """Reject secret access and write-oriented instructions before legacy fallback.
+
+        An unavailable optional legacy core must never turn a straightforward
+        security refusal into a 503.  This is a controlled business boundary,
+        not an attempt to parse or execute user-provided SQL.
+        """
+
+        lowered = question.casefold()
+        markers = (
+            "deepseek_api_key", "api key", "api_key", "数据库密码", "连接密码",
+            "mysql.user", "information_schema", "drop table", "delete from", "truncate ",
+            "update ", "grant ", "load_file", "服务器文件", "执行drop", "删除企业档案",
+        )
+        return any(marker in lowered for marker in markers)
+
+    @staticmethod
+    def _security_boundary(question: str) -> dict[str, Any]:
+        return {
+            "agent_version": "EnergyComputeAI-V6.3", "question": question.strip(), "route": "OUT_OF_SCOPE",
+            "router": {"route": "OUT_OF_SCOPE", "reason": "请求涉及密钥、系统账户、文件读取或写入性数据库操作。"},
+            "decomposition": None, "tool_calls": [], "sql_result": None, "rag_result": None,
+            "synthesis": None, "sources": [],
+            "final_answer": "系统不会提供密钥、账户或服务器文件，也不会执行或协助执行写入、删除、授权等数据库操作。",
+        }
 
     @staticmethod
     def _credit_boundary(question: str) -> dict[str, Any]:

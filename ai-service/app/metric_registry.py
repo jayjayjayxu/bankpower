@@ -7,6 +7,7 @@ formula or silently substitutes a statistical scope.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Literal
 
 
@@ -22,6 +23,7 @@ class MetricSpec:
     energy_type_code: str | None = None
     numerator: str | None = None
     denominator: str | None = None
+    numerators: tuple[str, ...] = ()
 
 
 METRIC_REGISTRY: tuple[MetricSpec, ...] = (
@@ -36,11 +38,26 @@ METRIC_REGISTRY: tuple[MetricSpec, ...] = (
     MetricSpec("hydro_generation_share", "水力发电占比", ("水力发电占比", "水电占比", "水电发电占比"), "DERIVED_METRIC", numerator="hydro_generation", denominator="total_generation"),
     MetricSpec("nuclear_generation_share", "核电发电占比", ("核电发电占比", "核电占比"), "DERIVED_METRIC", numerator="nuclear_generation", denominator="total_generation"),
     MetricSpec("solar_generation_share", "太阳能发电占比", ("太阳能发电占比", "光伏发电占比", "光伏占比"), "DERIVED_METRIC", numerator="solar_generation", denominator="total_generation"),
+    MetricSpec("non_fossil_generation_share", "非化石能源发电占比", ("非化石能源发电占比", "非化石发电占比", "非化石占比"), "DERIVED_METRIC", denominator="total_generation", numerators=("hydro_generation", "nuclear_generation", "wind_generation", "solar_generation")),
 )
+
+_SHARE_PHRASE = re.compile(r"(火力|火电|风力|风电|水力|水电|核电|太阳能|光伏)发?(?:电)?占(?:总)?发电量?(?:的)?(?:比例|比重)")
+_SHARE_SOURCE = {
+    "火力": "thermal_generation_share", "火电": "thermal_generation_share",
+    "风力": "wind_generation_share", "风电": "wind_generation_share",
+    "水力": "hydro_generation_share", "水电": "hydro_generation_share",
+    "核电": "nuclear_generation_share", "太阳能": "solar_generation_share", "光伏": "solar_generation_share",
+}
 
 
 def find_metric(question: str) -> MetricSpec | None:
     folded = question.casefold()
+    # Treat “火电发电占总发电量的比例” and similar full-sentence forms as
+    # registered derived metrics, rather than accidentally resolving the
+    # embedded direct metric first.
+    share = _SHARE_PHRASE.search(folded)
+    if share:
+        return metric_by_code(_SHARE_SOURCE[share.group(1)])
     # Derived aliases must win where one phrase also contains a direct alias.
     return next((item for item in METRIC_REGISTRY if item.metric_type == "DERIVED_METRIC" and any(alias in folded for alias in item.aliases)), None) or next(
         (item for item in METRIC_REGISTRY if any(alias in folded for alias in item.aliases)), None

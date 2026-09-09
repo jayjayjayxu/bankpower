@@ -51,7 +51,12 @@ class PublicStatisticsAgent:
     @staticmethod
     def supports(question: str) -> bool:
         lowered = question.casefold()
-        return find_metric(question) is not None or any(
+        if find_metric(question) is not None:
+            return True
+        # Terms such as "用电量" also occur in enterprise records.  A legacy
+        # public-statistics query must state a supported public region; otherwise
+        # it remains available to the general protected SQL router.
+        return public_region_for(question) is not None and any(
             alias in lowered for _, aliases, _, _ in _LEGACY_METRICS for alias in aliases
         )
 
@@ -95,42 +100,60 @@ class PublicStatisticsAgent:
         return dict(zip(result.columns, result.rows[0], strict=True))
 
     def _derived_result(self, question: str, metric: MetricSpec, region: str, year: int) -> dict[str, Any]:
-        numerator = self._load_generation_record(region, year, metric_by_code(metric.numerator or ""))
+        numerator_codes = metric.numerators or ((metric.numerator,) if metric.numerator else ())
+        numerator_records = [
+            self._load_generation_record(region, year, metric_by_code(code))
+            for code in numerator_codes
+        ]
         denominator = self._load_generation_record(region, year, metric_by_code(metric.denominator or ""))
         router = self._router(metric.code) | {"region_code": region, "year": year, "metric_type": "DERIVED_METRIC"}
-        if numerator is None:
-            return self._missing(question, router | {"calculation_status": "MISSING_NUMERATOR"}, f"当前缺少 {public_region_label(region)}{year} 年同口径{public_metric_label(metric.numerator or '')}，因此无法可靠计算{metric.label}。")
+        missing_numerators = [code for code, record in zip(numerator_codes, numerator_records, strict=True) if record is None]
+        if missing_numerators:
+            labels = "、".join(public_metric_label(code) for code in missing_numerators)
+            return self._missing(question, router | {"calculation_status": "MISSING_NUMERATOR"}, f"当前缺少 {public_region_label(region)}{year} 年同口径{labels}，因此无法可靠计算{metric.label}。")
         if denominator is None:
             return self._missing(question, router | {"calculation_status": "MISSING_DENOMINATOR"}, f"当前缺少 {public_region_label(region)}{year} 年同口径发电总量，因此无法可靠计算{metric.label}。")
-        compatible, fields = self._compatible(numerator, denominator)
-        if not compatible:
-            return self._incompatible_result(question, router, metric, numerator, denominator, fields)
+        numerators = [record for record in numerator_records if record is not None]
+        compatibility = [self._compatible(record, denominator) for record in numerators]
+        incompatible_fields = sorted({field for compatible, fields in compatibility if not compatible for field in fields})
+        if incompatible_fields:
+            return self._incompatible_result(question, router, metric, numerators, denominator, incompatible_fields)
         try:
-            numerator_value = Decimal(str(numerator["metric_value"]))
+            numerator_value = sum((Decimal(str(record["metric_value"])) for record in numerators), Decimal("0"))
             denominator_value = Decimal(str(denominator["metric_value"]))
             if denominator_value <= 0:
                 raise InvalidOperation
         except (InvalidOperation, ValueError):
             return self._missing(question, router | {"calculation_status": "MISSING_DENOMINATOR"}, "分母不是可用于比率计算的正数，因此未执行占比计算。")
         ratio = numerator_value / denominator_value
-        scope = str(numerator["statistical_scope"])
-        answer = f"{numerator['region_name']}{year}年{metric.label}为 {ratio * Decimal('100'):.2f}%。"
+        scope = str(numerators[0]["statistical_scope"])
+        answer = f"{numerators[0]['region_name']}{year}年{metric.label}为 {ratio * Decimal('100'):.2f}%。"
+        numerator_inputs = [self._input_public_dict(record, code) for record, code in zip(numerators, numerator_codes, strict=True)]
+        numerator_public = (
+            numerator_inputs[0]
+            if len(numerator_inputs) == 1
+            else {
+                "metric": "SUM(" + "+".join(numerator_codes) + ")", "value": str(numerator_value), "unit": str(numerators[0]["metric_unit"]),
+                "components": numerator_inputs,
+            }
+        )
+        numerator_label = " + ".join(public_metric_label(code) for code in numerator_codes)
         calculation = {
-            "calculation_id": f"CALC:{region}:{year}:{metric.code}", "calculation_type": "RATIO",
-            "formula": f"{public_metric_label(metric.numerator or '')} ÷ 发电总量 × 100%", "raw_value": str(ratio),
+            "calculation_id": f"CALC:{region}:{year}:{metric.code}", "calculation_type": "SUM_RATIO" if len(numerators) > 1 else "RATIO",
+            "formula": f"{numerator_label} ÷ 发电总量 × 100%", "raw_value": str(ratio),
             "display_value": f"{ratio * Decimal('100'):.2f}%", "status": "CALCULABLE",
-            "numerator": self._input_public_dict(numerator, metric.numerator or ""),
+            "numerator": numerator_public,
             "denominator": self._input_public_dict(denominator, metric.denominator or ""),
             "scope_validation": {"status": "COMPATIBLE", "checked_fields": ["region_code", "stat_year", "metric_basis", "scope_code", "statistical_scope", "metric_unit"]},
         }
-        sources = self._sources([numerator, denominator])
-        support_ids = [calculation["numerator"]["source_locator"], calculation["denominator"]["source_locator"], calculation["calculation_id"]]
+        sources = self._sources([*numerators, denominator])
+        support_ids = [item["source_locator"] for item in numerator_inputs] + [calculation["denominator"]["source_locator"], calculation["calculation_id"]]
         return {
             "agent_version": "EnergyComputeAI-V6.2", "question": question.strip(), "route": "SQL_CALC",
-            "router": router | {"availability": "AVAILABLE", "calculation_status": "CALCULABLE", "statistical_scope": scope, "scope_code": numerator["scope_code"], "metric_basis": numerator["metric_basis"]},
-            "decomposition": {"metric_type": "DERIVED_METRIC", "metric": metric.code, "required_metrics": [metric.numerator, metric.denominator]},
+            "router": router | {"availability": "AVAILABLE", "calculation_status": "CALCULABLE", "statistical_scope": scope, "scope_code": numerators[0]["scope_code"], "metric_basis": numerators[0]["metric_basis"]},
+            "decomposition": {"metric_type": "DERIVED_METRIC", "metric": metric.code, "required_metrics": [*numerator_codes, metric.denominator]},
             "tool_calls": [{"order": 1, "tool": "PUBLIC_STATISTICS_SQL", "executed": True, "table": "power_source_structure_v2"}, {"order": 2, "tool": "METRIC_CALCULATOR", "executed": True, "calculation_type": "RATIO"}],
-            "sql_result": {"generated_sql": "固定指标注册表查询：见两个基础事实来源。", "safety": {"safe": True, "tables": ["power_source_structure_v2", "dim_region", "data_source"]}, "query_result": {"columns": list(numerator), "rows": [list(numerator.values()), list(denominator.values())]}},
+            "sql_result": {"generated_sql": "固定指标注册表查询：见基础事实来源。", "safety": {"safe": True, "tables": ["power_source_structure_v2", "dim_region", "data_source"]}, "query_result": {"columns": list(numerators[0]), "rows": [*[list(item.values()) for item in numerators], list(denominator.values())]}},
             "rag_result": None, "calculation_result": calculation,
             "interpretation": {"response_mode": "DERIVED_METRIC", "answer_status": "ANSWERED", "primary_conclusion": answer, "facts": [{"key": metric.code, "label": metric.label, "value": calculation["display_value"]}], "candidates": [], "warnings": [], "boundaries": [f"计算仅使用同地区、同年份、同一统计口径（{scope}）的两个公开结构化基础事实。"]},
             "synthesis": {"claims": [{"claim_type": "CALC_RESULT", "text": answer, "support_ids": support_ids}], "dropped_claims": []}, "sources": sources, "final_answer": answer,
@@ -180,9 +203,9 @@ class PublicStatisticsAgent:
     def _input_public_dict(record: dict[str, Any], metric_code: str) -> dict[str, Any]:
         return {"metric": metric_code, "value": str(record["metric_value"]), "unit": str(record["metric_unit"]), "region_code": str(record["region_code"]), "year": int(record["stat_year"]), "metric_basis": str(record["metric_basis"]), "scope_code": str(record["scope_code"]), "statistical_scope": str(record["statistical_scope"]), "source_locator": f"power_source_structure_v2:{record['region_code']}:{record['stat_year']}:{record['scope_code']}:{record['energy_type_code']}"}
 
-    def _incompatible_result(self, question: str, router: dict[str, Any], metric: MetricSpec, numerator: dict[str, Any], denominator: dict[str, Any], fields: list[str]) -> dict[str, Any]:
+    def _incompatible_result(self, question: str, router: dict[str, Any], metric: MetricSpec, numerators: list[dict[str, Any]], denominator: dict[str, Any], fields: list[str]) -> dict[str, Any]:
         answer = f"{metric.label}的分子与分母统计口径不兼容（差异字段：{'、'.join(fields)}），不能直接计算可靠占比。"
-        return {"agent_version": "EnergyComputeAI-V6.2", "question": question.strip(), "route": "IN_SCOPE_DATA_MISSING", "router": router | {"availability": "INCOMPATIBLE_SCOPE", "calculation_status": "INCOMPATIBLE_SCOPE"}, "decomposition": {"metric_type": "DERIVED_METRIC", "metric": metric.code}, "tool_calls": [{"order": 1, "tool": "PUBLIC_STATISTICS_SQL", "executed": True, "table": "power_source_structure_v2"}, {"order": 2, "tool": "METRIC_CALCULATOR", "executed": False, "reason": "INCOMPATIBLE_SCOPE"}], "sql_result": None, "rag_result": None, "interpretation": {"response_mode": "IN_SCOPE_DATA_MISSING", "answer_status": "INCOMPATIBLE_SCOPE", "primary_conclusion": answer, "facts": [], "candidates": [], "warnings": [], "boundaries": ["统计口径不兼容时，系统不会执行计算。"]}, "synthesis": {"claims": [], "dropped_claims": []}, "sources": self._sources([numerator, denominator]), "final_answer": answer}
+        return {"agent_version": "EnergyComputeAI-V6.2", "question": question.strip(), "route": "IN_SCOPE_DATA_MISSING", "router": router | {"availability": "INCOMPATIBLE_SCOPE", "calculation_status": "INCOMPATIBLE_SCOPE"}, "decomposition": {"metric_type": "DERIVED_METRIC", "metric": metric.code}, "tool_calls": [{"order": 1, "tool": "PUBLIC_STATISTICS_SQL", "executed": True, "table": "power_source_structure_v2"}, {"order": 2, "tool": "METRIC_CALCULATOR", "executed": False, "reason": "INCOMPATIBLE_SCOPE"}], "sql_result": None, "rag_result": None, "interpretation": {"response_mode": "IN_SCOPE_DATA_MISSING", "answer_status": "INCOMPATIBLE_SCOPE", "primary_conclusion": answer, "facts": [], "candidates": [], "warnings": [], "boundaries": ["统计口径不兼容时，系统不会执行计算。"]}, "synthesis": {"claims": [], "dropped_claims": []}, "sources": self._sources([*numerators, denominator]), "final_answer": answer}
 
     @staticmethod
     def _sources(records: list[dict[str, Any]]) -> list[dict[str, Any]]:

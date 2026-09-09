@@ -12,6 +12,7 @@ const sessionId = ref(null)
 const conversation = ref(null)
 const conversationViewport = ref(null)
 const examples = [
+  '易信科技百旺信三期算电模拟有哪些数据缺口？',
   '深圳百旺信智算中心2025年的上架率和平均机柜价格是多少？',
   '哪些算力中心PUE低于1.3？',
   '深圳地铁还有哪些数据需要客户经理进行尽调？',
@@ -82,6 +83,7 @@ function sourceDetails(source) {
 function routeLabel(route) {
   return {
     SQL: '电力 / 算力结构化查询',
+    SIMULATION: '算电情景模拟 · 非实测数据',
     RAG: '现行公开政策检索',
     BOTH: '数据库 + 政策证据比对',
     DUE_DILIGENCE: '项目初步尽调',
@@ -96,6 +98,7 @@ function routeLabel(route) {
     CALC_PROVENANCE: '计算过程追溯',
     CLARIFICATION: '需澄清指标',
     IN_SCOPE_DATA_MISSING: '领域内数据暂缺',
+    SQL_GENERATION_UNAVAILABLE: '查询未生成 · 不代表数据缺失',
     OUT_OF_SCOPE: '能力边界提示',
   }[route] || route
 }
@@ -104,8 +107,14 @@ function useExample(value) {
   question.value = value
 }
 
+function resultFacts(result, assumptions = false) {
+  return (result.structured_data?.facts || []).filter((fact) => (fact.category === 'SIMULATION_ASSUMPTION') === assumptions)
+}
+
 function dueScore(due) {
-  const score = Number(due?.snapshot?.data_completeness?.score)
+  const value = due?.snapshot?.data_completeness?.score
+  if (value == null || value === '') return '—'
+  const score = Number(value)
   return Number.isFinite(score) ? `${score.toFixed(1)}%` : '—'
 }
 
@@ -168,7 +177,7 @@ async function scrollConversationToLatest() {
         <div v-if="!messages.length" class="ai-welcome">
           <p>面向电力、算力、企业数据与现行公开政策的可审计问答</p>
           <h1>先取证，再作答。</h1>
-          <span>数字只来自已执行的只读 SQL；系统会将原始结果转换为业务语义，并保留数据口径与证据边界。</span>
+          <span>查询结果保留来源、统计口径和年份。模拟数据单独标记；真实资料缺失时，不会将模拟值当作已核实事实。</span>
           <div class="ai-examples">
             <button v-for="example in examples" :key="example" type="button" @click="useExample(example)">{{ example }}</button>
           </div>
@@ -193,7 +202,11 @@ async function scrollConversationToLatest() {
 
             <section v-if="message.result.structured_data?.facts?.length" class="ai-evidence-block">
               <h2>关键数据</h2>
-              <ul class="ai-claim-list"><li v-for="fact in message.result.structured_data.facts" :key="`${fact.key}-${fact.label}`"><span>{{ fact.label }}</span>{{ fact.value }}</li></ul>
+              <ul class="ai-claim-list"><li v-for="fact in resultFacts(message.result)" :key="`${fact.key}-${fact.label}`"><span>{{ fact.label }}</span>{{ fact.value }}</li></ul>
+              <details v-if="resultFacts(message.result, true).length">
+                <summary>查看 {{ resultFacts(message.result, true).length }} 项参数、真实值缺口与模拟依据</summary>
+                <ul class="ai-claim-list"><li v-for="fact in resultFacts(message.result, true)" :key="fact.key"><span>{{ fact.label }}</span>{{ fact.value }}</li></ul>
+              </details>
             </section>
 
             <section v-if="message.result.data?.calculation" class="ai-evidence-block">

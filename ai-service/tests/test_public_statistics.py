@@ -31,7 +31,7 @@ def settings() -> Settings:
 
 
 def row(energy_type: str, value: str, *, scope: str = "CN_ALL_GROSS_GENERATION") -> list[str]:
-    label = {"TOTAL": "全部电源", "THERMAL": "火电", "WIND": "风电"}[energy_type]
+    label = {"TOTAL": "全部电源", "THERMAL": "火电", "WIND": "风电", "HYDRO": "水电", "NUCLEAR": "核电", "SOLAR": "太阳能发电"}[energy_type]
     return ["CN", "全国", "2024", "GROSS_GENERATION", scope, "全国全口径年度发电量", energy_type, label, value, "GWh", "EQ", "DISCLOSED", "p.1", "A", "国家能源局公开统计", "https://example.gov", "国家能源局"]
 
 
@@ -66,6 +66,12 @@ class PublicStatisticsTests(unittest.TestCase):
         self.assertEqual(result["synthesis"]["claims"][0]["claim_type"], "CALC_RESULT")
         self.assertEqual(len(executor.sql), 2)
 
+    def test_full_share_phrase_is_not_misclassified_as_direct_metric(self) -> None:
+        executor = StubExecutor({"THERMAL": row("THERMAL", "6374260"), "TOTAL": row("TOTAL", "10086880")})
+        result = PublicStatisticsAgent(settings(), executor).run("全国2024年火电发电占总发电量的比例是多少？")
+        self.assertEqual(result["route"], "SQL_CALC")
+        self.assertEqual(result["decomposition"]["metric"], "thermal_generation_share")
+
     def test_incompatible_scope_is_never_calculated(self) -> None:
         executor = StubExecutor({"THERMAL": row("THERMAL", "6374260", scope="CN_INDUSTRIAL"), "TOTAL": row("TOTAL", "10086880")})
         result = PublicStatisticsAgent(settings(), executor).run("全国2024年火电占比是多少？")
@@ -81,8 +87,23 @@ class PublicStatisticsTests(unittest.TestCase):
         self.assertEqual(result["router"]["calculation_status"], "MISSING_NUMERATOR")
         self.assertNotEqual(result["route"], "OUT_OF_SCOPE")
 
+    def test_non_fossil_share_is_sum_of_registered_generation_metrics(self) -> None:
+        executor = StubExecutor({
+            "HYDRO": row("HYDRO", "10"), "NUCLEAR": row("NUCLEAR", "20"),
+            "WIND": row("WIND", "30"), "SOLAR": row("SOLAR", "40"), "TOTAL": row("TOTAL", "200"),
+        })
+        result = PublicStatisticsAgent(settings(), executor).run("全国2024年非化石能源发电占比是多少？")
+        self.assertEqual(result["route"], "SQL_CALC")
+        self.assertEqual(result["calculation_result"]["display_value"], "50.00%")
+        self.assertEqual(result["calculation_result"]["calculation_type"], "SUM_RATIO")
+        self.assertEqual(len(result["calculation_result"]["numerator"]["components"]), 4)
+
     def test_weather_is_not_claimed_as_public_power_statistic(self) -> None:
         self.assertFalse(PublicStatisticsAgent.supports("东京明天会下雨吗？"))
+
+    def test_enterprise_consumption_does_not_get_captured_as_public_statistic(self) -> None:
+        self.assertFalse(PublicStatisticsAgent.supports("企业C000003在2025年1月的用电量是多少？"))
+        self.assertTrue(PublicStatisticsAgent.supports("全国2024年全社会用电量是多少？"))
 
 
 if __name__ == "__main__":

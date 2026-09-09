@@ -9,7 +9,7 @@ if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
 
 from app.config import Settings
-from app.energy_compute import EnergyComputeAgent
+from app.energy_compute import EnergyComputeAgent, EntityResolver
 from app.energy_sql import (
     EnergyTextToSQLPipeline,
     GeneratedSQL,
@@ -115,6 +115,14 @@ class EnergyComputeAgentTests(unittest.TestCase):
         self.assertEqual(generator.questions, [])
         self.assertEqual(executor.queries, [])
 
+    def test_sql_generator_abstention_is_not_misreported_as_out_of_scope(self) -> None:
+        agent, generator, executor = self.make_agent("SELECT 'NOT_ANSWERABLE_FROM_DB' AS error_code LIMIT 1")
+        result = agent.run("企业C000001的未登记字段是多少？")
+        self.assertEqual(result["route"], "SQL_GENERATION_UNAVAILABLE")
+        self.assertEqual(result["router"]["generation_status"], "NOT_ANSWERABLE_FROM_DB")
+        self.assertEqual(len(generator.questions), 1)
+        self.assertEqual(executor.queries, [])
+
     def test_rejected_sql_is_never_executed(self) -> None:
         agent, _, executor = self.make_agent("SELECT unknown_metric FROM compute_facility_metric_v1 LIMIT 1")
         result = agent.run("深圳哪些算力中心PUE最低？")
@@ -122,6 +130,35 @@ class EnergyComputeAgentTests(unittest.TestCase):
         self.assertFalse(result["sql_result"]["safety"]["safe"])
         self.assertIsNone(result["sql_result"]["query_result"])
         self.assertEqual(executor.queries, [])
+
+    def test_controlled_raw_company_id_is_injected_as_sql_constraint(self) -> None:
+        resolver = EntityResolver()
+        resolved, entities = resolver.resolve("企业C000003在2025年1月的用电量是多少？")
+        self.assertEqual(entities, [{
+            "entity_type": "DATABASE_COMPANY",
+            "entity_id": "C000003",
+            "canonical_name": "企业 C000003",
+        }])
+        self.assertIn("enterprise_profile.company_id = 'C000003'", resolved)
+
+    def test_structured_enterprise_and_model_terms_are_sql_supported(self) -> None:
+        for question in (
+            "年用电量超过5000万kWh的企业有哪些？",
+            "哪些商品仅有候选设施映射？",
+            "列出企业模型快照及其运行版本。",
+            "深圳本地可计物理容量的IDC有哪些？",
+        ):
+            with self.subTest(question=question):
+                self.assertTrue(EnergyComputeAgent.supports(question))
+
+    def test_documented_schema_identifiers_remain_sql_supported(self) -> None:
+        for question in (
+            "哪些商品清单已经直接确认 facility_v2_id？",
+            "年度能源汇总中 peak_plus_critical_ratio 高于 0.2 的记录有哪些？",
+            "analysis_run 中 COMPLETED 任务有哪些版本组合？",
+        ):
+            with self.subTest(question=question):
+                self.assertTrue(EnergyComputeAgent.supports(question))
 
 
 if __name__ == "__main__":

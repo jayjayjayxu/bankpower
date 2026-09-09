@@ -43,7 +43,7 @@ class StubExecutor:
                 ["company_id", "financial_year", "revenue_wanyuan", "revenue_growth", "net_profit_wanyuan", "total_assets_wanyuan", "total_liabilities_wanyuan", "total_equity_wanyuan", "debt_ratio", "operating_cashflow_wanyuan", "currency", "data_quality", "statistical_scope"],
                 self.financial_rows,
             )
-        if "enterprise_operational_statistic_v1" in sql:
+        if "enterprise_public_energy_metric" in sql:
             return QueryResult(["company_id", "statistic_year", "metric_code", "metric_value", "metric_unit", "data_type", "data_quality", "statistical_scope"], self.passenger_rows)
         if "v_enterprise_annual_energy_summary" in sql:
             return QueryResult(["company_id", "year", "annual_power_kwh", "annual_electricity_cost_yuan", "avg_cost_yuan_kwh", "annual_max_demand_kw", "data_type"], [["C000020", "2025", "2269000000", "", "", "", "PUBLIC"]])
@@ -77,6 +77,12 @@ class CorporateAnalysisTests(unittest.TestCase):
         self.assertIn("客运运营数据", [item["category"] for item in inventory if item["status"] == "NOT_STORED"])
         self.assertNotIn("当前数据库缺少该企业的营业收入", result["final_answer"])
         self.assertEqual(len(executor.queries), 9)
+
+    def test_passenger_lookup_uses_existing_controlled_metric_table(self) -> None:
+        executor = StubExecutor()
+        result = CorporateAnalysisAgent(test_settings(), executor=executor).run("深圳地铁的客流指标在当前数据库中处于什么数据状态？")
+        self.assertEqual(result["route"], "CORPORATE_DATA_COVERAGE")
+        self.assertTrue(any("enterprise_public_energy_metric" in query for query in executor.queries))
 
     def test_annual_power_uses_annual_energy_table_not_financial_template(self) -> None:
         executor = StubExecutor()

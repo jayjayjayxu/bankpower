@@ -10,7 +10,13 @@ SERVICE_ROOT = Path(__file__).resolve().parents[1]
 if str(SERVICE_ROOT) not in sys.path:
     sys.path.insert(0, str(SERVICE_ROOT))
 
-from app.policy_rag import PolicyRAGAgent, PolicyRAGAnswerer, PolicyRAGError
+from app.policy_rag import (
+    MetadataAwarePolicySearcher,
+    PolicyRAGAgent,
+    PolicyRAGAnswerer,
+    PolicyRAGError,
+    policy_query_profile,
+)
 
 
 EVIDENCE = {
@@ -90,6 +96,26 @@ class PolicyRAGTests(unittest.TestCase):
         self.assertTrue(PolicyRAGAgent.supports("新建数据中心PUE能效要求是多少？"))
         self.assertTrue(PolicyRAGAgent.supports("请引用银行内部授信制度的原文。"))
         self.assertFalse(PolicyRAGAgent.supports("深圳百旺信智算中心2025年PUE是多少？"))
+
+    def test_query_normalization_extracts_topic_region_and_historic_cutoff(self) -> None:
+        profile = policy_query_profile("截至2024年底，深圳绿贷对数据中心有什么要求？")
+        self.assertIn("绿色贷款", profile.normalized_query)
+        self.assertEqual(profile.topics, ("GREEN_FINANCE", "DATA_CENTER"))
+        self.assertEqual(profile.region, "深圳市")
+        self.assertEqual(str(profile.effective_on_or_before), "2024-12-31")
+
+    def test_metadata_reranker_prefers_matching_local_topic_and_honors_cutoff(self) -> None:
+        base = FakeSearcher([
+            dict(EVIDENCE, chunk_id="national-vpp", topic="VPP", region="全国", effective_date="2024-01-01", similarity=0.9),
+            dict(EVIDENCE, chunk_id="shenzhen-vpp", topic="VPP", region="深圳市", effective_date="2024-01-01", similarity=0.1),
+            dict(EVIDENCE, chunk_id="future-vpp", topic="VPP", region="深圳市", effective_date="2025-10-01", similarity=1.0),
+            dict(EVIDENCE, chunk_id="green", topic="GREEN_FINANCE", region="深圳市", effective_date="2024-01-01", similarity=1.0),
+        ])
+        results = MetadataAwarePolicySearcher(base).search("截至2024年底深圳虚拟电厂政策", top_k=2)
+        self.assertEqual(results[0]["chunk_id"], "shenzhen-vpp")
+        self.assertNotIn("future-vpp", [item["chunk_id"] for item in results])
+        self.assertNotIn("green", [item["chunk_id"] for item in results])
+        self.assertEqual(results[0]["retrieval"]["region_filter"], "深圳市")
 
 
 if __name__ == "__main__":

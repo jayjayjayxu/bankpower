@@ -78,9 +78,10 @@ ALLOWED_COLUMNS: dict[str, set[str]] = {
         "total_assets_wanyuan", "total_liabilities_wanyuan", "total_equity_wanyuan", "debt_ratio",
         "operating_cashflow_wanyuan", "currency", "source_id", "data_quality", "statistical_scope", "notes",
     },
-    "enterprise_operational_statistic_v1": {
-        "statistic_id", "company_id", "statistic_year", "metric_code", "metric_value", "metric_unit", "data_type",
-        "source_id", "data_quality", "statistical_scope", "notes", "created_at", "updated_at",
+    "enterprise_public_energy_metric": {
+        "metric_id", "company_id", "report_year", "metric_code", "metric_name", "metric_value", "metric_unit",
+        "normalized_value_kwh", "reporting_scope", "replacement_eligibility", "source_id", "source_page",
+        "calculation_formula", "data_type", "verification_status", "data_version", "notes", "created_at", "updated_at",
     },
     "enterprise_energy_features": {
         "feature_id", "company_id", "analysis_year", "feature_version", "annual_power_kwh", "annual_electricity_cost_yuan",
@@ -285,7 +286,13 @@ Rules:
 8. analysis_result_snapshot contains research model snapshots; retrieve its facts but never draw a credit, finance-risk, policy, or quality conclusion.
 9. For policy, green-loan eligibility, finance risk, subjective ranking, CEO, or unavailable information, output exactly:
 SELECT 'NOT_ANSWERABLE_FROM_DB' AS error_code LIMIT 1;
-10. Output SQL only, without Markdown or explanation.
+   Do not use this marker merely because a query needs aggregation, a documented join, a year filter, or a business-field alias.
+10. Use these schema-level query contracts whenever the question matches their business semantics:
+   - Tariff period/price: electricity_tariff; a year is `year`; commercial and industrial users are `customer_type LIKE '工商业%'`; time bands are `time_period`, `start_time_text`, `end_time_text`; average terminal price is `AVG(final_price_yuan_kwh)`.
+   - Completed model snapshots: join `analysis_result_snapshot s` to `analysis_run r` on `s.run_id=r.run_id`, filter `r.status='COMPLETED'`; NPV is `s.npv_wanyuan`, minimum DSCR is `s.base_min_dscr`, and debt ratio is `s.max_debt_ratio`.
+   - Enterprise annual electricity: `v_enterprise_annual_energy_summary` is already annual; its fields are `annual_power_kwh`, `avg_cost_yuan_kwh`, and `annual_max_demand_kw`. It may join enterprise_profile by company_id for enterprise name or industry.
+   - Candidate facility questions: a non-CONFIRMED mapping is still a valid result and must retain `mapping_status` and `boundary_note`.
+11. Output SQL only, without Markdown or explanation.
 """
 
 SUMMARY_SYSTEM_PROMPT = """You summarize already-executed EnergyComputeAI V0.2 SQL results in concise Chinese.

@@ -249,6 +249,11 @@ class ConversationService:
             return "LOCAL", self._calculation_provenance(clean, state.turns[-1].result)
         if state.turns and _SOURCE_FOLLOW_UP.search(clean):
             return "LOCAL", self._provenance_for_question(clean, state)
+        if state.turns and state.turns[-1].result.get("route") == "SIMULATION":
+            # Preserve the simulated scope explicitly; never turn a short
+            # scenario follow-up into a query for actual company accounts.
+            if len(clean) <= 40 and any(term in clean.casefold() for term in ("基准", "保守", "乐观", "缺什么", "还缺", "参数", "月度")) and not self._has_entity(clean):
+                return "AGENT", "百旺信三期算电模拟：" + clean
         if self._is_comparison_follow_up(clean):
             if state.turns:
                 return "LOCAL", self._comparison_result(clean, state)
@@ -275,6 +280,9 @@ class ConversationService:
         return "AGENT", clean
 
     def _update_state(self, state: ConversationState, question: str, effective_question: str, result: dict[str, Any]) -> None:
+        if result.get("route") == "SIMULATION":
+            self._clear_analysis_context(state)
+            state.active_statistical_scope = "SIMULATED:SZCF016:PHASE_III_EXCHANGE_DISCLOSURE"
         if result.get("route") not in {"CLARIFICATION", "PROVENANCE", "CONTEXT_RESET"}:
             router = result.get("router") or {}
             verified = list(router.get("entity_resolution") or [])
@@ -343,6 +351,11 @@ class ConversationService:
 
     @staticmethod
     def _calculation_provenance(question: str, previous: dict[str, Any]) -> dict[str, Any]:
+        if previous.get("route") == "SIMULATION":
+            answer = "模拟 DSCR = 当年 CFADS 代理值 ÷ 当年偿债本息，最低值取 10 年最小值；储能电费节省 = 基线电费 − 优化后电费，尚未扣除储能运维。此处解释已入库版本的公式，未重新计算；输入与真实资料缺口见模拟情景依据。"
+            return {"question": question, "route": "CALC_PROVENANCE", "router": {"route": "CALC_PROVENANCE"},
+                    "final_answer": answer, "sources": list(previous.get("sources") or []),
+                    "interpretation": {"primary_conclusion": answer, "boundaries": list((previous.get("interpretation") or {}).get("boundaries") or [])}}
         calculation = previous.get("calculation_result") or {}
         if calculation.get("calculation_type") != "RATIO":
             return ConversationService._clarification_result(question, "当前上一轮没有可复用的程序化派生指标计算。")
@@ -655,12 +668,19 @@ class ConversationService:
         target = re.search(r"(?<!\d)(\d+(?:\.\d+)?)(?!\d)", question)
         previous = state.turns[-1]
         if target:
-            target_text = target.group(1)
+            target_value = Decimal(target.group(1))
+            matched = False
             for turn in reversed(state.turns):
-                serialized = json.dumps(turn.result.get("sql_result") or {}, ensure_ascii=False, default=str)
-                if target_text in serialized:
+                rows = ((turn.result.get("sql_result") or {}).get("query_result") or {}).get("rows") or []
+                values = [value for row in rows for value in row]
+                values += [fact.get("value", "") for fact in (turn.result.get("interpretation") or {}).get("facts") or []]
+                numbers = [Decimal(number) for value in values for number in re.findall(r"(?<![\w.])-?\d+(?:\.\d+)?(?![\w.])", str(value).replace(",", ""))]
+                if target_value in numbers:
                     previous = turn
+                    matched = True
                     break
+            if not matched:
+                return self._clarification_result(question, "未在已保存的查询或模拟结果中找到该数值，不能为它指定来源。请提供原问题或完整数值与单位。")
         result = self._provenance_result(question, previous)
         if target:
             result["final_answer"] = (
@@ -669,6 +689,7 @@ class ConversationService:
             )
             result["synthesis"]["claims"][0]["text"] = result["final_answer"]
             result["synthesis"]["claims"][0]["support_ids"] = ["TURN:matched_numeric_value"]
+            result["interpretation"]["primary_conclusion"] = result["final_answer"]
         return result
 
     @staticmethod
@@ -677,12 +698,17 @@ class ConversationService:
         sql = source_result.get("sql_result")
         sources = list(source_result.get("sources") or [])
         references = list((source_result.get("rag_result") or {}).get("references") or [])
-        source_kind = "受控只读 SQL 查询结果" if sql and sql.get("query_result") else "已检索的政策原文"
+        if (source_result.get("router") or {}).get("data_type") == "SIMULATED":
+            source_kind = "已入库模拟情景（SIMULATED，非真实观测或政策原文）"
+        elif sql and sql.get("query_result"):
+            source_kind = "受控只读 SQL 查询结果"
+        else:
+            source_kind = "已检索的政策原文" if references else "已保存的来源记录"
         answer = f"该结论来自上一轮的{source_kind}。原问题为“{previous.question}”。下方保留同一批来源和结构化结果，未重新执行查询。"
         return {
             "question": question, "route": "PROVENANCE", "router": {"route": "PROVENANCE", "reason": "复用上一轮已完成结果的可追溯证据。"},
             "sql_result": sql, "rag_result": {"references": references} if references else None,
-            "interpretation": source_result.get("interpretation"), "sources": sources,
+            "interpretation": {**(source_result.get("interpretation") or {}), "primary_conclusion": answer}, "sources": sources,
             "synthesis": {"claims": [{"claim_type": "CONVERSATIONAL_PROVENANCE", "text": answer, "support_ids": ["TURN:-1"]}], "dropped_claims": []},
             "final_answer": answer,
         }

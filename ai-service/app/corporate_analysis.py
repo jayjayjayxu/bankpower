@@ -150,7 +150,7 @@ class CorporateAnalysisAgent:
         inventory = [
             self._inventory_item("企业主数据", "enterprise_profile", profile, "企业名称、属地、所有制、行业、用能/业务标签与核验状态"),
             self._inventory_item("年度财务", "enterprise_financial", financial, "营业收入、利润、资产负债和经营现金流"),
-            self._inventory_item("客运运营数据", "enterprise_operational_statistic_v1", passengers, "年度客运量、客流和运营指标"),
+            self._inventory_item("客运运营数据", "enterprise_public_energy_metric", passengers, "年度客运量、客流和运营指标"),
             self._inventory_item("年度用电", "v_enterprise_annual_energy_summary", annual, "年度用电量、电费、平均电价、最大需量与数据类型"),
             self._inventory_item("用电特征", "enterprise_energy_features", features, "负荷、峰谷结构、用电量及数据情景/可信度"),
             self._inventory_item("银行观察", "enterprise_bank_observation", observations, "业务机会标签、潜在产品和营销初筛说明"),
@@ -355,6 +355,8 @@ class CorporateAnalysisAgent:
             "policy_assessment_summary": {"record_count": len(assessment_rows), "partial_evidence": sum(item.get("evidence_status") == "PARTIAL" for item in assessment_rows), "not_collected": sum(item.get("evidence_status") == "NOT_COLLECTED" for item in assessment_rows)},
         }
         answer, narration = self.narrator.narrate(question, "CORPORATE_ANALYSIS", evidence, fallback)
+        if not financial_row and "不能作为集团真实财务或授信结论" not in answer:
+            answer = answer.rstrip() + " 当前缺少集团经审计财务事实，不能作为集团真实财务或授信结论。"
         return self._result(
             question, "CORPORATE_ANALYSIS", "CORPORATE_INVESTMENT", entities, primary_safety, primary_result,
             answer, facts, risks, gaps,
@@ -464,10 +466,11 @@ class CorporateAnalysisAgent:
 
     @staticmethod
     def _passenger_sql(company_id: str, year: int | None = None) -> str:
-        year_filter = f" AND statistic_year={year}" if year is not None else ""
-        return ("SELECT company_id, statistic_year, metric_code, metric_value, metric_unit, data_type, data_quality, statistical_scope "
-                "FROM enterprise_operational_statistic_v1 WHERE company_id='" + company_id + "' AND metric_code='PASSENGER_VOLUME'"
-                + year_filter + " ORDER BY statistic_year DESC LIMIT 1;")
+        year_filter = f" AND report_year={year}" if year is not None else ""
+        return ("SELECT company_id, report_year AS statistic_year, metric_code, metric_value, metric_unit, data_type, "
+                "verification_status AS data_quality, reporting_scope AS statistical_scope "
+                "FROM enterprise_public_energy_metric WHERE company_id='" + company_id + "' AND metric_code='PASSENGER_VOLUME'"
+                + year_filter + " ORDER BY report_year DESC LIMIT 1;")
 
     @staticmethod
     def _annual_energy_sql(company_id: str, year: int | None = None) -> str:

@@ -9,6 +9,7 @@ import sys
 import threading
 import unicodedata
 from dataclasses import asdict, dataclass
+from datetime import date
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Protocol
@@ -21,7 +22,7 @@ DOCUMENT_NAME_PATTERN = re.compile(r"《([^》]+)》")
 POLICY_TERMS = (
     "政策", "规定", "办法", "指南", "通知", "补贴", "训力券", "绿色金融", "绿色贷款",
     "绿色低碳", "虚拟电厂", "需求响应", "电力市场", "准入", "申报", "资助", "符合要求",
-    "制度", "授信", "信贷", "产品手册",
+    "制度", "授信", "信贷", "产品手册", "辅助服务", "市场规则", "交易规则",
 )
 
 SYSTEM_PROMPT = f"""你是 EnergyComputeAI V0.3 的政策与银行知识问答助手。
@@ -79,7 +80,7 @@ class LocalPolicyIndexSearcher:
             raise PolicyRAGError("政策索引中不存在 PUBLIC 且 EFFECTIVE 的记录。")
 
     @staticmethod
-    def _terms(value: str) -> set[str]:
+    def terms(value: str) -> set[str]:
         compact = _compact(value).casefold()
         terms = set(re.findall(r"[a-z0-9]+", compact))
         for run in re.findall(r"[\u4e00-\u9fff]+", compact):
@@ -88,16 +89,173 @@ class LocalPolicyIndexSearcher:
                 terms.add(run)
         return {term for term in terms if term}
 
+    @classmethod
+    def lexical_score(cls, query: str, item: dict[str, Any]) -> int:
+        """Score a chunk without allowing repeated embedding windows to win."""
+
+        score = 0
+        title = _compact(str(item.get("title") or "")).casefold()
+        text = _compact(str(item.get("text") or "")).casefold()
+        for term in cls.terms(query):
+            if term in title:
+                score += 8
+            if term in text:
+                score += min(3, text.count(term))
+        return score
+
     def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
-        terms = self._terms(query)
         ranked: list[tuple[int, int, dict[str, Any]]] = []
         for position, item in enumerate(self.records):
-            title = str(item.get("title") or "")
-            text = str(item.get("text") or "")
-            score = sum((3 if term in title else 0) + text.count(term) for term in terms)
+            score = self.lexical_score(query, item)
             ranked.append((score, -position, item))
         ranked.sort(key=lambda value: (value[0], value[1]), reverse=True)
-        return [dict(item, rank=index, similarity=float(score)) for index, (score, _, item) in enumerate(ranked[:top_k], 1)]
+        # Index records are embedding windows, so the same source chunk can be
+        # repeated several times.  Returning unique chunks gives the answerer
+        # five independent pieces of evidence rather than five copies.
+        results: list[dict[str, Any]] = []
+        seen_chunk_ids: set[str] = set()
+        for score, _, item in ranked:
+            chunk_id = str(item.get("chunk_id") or "")
+            if not chunk_id or chunk_id in seen_chunk_ids:
+                continue
+            seen_chunk_ids.add(chunk_id)
+            results.append(dict(item, rank=len(results) + 1, similarity=float(score)))
+            if len(results) >= top_k:
+                break
+        return results
+
+
+@dataclass(frozen=True)
+class PolicyQueryProfile:
+    normalized_query: str
+    topics: tuple[str, ...]
+    region: str | None
+    effective_on_or_before: date | None
+
+
+_QUERY_ALIASES = (
+    ("绿贷", "绿色贷款 绿色金融"),
+    ("绿色信贷", "绿色贷款 绿色金融"),
+    ("算力券", "训力券 算力补贴"),
+    ("能效", "能效 PUE"),
+    ("削峰填谷", "需求响应 负荷管理"),
+)
+_TOPIC_SIGNALS = (
+    (("绿色金融", "绿色贷款", "绿色信贷", "绿贷", "项目目录"), "GREEN_FINANCE"),
+    (("虚拟电厂",), "VPP"),
+    (("数据中心", "pue", "算力"), "DATA_CENTER"),
+    (("储能",), "STORAGE_OPERATION"),
+    (("需求响应", "削峰填谷", "负荷管理"), "DEMAND_RESPONSE"),
+    (("辅助服务",), "AUXILIARY_SERVICE"),
+    (("电力市场", "中长期", "现货交易"), "MARKET_RULE"),
+)
+_REGION_ALIASES = (("深圳", "深圳市"), ("广东", "广东省"), ("全国", "全国"), ("国家", "全国"))
+_AS_OF_YEAR = re.compile(r"(?:截至|截止|到|在)\s*(20\d{2})\s*年(?:底|末|时)?")
+
+
+def policy_query_profile(question: str) -> PolicyQueryProfile:
+    """Normalize policy wording and extract only explicit retrieval constraints."""
+
+    normalized = question.strip()
+    lowered = normalized.casefold()
+    expansions = [replacement for alias, replacement in _QUERY_ALIASES if alias in lowered]
+    if expansions:
+        normalized = normalized + " " + " ".join(expansions)
+    topics = tuple(
+        topic for signals, topic in _TOPIC_SIGNALS if any(signal in lowered for signal in signals)
+    )
+    region = next((code for alias, code in _REGION_ALIASES if alias in question), None)
+    date_match = _AS_OF_YEAR.search(question)
+    cutoff = date(int(date_match.group(1)), 12, 31) if date_match else None
+    return PolicyQueryProfile(normalized, topics, region, cutoff)
+
+
+class MetadataAwarePolicySearcher:
+    """Apply deterministic metadata reranking identically to lexical and FAISS.
+
+    FAISS remains the semantic candidate generator where its local model is
+    available; lexical mode remains a supported low-resource backend.  This
+    layer makes their final evidence set obey the same topic, region and
+    historic effective-date rules without modifying the answer prompt.
+    """
+
+    _CANDIDATE_MULTIPLIER = 12
+
+    def __init__(self, base: Searcher) -> None:
+        self.base = base
+
+    @staticmethod
+    def _effective_after(item: dict[str, Any], cutoff: date | None) -> bool:
+        if cutoff is None:
+            return False
+        raw = str(item.get("effective_date") or "")
+        try:
+            return bool(raw) and date.fromisoformat(raw) > cutoff
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _topic_match(item: dict[str, Any], topics: tuple[str, ...]) -> bool:
+        return not topics or str(item.get("topic") or "") in topics
+
+    @staticmethod
+    def _region_bonus(item: dict[str, Any], region: str | None) -> int:
+        if region is None:
+            return 0
+        item_region = str(item.get("region") or "")
+        if item_region == region:
+            return 30
+        # A local policy question can legitimately need a national superior
+        # rule, but local implementation rules take precedence in retrieval.
+        return 8 if region in {"深圳市", "广东省"} and item_region == "全国" else -30
+
+    @staticmethod
+    def _unique(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        results: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for item in items:
+            chunk_id = str(item.get("chunk_id") or "")
+            if not chunk_id or chunk_id in seen:
+                continue
+            seen.add(chunk_id)
+            results.append(item)
+        return results
+
+    def search(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
+        profile = policy_query_profile(query)
+        candidates = self._unique(
+            self.base.search(profile.normalized_query, top_k=max(top_k * self._CANDIDATE_MULTIPLIER, 40))
+        )
+        eligible = [item for item in candidates if not self._effective_after(item, profile.effective_on_or_before)]
+        topic_candidates = [item for item in eligible if self._topic_match(item, profile.topics)]
+        # Do not turn a missing corpus topic into a false negative.  The normal
+        # evidence-grounded answerer will still refuse if evidence is inadequate.
+        selected_pool = topic_candidates if topic_candidates else eligible
+
+        def ranking(item: dict[str, Any]) -> tuple[int, int, float, int]:
+            topic_bonus = 50 if profile.topics and self._topic_match(item, profile.topics) else 0
+            lexical = LocalPolicyIndexSearcher.lexical_score(profile.normalized_query, item)
+            similarity = float(item.get("similarity") or 0)
+            return (topic_bonus + self._region_bonus(item, profile.region), lexical, similarity, -int(item.get("rank") or 0))
+
+        chosen = self._unique(sorted(selected_pool, key=ranking, reverse=True))
+        if len(chosen) < top_k:
+            chosen = self._unique(chosen + [item for item in eligible if item not in chosen])
+        results = []
+        for rank, item in enumerate(chosen[:top_k], 1):
+            record = dict(item)
+            record.update({
+                "rank": rank,
+                "retrieval": {
+                    "normalized_query": profile.normalized_query,
+                    "topics": list(profile.topics),
+                    "region_filter": profile.region,
+                    "effective_on_or_before": str(profile.effective_on_or_before or ""),
+                    "base_backend": type(self.base).__name__,
+                },
+            })
+            results.append(record)
+        return results
 
 
 @dataclass(frozen=True)
@@ -304,7 +462,7 @@ class PolicyRAGAgent:
                 if self._answerer is None:
                     if os.getenv("POLICY_RAG_SEARCH_MODE", "").casefold() == "lexical":
                         self._answerer = PolicyRAGAnswerer(
-                            LocalPolicyIndexSearcher(self.settings.policy_rag_index_dir),
+                            MetadataAwarePolicySearcher(LocalPolicyIndexSearcher(self.settings.policy_rag_index_dir)),
                             DeepSeekPolicyBackend(),
                         )
                         return self._answerer
@@ -316,7 +474,7 @@ class PolicyRAGAgent:
                     from semantic_search import SemanticSearcher
 
                     self._answerer = PolicyRAGAnswerer(
-                        SemanticSearcher(self.settings.policy_rag_index_dir, cache_dir=self.settings.core_dir / "storage" / "huggingface", device="cpu", batch_size=1, local_files_only=True),
+                        MetadataAwarePolicySearcher(SemanticSearcher(self.settings.policy_rag_index_dir, cache_dir=self.settings.core_dir / "storage" / "huggingface", device="cpu", batch_size=1, local_files_only=True)),
                         DeepSeekPolicyBackend(),
                     )
         return self._answerer

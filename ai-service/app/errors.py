@@ -25,6 +25,7 @@ class ErrorCode(str, Enum):
     RAG_VALIDATION_ERROR = "RAG_VALIDATION_ERROR"
     RAG_INDEX_ERROR = "RAG_INDEX_ERROR"
     IN_SCOPE_DATA_MISSING = "IN_SCOPE_DATA_MISSING"
+    SQL_GENERATION_UNAVAILABLE = "SQL_GENERATION_UNAVAILABLE"
     OUT_OF_SCOPE = "OUT_OF_SCOPE"
     CALCULATION_ERROR = "CALCULATION_ERROR"
     CONTEXT_RESOLUTION_ERROR = "CONTEXT_RESOLUTION_ERROR"
@@ -58,6 +59,7 @@ _DESCRIPTORS: dict[ErrorCode, ErrorDescriptor] = {
     ErrorCode.RAG_VALIDATION_ERROR: ErrorDescriptor(ErrorCode.RAG_VALIDATION_ERROR, 502, "政策证据校验未通过，本次未输出未经验证的回答。", True),
     ErrorCode.RAG_INDEX_ERROR: ErrorDescriptor(ErrorCode.RAG_INDEX_ERROR, 503, "政策知识库暂时不可用，请稍后重试。", True),
     ErrorCode.IN_SCOPE_DATA_MISSING: ErrorDescriptor(ErrorCode.IN_SCOPE_DATA_MISSING, 200, "该问题属于当前业务范围，但缺少可核验数据。", False),
+    ErrorCode.SQL_GENERATION_UNAVAILABLE: ErrorDescriptor(ErrorCode.SQL_GENERATION_UNAVAILABLE, 200, "查询未生成，本次未核验数据是否存在。", True),
     ErrorCode.OUT_OF_SCOPE: ErrorDescriptor(ErrorCode.OUT_OF_SCOPE, 200, "该问题超出当前系统支持范围。", False),
     ErrorCode.CALCULATION_ERROR: ErrorDescriptor(ErrorCode.CALCULATION_ERROR, 422, "计算输入不完整或不兼容，未执行推导计算。", False),
     ErrorCode.CONTEXT_RESOLUTION_ERROR: ErrorDescriptor(ErrorCode.CONTEXT_RESOLUTION_ERROR, 422, "无法可靠继承上一轮上下文，请明确项目、年份或指标。", False),
@@ -78,6 +80,8 @@ def result_error_code(result: dict[str, Any]) -> ErrorCode | None:
         return ErrorCode.OUT_OF_SCOPE
     if route == "IN_SCOPE_DATA_MISSING":
         return ErrorCode.IN_SCOPE_DATA_MISSING
+    if route == "SQL_GENERATION_UNAVAILABLE":
+        return ErrorCode.SQL_GENERATION_UNAVAILABLE
     if route in {"CLARIFICATION", "CONTEXT_RESET"}:
         return ErrorCode.CONTEXT_RESOLUTION_ERROR if route == "CLARIFICATION" else None
     sql_safety = (result.get("sql_result") or {}).get("safety") or {}
